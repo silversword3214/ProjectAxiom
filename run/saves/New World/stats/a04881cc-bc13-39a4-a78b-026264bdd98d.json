@@ -1,0 +1,26 @@
+{
+  "stats": {
+    "minecraft:picked_up": {
+      "minecraft:wildflowers": 3
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 3280,
+      "minecraft:time_since_rest": 3410,
+      "minecraft:walk_one_cm": 7465,
+      "minecraft:total_world_time": 3542,
+      "minecraft:leave_game": 4,
+      "minecraft:fly_one_cm": 7193,
+      "minecraft:walk_on_water_one_cm": 369,
+      "minecraft:sneak_time": 31,
+      "minecraft:play_time": 3410,
+      "minecraft:damage_dealt": 20,
+      "minecraft:jump": 9,
+      "minecraft:time_since_death": 3410
+    },
+    "minecraft:used": {
+      "minecraft:birch_slab": 4,
+      "minecraft:pig_spawn_egg": 2
+    }
+  },
+  "DataVersion": 4671
+}

@@ -1,0 +1,20 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 592,
+      "minecraft:time_since_rest": 476,
+      "minecraft:walk_one_cm": 2441,
+      "minecraft:total_world_time": 1510,
+      "minecraft:leave_game": 2,
+      "minecraft:damage_taken": 500,
+      "minecraft:play_time": 1471,
+      "minecraft:deaths": 1,
+      "minecraft:jump": 1,
+      "minecraft:time_since_death": 445
+    },
+    "minecraft:used": {
+      "minecraft:flint_and_steel": 1
+    }
+  },
+  "DataVersion": 4671
+}

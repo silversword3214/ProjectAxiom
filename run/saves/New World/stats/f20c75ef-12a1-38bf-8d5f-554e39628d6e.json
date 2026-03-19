@@ -1,0 +1,39 @@
+{
+  "stats": {
+    "minecraft:picked_up": {
+      "minecraft:leaf_litter": 5,
+      "minecraft:dirt": 1
+    },
+    "minecraft:killed_by": {
+      "minecraft:skeleton": 1
+    },
+    "minecraft:used": {
+      "minecraft:cobbled_deepslate": 2,
+      "minecraft:diamond_axe": 3,
+      "minecraft:diamond_pickaxe": 3,
+      "minecraft:diamond_shovel": 9
+    },
+    "minecraft:mined": {
+      "minecraft:spruce_fence": 1,
+      "minecraft:dirt": 4,
+      "minecraft:leaf_litter": 3,
+      "minecraft:oak_log": 1,
+      "minecraft:grass_block": 3,
+      "minecraft:red_concrete": 1,
+      "minecraft:stone": 2
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 2271,
+      "minecraft:walk_one_cm": 1206,
+      "minecraft:total_world_time": 2727,
+      "minecraft:leave_game": 3,
+      "minecraft:damage_taken": 40,
+      "minecraft:sneak_time": 7,
+      "minecraft:play_time": 2625,
+      "minecraft:deaths": 1,
+      "minecraft:jump": 7,
+      "minecraft:time_since_death": 2250
+    }
+  },
+  "DataVersion": 4671
+}

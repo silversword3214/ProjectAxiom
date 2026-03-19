@@ -1,0 +1,26 @@
+{
+  "stats": {
+    "minecraft:killed": {
+      "minecraft:zombie_villager": 2
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 59,
+      "minecraft:time_since_rest": 1346,
+      "minecraft:walk_one_cm": 476,
+      "minecraft:total_world_time": 1358,
+      "minecraft:leave_game": 2,
+      "minecraft:fly_one_cm": 398,
+      "minecraft:mob_kills": 2,
+      "minecraft:damage_taken": 126,
+      "minecraft:play_time": 1346,
+      "minecraft:damage_dealt": 155,
+      "minecraft:jump": 9,
+      "minecraft:time_since_death": 1346
+    },
+    "minecraft:used": {
+      "minecraft:diamond_axe": 2,
+      "minecraft:potion": 1
+    }
+  },
+  "DataVersion": 4671
+}

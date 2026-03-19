@@ -1,0 +1,21 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:obsidian": 4
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 8699,
+      "minecraft:time_since_rest": 3418,
+      "minecraft:fall_one_cm": 506,
+      "minecraft:walk_one_cm": 5733,
+      "minecraft:total_world_time": 3460,
+      "minecraft:leave_game": 4,
+      "minecraft:fly_one_cm": 6933,
+      "minecraft:damage_taken": 20,
+      "minecraft:play_time": 3418,
+      "minecraft:jump": 41,
+      "minecraft:time_since_death": 3418
+    }
+  },
+  "DataVersion": 4671
+}

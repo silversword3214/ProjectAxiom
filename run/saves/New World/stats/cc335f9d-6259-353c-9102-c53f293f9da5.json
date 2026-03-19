@@ -1,0 +1,27 @@
+{
+  "stats": {
+    "minecraft:killed": {
+      "minecraft:pig": 1
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 1387,
+      "minecraft:time_since_rest": 581,
+      "minecraft:walk_one_cm": 192,
+      "minecraft:total_world_time": 590,
+      "minecraft:leave_game": 1,
+      "minecraft:fly_one_cm": 4126,
+      "minecraft:mob_kills": 1,
+      "minecraft:play_time": 581,
+      "minecraft:damage_dealt": 100,
+      "minecraft:jump": 22,
+      "minecraft:time_since_death": 581
+    },
+    "minecraft:picked_up": {
+      "minecraft:porkchop": 1
+    },
+    "minecraft:used": {
+      "minecraft:netherite_sword": 1
+    }
+  },
+  "DataVersion": 4671
+}

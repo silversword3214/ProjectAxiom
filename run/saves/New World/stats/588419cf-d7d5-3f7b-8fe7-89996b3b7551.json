@@ -1,0 +1,22 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 824,
+      "minecraft:time_since_rest": 2062,
+      "minecraft:walk_one_cm": 1873,
+      "minecraft:total_world_time": 2073,
+      "minecraft:leave_game": 1,
+      "minecraft:fly_one_cm": 894,
+      "minecraft:walk_under_water_one_cm": 2010,
+      "minecraft:sneak_time": 20,
+      "minecraft:play_time": 2062,
+      "minecraft:jump": 2,
+      "minecraft:time_since_death": 2062
+    },
+    "minecraft:used": {
+      "minecraft:allay_spawn_egg": 1,
+      "minecraft:zombie_villager_spawn_egg": 1
+    }
+  },
+  "DataVersion": 4671
+}

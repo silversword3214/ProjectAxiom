@@ -1,0 +1,30 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 486,
+      "minecraft:walk_one_cm": 190780,
+      "minecraft:leave_game": 3,
+      "minecraft:mob_kills": 1,
+      "minecraft:damage_taken": 108,
+      "minecraft:play_time": 4068,
+      "minecraft:damage_dealt": 144,
+      "minecraft:jump": 31,
+      "minecraft:time_since_death": 464,
+      "minecraft:sprint_one_cm": 1440,
+      "minecraft:fall_one_cm": 4159,
+      "minecraft:total_world_time": 4089,
+      "minecraft:fly_one_cm": 149876,
+      "minecraft:deaths": 1
+    },
+    "minecraft:killed_by": {
+      "minecraft:skeleton": 1
+    },
+    "minecraft:killed": {
+      "minecraft:drowned": 1
+    },
+    "minecraft:used": {
+      "minecraft:netherite_shovel": 2
+    }
+  },
+  "DataVersion": 4671
+}

@@ -1,0 +1,39 @@
+{
+  "stats": {
+    "minecraft:mined": {
+      "minecraft:wildflowers": 1
+    },
+    "minecraft:killed": {
+      "minecraft:horse": 1,
+      "minecraft:skeleton": 1
+    },
+    "minecraft:picked_up": {
+      "minecraft:porkchop": 3,
+      "minecraft:ender_pearl": 1,
+      "minecraft:wildflowers": 2
+    },
+    "minecraft:used": {
+      "minecraft:spruce_fence": 11,
+      "minecraft:netherite_sword": 5,
+      "minecraft:horse_spawn_egg": 1,
+      "minecraft:red_concrete": 6
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 3039,
+      "minecraft:walk_one_cm": 31146,
+      "minecraft:leave_game": 3,
+      "minecraft:mob_kills": 2,
+      "minecraft:walk_under_water_one_cm": 111,
+      "minecraft:damage_taken": 80,
+      "minecraft:play_time": 3039,
+      "minecraft:damage_dealt": 360,
+      "minecraft:jump": 24,
+      "minecraft:time_since_death": 3039,
+      "minecraft:sprint_one_cm": 15815,
+      "minecraft:total_world_time": 3169,
+      "minecraft:fly_one_cm": 6484,
+      "minecraft:walk_on_water_one_cm": 141
+    }
+  },
+  "DataVersion": 4671
+}

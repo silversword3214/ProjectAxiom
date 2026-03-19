@@ -1,0 +1,21 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:zombie_villager_spawn_egg": 3
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 772,
+      "minecraft:walk_one_cm": 186,
+      "minecraft:total_world_time": 784,
+      "minecraft:leave_game": 3,
+      "minecraft:fly_one_cm": 537,
+      "minecraft:crouch_one_cm": 20,
+      "minecraft:sneak_time": 72,
+      "minecraft:play_time": 772,
+      "minecraft:damage_dealt": 24,
+      "minecraft:jump": 3,
+      "minecraft:time_since_death": 772
+    }
+  },
+  "DataVersion": 4671
+}

@@ -1,0 +1,41 @@
+{
+  "stats": {
+    "minecraft:killed": {
+      "minecraft:zombie_villager": 3
+    },
+    "minecraft:mined": {
+      "minecraft:oak_planks": 3
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 3231,
+      "minecraft:walk_one_cm": 19939,
+      "minecraft:leave_game": 3,
+      "minecraft:mob_kills": 3,
+      "minecraft:walk_under_water_one_cm": 21,
+      "minecraft:damage_taken": 220,
+      "minecraft:damage_dealt": 420,
+      "minecraft:play_time": 3231,
+      "minecraft:jump": 32,
+      "minecraft:time_since_death": 3231,
+      "minecraft:sprint_one_cm": 2650,
+      "minecraft:fall_one_cm": 917,
+      "minecraft:swim_one_cm": 171,
+      "minecraft:total_world_time": 3274,
+      "minecraft:fly_one_cm": 16500,
+      "minecraft:walk_on_water_one_cm": 220,
+      "minecraft:crouch_one_cm": 45,
+      "minecraft:sneak_time": 29
+    },
+    "minecraft:used": {
+      "minecraft:golden_apple": 2,
+      "minecraft:diamond_axe": 8,
+      "minecraft:oak_planks": 19,
+      "minecraft:zombie_villager_spawn_egg": 3
+    },
+    "minecraft:picked_up": {
+      "minecraft:oak_planks": 3,
+      "minecraft:rotten_flesh": 1
+    }
+  },
+  "DataVersion": 4671
+}

@@ -1,0 +1,20 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:barrel": 1
+    },
+    "minecraft:custom": {
+      "minecraft:open_barrel": 2,
+      "minecraft:open_chest": 1,
+      "minecraft:time_since_rest": 1380,
+      "minecraft:walk_one_cm": 12,
+      "minecraft:total_world_time": 1394,
+      "minecraft:leave_game": 2,
+      "minecraft:fly_one_cm": 149,
+      "minecraft:play_time": 1380,
+      "minecraft:open_shulker_box": 1,
+      "minecraft:time_since_death": 1380
+    }
+  },
+  "DataVersion": 4671
+}

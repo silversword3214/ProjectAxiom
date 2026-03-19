@@ -1,0 +1,20 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:cooked_beef": 1
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 216,
+      "minecraft:time_since_rest": 2389,
+      "minecraft:walk_one_cm": 937,
+      "minecraft:total_world_time": 2401,
+      "minecraft:leave_game": 2,
+      "minecraft:fly_one_cm": 1384,
+      "minecraft:walk_on_water_one_cm": 1034,
+      "minecraft:play_time": 2389,
+      "minecraft:jump": 9,
+      "minecraft:time_since_death": 2389
+    }
+  },
+  "DataVersion": 4671
+}

@@ -1,0 +1,35 @@
+{
+  "stats": {
+    "minecraft:mined": {
+      "minecraft:deepslate": 1,
+      "minecraft:deepslate_diamond_ore": 3
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 3348,
+      "minecraft:time_since_rest": 1595,
+      "minecraft:walk_one_cm": 1994,
+      "minecraft:total_world_time": 1648,
+      "minecraft:leave_game": 4,
+      "minecraft:fly_one_cm": 3982,
+      "minecraft:mob_kills": 3,
+      "minecraft:damage_taken": 100,
+      "minecraft:play_time": 1595,
+      "minecraft:damage_dealt": 320,
+      "minecraft:jump": 23,
+      "minecraft:time_since_death": 1569
+    },
+    "minecraft:picked_up": {
+      "minecraft:black_wool": 1,
+      "minecraft:mutton": 1
+    },
+    "minecraft:used": {
+      "minecraft:diamond_axe": 4,
+      "minecraft:netherite_pickaxe": 4
+    },
+    "minecraft:killed": {
+      "minecraft:pig": 2,
+      "minecraft:villager": 1
+    }
+  },
+  "DataVersion": 4671
+}

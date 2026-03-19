@@ -1,0 +1,19 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 50,
+      "minecraft:time_since_rest": 697,
+      "minecraft:walk_one_cm": 584,
+      "minecraft:total_world_time": 748,
+      "minecraft:leave_game": 3,
+      "minecraft:fly_one_cm": 327,
+      "minecraft:play_time": 697,
+      "minecraft:jump": 2,
+      "minecraft:time_since_death": 697
+    },
+    "minecraft:used": {
+      "minecraft:villager_spawn_egg": 1
+    }
+  },
+  "DataVersion": 4671
+}

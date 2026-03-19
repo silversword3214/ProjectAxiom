@@ -1,0 +1,40 @@
+{
+  "stats": {
+    "minecraft:killed_by": {
+      "minecraft:creeper": 1
+    },
+    "minecraft:picked_up": {
+      "minecraft:coal": 2,
+      "minecraft:cobblestone": 14
+    },
+    "minecraft:mined": {
+      "minecraft:coal_ore": 2,
+      "minecraft:copper_ore": 2,
+      "minecraft:stone": 16
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 4969,
+      "minecraft:walk_one_cm": 3771,
+      "minecraft:leave_game": 6,
+      "minecraft:walk_under_water_one_cm": 909,
+      "minecraft:damage_taken": 472,
+      "minecraft:play_time": 5957,
+      "minecraft:jump": 17,
+      "minecraft:time_since_death": 4947,
+      "minecraft:sprint_one_cm": 119,
+      "minecraft:fall_one_cm": 1000,
+      "minecraft:total_world_time": 6168,
+      "minecraft:fly_one_cm": 15847,
+      "minecraft:walk_on_water_one_cm": 646,
+      "minecraft:crouch_one_cm": 27,
+      "minecraft:sneak_time": 137,
+      "minecraft:deaths": 1
+    },
+    "minecraft:used": {
+      "minecraft:flint_and_steel": 1,
+      "minecraft:diamond_pickaxe": 20,
+      "minecraft:obsidian": 14
+    }
+  },
+  "DataVersion": 4671
+}

@@ -1,0 +1,50 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:cobbled_deepslate": 4,
+      "minecraft:netherite_sword": 147,
+      "minecraft:netherite_pickaxe": 26
+    },
+    "minecraft:killed": {
+      "minecraft:zombie": 36,
+      "minecraft:pillager": 1,
+      "minecraft:chicken": 1,
+      "minecraft:creeper": 1,
+      "minecraft:pig": 1,
+      "minecraft:sheep": 2,
+      "minecraft:cow": 13,
+      "minecraft:spider": 1
+    },
+    "minecraft:killed_by": {
+      "minecraft:pillager": 1,
+      "minecraft:zombie": 2
+    },
+    "minecraft:mined": {
+      "minecraft:deepslate": 17,
+      "minecraft:deepslate_diamond_ore": 5,
+      "minecraft:andesite": 3,
+      "minecraft:stone": 1
+    },
+    "minecraft:picked_up": {
+      "minecraft:cobbled_deepslate": 4,
+      "minecraft:andesite": 3
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 78,
+      "minecraft:walk_one_cm": 18482,
+      "minecraft:leave_game": 5,
+      "minecraft:mob_kills": 56,
+      "minecraft:damage_taken": 680,
+      "minecraft:damage_dealt": 9127,
+      "minecraft:play_time": 5334,
+      "minecraft:jump": 101,
+      "minecraft:time_since_death": 58,
+      "minecraft:sprint_one_cm": 13094,
+      "minecraft:fall_one_cm": 2860,
+      "minecraft:total_world_time": 5399,
+      "minecraft:fly_one_cm": 17230,
+      "minecraft:deaths": 3
+    }
+  },
+  "DataVersion": 4671
+}

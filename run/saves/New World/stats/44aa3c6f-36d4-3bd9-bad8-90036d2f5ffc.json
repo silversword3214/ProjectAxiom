@@ -1,0 +1,36 @@
+{
+  "stats": {
+    "minecraft:killed_by": {
+      "minecraft:zombie": 1
+    },
+    "minecraft:picked_up": {
+      "minecraft:wildflowers": 2,
+      "minecraft:gunpowder": 1
+    },
+    "minecraft:used": {
+      "minecraft:zombie_spawn_egg": 1
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 3822,
+      "minecraft:walk_one_cm": 5699,
+      "minecraft:leave_game": 3,
+      "minecraft:mob_kills": 1,
+      "minecraft:walk_under_water_one_cm": 567,
+      "minecraft:damage_taken": 120,
+      "minecraft:play_time": 3907,
+      "minecraft:damage_dealt": 431,
+      "minecraft:jump": 64,
+      "minecraft:time_since_death": 3799,
+      "minecraft:sprint_one_cm": 3852,
+      "minecraft:swim_one_cm": 112,
+      "minecraft:total_world_time": 3967,
+      "minecraft:fly_one_cm": 4715,
+      "minecraft:walk_on_water_one_cm": 359,
+      "minecraft:deaths": 1
+    },
+    "minecraft:killed": {
+      "minecraft:creeper": 1
+    }
+  },
+  "DataVersion": 4671
+}

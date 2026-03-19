@@ -1,0 +1,28 @@
+{
+  "stats": {
+    "minecraft:picked_up": {
+      "minecraft:diorite": 1
+    },
+    "minecraft:mined": {
+      "minecraft:diorite": 1,
+      "minecraft:coal_ore": 1,
+      "minecraft:stone": 3
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 1044,
+      "minecraft:time_since_rest": 1228,
+      "minecraft:walk_one_cm": 265,
+      "minecraft:total_world_time": 1282,
+      "minecraft:leave_game": 5,
+      "minecraft:fly_one_cm": 488,
+      "minecraft:play_time": 1228,
+      "minecraft:jump": 12,
+      "minecraft:time_since_death": 1228
+    },
+    "minecraft:used": {
+      "minecraft:cobbled_deepslate": 2,
+      "minecraft:netherite_pickaxe": 5
+    }
+  },
+  "DataVersion": 4671
+}

@@ -1,0 +1,39 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 4150,
+      "minecraft:time_since_rest": 1998,
+      "minecraft:walk_one_cm": 2516,
+      "minecraft:total_world_time": 2014,
+      "minecraft:leave_game": 2,
+      "minecraft:fly_one_cm": 12165,
+      "minecraft:mob_kills": 13,
+      "minecraft:damage_dealt": 2561,
+      "minecraft:play_time": 1998,
+      "minecraft:jump": 67,
+      "minecraft:time_since_death": 1998
+    },
+    "minecraft:used": {
+      "minecraft:netherite_sword": 28
+    },
+    "minecraft:picked_up": {
+      "minecraft:egg": 1,
+      "minecraft:white_wool": 1,
+      "minecraft:feather": 4,
+      "minecraft:chicken": 3,
+      "minecraft:gunpowder": 1,
+      "minecraft:arrow": 1,
+      "minecraft:bone": 3
+    },
+    "minecraft:killed": {
+      "minecraft:skeleton": 5,
+      "minecraft:creeper": 1,
+      "minecraft:chicken": 3,
+      "minecraft:enderman": 1,
+      "minecraft:pig": 1,
+      "minecraft:sheep": 1,
+      "minecraft:spider": 1
+    }
+  },
+  "DataVersion": 4671
+}

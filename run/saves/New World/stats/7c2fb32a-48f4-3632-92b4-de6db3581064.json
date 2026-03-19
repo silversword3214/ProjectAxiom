@@ -1,0 +1,20 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:white_wool": 2
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 1634,
+      "minecraft:time_since_rest": 977,
+      "minecraft:walk_one_cm": 3492,
+      "minecraft:total_world_time": 1667,
+      "minecraft:leave_game": 2,
+      "minecraft:fly_one_cm": 5990,
+      "minecraft:walk_on_water_one_cm": 60,
+      "minecraft:play_time": 977,
+      "minecraft:jump": 19,
+      "minecraft:time_since_death": 977
+    }
+  },
+  "DataVersion": 4671
+}

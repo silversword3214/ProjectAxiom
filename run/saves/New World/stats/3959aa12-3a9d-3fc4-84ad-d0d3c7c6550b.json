@@ -1,0 +1,38 @@
+{
+  "stats": {
+    "minecraft:killed": {
+      "minecraft:salmon": 10,
+      "minecraft:cow": 1,
+      "minecraft:squid": 4
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 2405,
+      "minecraft:walk_one_cm": 5451,
+      "minecraft:leave_game": 3,
+      "minecraft:mob_kills": 15,
+      "minecraft:walk_under_water_one_cm": 1203,
+      "minecraft:damage_dealt": 800,
+      "minecraft:play_time": 2405,
+      "minecraft:jump": 52,
+      "minecraft:time_since_death": 2405,
+      "minecraft:sprint_one_cm": 4181,
+      "minecraft:swim_one_cm": 1416,
+      "minecraft:total_world_time": 2764,
+      "minecraft:fly_one_cm": 31362,
+      "minecraft:walk_on_water_one_cm": 44221,
+      "minecraft:crouch_one_cm": 402,
+      "minecraft:sneak_time": 19
+    },
+    "minecraft:used": {
+      "minecraft:netherite_sword": 15
+    },
+    "minecraft:picked_up": {
+      "minecraft:ink_sac": 3,
+      "minecraft:salmon": 3,
+      "minecraft:leather": 1,
+      "minecraft:bone_meal": 1,
+      "minecraft:beef": 1
+    }
+  },
+  "DataVersion": 4671
+}

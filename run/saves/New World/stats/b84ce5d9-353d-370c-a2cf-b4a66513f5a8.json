@@ -1,0 +1,27 @@
+{
+  "stats": {
+    "minecraft:mined": {
+      "minecraft:deepslate": 2
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 3784,
+      "minecraft:time_since_rest": 5101,
+      "minecraft:walk_one_cm": 2935,
+      "minecraft:total_world_time": 5171,
+      "minecraft:leave_game": 4,
+      "minecraft:fly_one_cm": 12314,
+      "minecraft:walk_under_water_one_cm": 286,
+      "minecraft:walk_on_water_one_cm": 483,
+      "minecraft:play_time": 5101,
+      "minecraft:jump": 20,
+      "minecraft:time_since_death": 5101
+    },
+    "minecraft:used": {
+      "minecraft:diamond_pickaxe": 2
+    },
+    "minecraft:picked_up": {
+      "minecraft:cobbled_deepslate": 2
+    }
+  },
+  "DataVersion": 4671
+}

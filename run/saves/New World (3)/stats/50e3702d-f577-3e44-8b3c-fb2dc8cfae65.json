@@ -1,0 +1,24 @@
+{
+  "stats": {
+    "minecraft:picked_up": {
+      "minecraft:gunpowder": 1
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 486,
+      "minecraft:time_since_rest": 624,
+      "minecraft:walk_one_cm": 2256,
+      "minecraft:total_world_time": 1137,
+      "minecraft:leave_game": 1,
+      "minecraft:fly_one_cm": 19257,
+      "minecraft:mob_kills": 1,
+      "minecraft:play_time": 624,
+      "minecraft:damage_dealt": 245,
+      "minecraft:jump": 31,
+      "minecraft:time_since_death": 624
+    },
+    "minecraft:killed": {
+      "minecraft:creeper": 1
+    }
+  },
+  "DataVersion": 4671
+}

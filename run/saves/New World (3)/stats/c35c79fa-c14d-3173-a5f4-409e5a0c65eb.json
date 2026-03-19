@@ -1,0 +1,35 @@
+{
+  "stats": {
+    "minecraft:killed_by": {
+      "minecraft:skeleton": 1,
+      "minecraft:enderman": 1
+    },
+    "minecraft:mined": {
+      "minecraft:fern": 4,
+      "minecraft:spruce_log": 1,
+      "minecraft:podzol": 1,
+      "minecraft:spruce_leaves": 1
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 7368,
+      "minecraft:time_since_rest": 28,
+      "minecraft:walk_one_cm": 9762,
+      "minecraft:total_world_time": 2396,
+      "minecraft:leave_game": 1,
+      "minecraft:fly_one_cm": 38779,
+      "minecraft:damage_taken": 480,
+      "minecraft:play_time": 2215,
+      "minecraft:damage_dealt": 195,
+      "minecraft:deaths": 2,
+      "minecraft:jump": 64,
+      "minecraft:time_since_death": 5
+    },
+    "minecraft:used": {
+      "minecraft:spruce_log": 1
+    },
+    "minecraft:picked_up": {
+      "minecraft:spruce_log": 1
+    }
+  },
+  "DataVersion": 4671
+}

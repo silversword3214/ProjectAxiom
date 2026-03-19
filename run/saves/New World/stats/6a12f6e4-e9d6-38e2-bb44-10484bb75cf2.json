@@ -1,0 +1,34 @@
+{
+  "stats": {
+    "minecraft:picked_up": {
+      "minecraft:cobblestone": 2
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 2268,
+      "minecraft:time_since_rest": 1542,
+      "minecraft:fall_one_cm": 675,
+      "minecraft:walk_one_cm": 829,
+      "minecraft:total_world_time": 1577,
+      "minecraft:leave_game": 3,
+      "minecraft:fly_one_cm": 9754,
+      "minecraft:mob_kills": 1,
+      "minecraft:play_time": 1542,
+      "minecraft:damage_dealt": 200,
+      "minecraft:jump": 41,
+      "minecraft:time_since_death": 1542
+    },
+    "minecraft:used": {
+      "minecraft:netherite_sword": 2,
+      "minecraft:netherite_pickaxe": 4
+    },
+    "minecraft:killed": {
+      "minecraft:villager": 1
+    },
+    "minecraft:mined": {
+      "minecraft:deepslate": 1,
+      "minecraft:smooth_stone": 1,
+      "minecraft:cobblestone": 2
+    }
+  },
+  "DataVersion": 4671
+}

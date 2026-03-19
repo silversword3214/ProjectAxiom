@@ -1,0 +1,20 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:stripped_jungle_wood": 6
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 2916,
+      "minecraft:time_since_rest": 2038,
+      "minecraft:fall_one_cm": 450,
+      "minecraft:walk_one_cm": 8877,
+      "minecraft:total_world_time": 2238,
+      "minecraft:leave_game": 2,
+      "minecraft:fly_one_cm": 2315,
+      "minecraft:play_time": 2038,
+      "minecraft:jump": 6,
+      "minecraft:time_since_death": 2038
+    }
+  },
+  "DataVersion": 4671
+}

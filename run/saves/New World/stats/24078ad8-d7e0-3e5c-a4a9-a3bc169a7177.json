@@ -1,0 +1,28 @@
+{
+  "stats": {
+    "minecraft:picked_up": {
+      "minecraft:diamond": 2
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 1862,
+      "minecraft:walk_one_cm": 4296,
+      "minecraft:total_world_time": 1896,
+      "minecraft:leave_game": 4,
+      "minecraft:fly_one_cm": 15000,
+      "minecraft:walk_under_water_one_cm": 393,
+      "minecraft:walk_on_water_one_cm": 1137,
+      "minecraft:sneak_time": 158,
+      "minecraft:play_time": 1862,
+      "minecraft:jump": 18,
+      "minecraft:time_since_death": 1862
+    },
+    "minecraft:mined": {
+      "minecraft:deepslate": 25,
+      "minecraft:deepslate_diamond_ore": 1
+    },
+    "minecraft:used": {
+      "minecraft:netherite_pickaxe": 26
+    }
+  },
+  "DataVersion": 4671
+}

@@ -1,0 +1,26 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 14714,
+      "minecraft:walk_one_cm": 1379,
+      "minecraft:leave_game": 3,
+      "minecraft:damage_taken": 200,
+      "minecraft:play_time": 14939,
+      "minecraft:open_shulker_box": 2,
+      "minecraft:jump": 6,
+      "minecraft:time_since_death": 14675,
+      "minecraft:sprint_one_cm": 1182,
+      "minecraft:fall_one_cm": 1026,
+      "minecraft:total_world_time": 15133,
+      "minecraft:fly_one_cm": 808,
+      "minecraft:deaths": 1
+    },
+    "minecraft:mined": {
+      "minecraft:fire": 1
+    },
+    "minecraft:used": {
+      "minecraft:flint_and_steel": 1
+    }
+  },
+  "DataVersion": 4671
+}

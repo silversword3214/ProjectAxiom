@@ -1,0 +1,30 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:netherite_sword": 14
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 1897,
+      "minecraft:walk_one_cm": 2709,
+      "minecraft:leave_game": 5,
+      "minecraft:mob_kills": 5,
+      "minecraft:play_time": 1897,
+      "minecraft:damage_dealt": 1038,
+      "minecraft:jump": 14,
+      "minecraft:time_since_death": 1897,
+      "minecraft:sprint_one_cm": 2165,
+      "minecraft:total_world_time": 1977,
+      "minecraft:fly_one_cm": 9614,
+      "minecraft:crouch_one_cm": 1,
+      "minecraft:sneak_time": 77
+    },
+    "minecraft:picked_up": {
+      "minecraft:cobbled_deepslate": 13,
+      "minecraft:rotten_flesh": 10
+    },
+    "minecraft:killed": {
+      "minecraft:zombie": 5
+    }
+  },
+  "DataVersion": 4671
+}

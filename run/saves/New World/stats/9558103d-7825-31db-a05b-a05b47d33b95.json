@@ -1,0 +1,23 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 2400,
+      "minecraft:time_since_rest": 1469,
+      "minecraft:walk_one_cm": 1916,
+      "minecraft:total_world_time": 1469,
+      "minecraft:fly_one_cm": 801,
+      "minecraft:mob_kills": 1,
+      "minecraft:play_time": 1469,
+      "minecraft:damage_dealt": 200,
+      "minecraft:jump": 7,
+      "minecraft:time_since_death": 1469
+    },
+    "minecraft:used": {
+      "minecraft:diamond_axe": 4
+    },
+    "minecraft:killed": {
+      "minecraft:zombie_villager": 1
+    }
+  },
+  "DataVersion": 4671
+}

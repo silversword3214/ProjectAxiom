@@ -1,0 +1,34 @@
+{
+  "stats": {
+    "minecraft:dropped": {
+      "minecraft:cooked_beef": 3
+    },
+    "minecraft:mined": {
+      "minecraft:deepslate": 85,
+      "minecraft:deepslate_diamond_ore": 4
+    },
+    "minecraft:used": {
+      "minecraft:netherite_pickaxe": 89
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 3608,
+      "minecraft:walk_one_cm": 4967,
+      "minecraft:leave_game": 4,
+      "minecraft:play_time": 3608,
+      "minecraft:damage_dealt": 20,
+      "minecraft:jump": 4,
+      "minecraft:time_since_death": 3608,
+      "minecraft:drop": 3,
+      "minecraft:sprint_one_cm": 1644,
+      "minecraft:fall_one_cm": 225,
+      "minecraft:total_world_time": 4047,
+      "minecraft:fly_one_cm": 14327,
+      "minecraft:crouch_one_cm": 120,
+      "minecraft:sneak_time": 38
+    },
+    "minecraft:picked_up": {
+      "minecraft:cooked_beef": 1
+    }
+  },
+  "DataVersion": 4671
+}

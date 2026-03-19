@@ -1,0 +1,25 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 1077,
+      "minecraft:time_since_rest": 2371,
+      "minecraft:walk_one_cm": 1270,
+      "minecraft:total_world_time": 2390,
+      "minecraft:leave_game": 2,
+      "minecraft:fly_one_cm": 3007,
+      "minecraft:mob_kills": 1,
+      "minecraft:damage_taken": 180,
+      "minecraft:play_time": 2371,
+      "minecraft:damage_dealt": 12,
+      "minecraft:jump": 8,
+      "minecraft:time_since_death": 2371
+    },
+    "minecraft:picked_up": {
+      "minecraft:dirt": 1
+    },
+    "minecraft:killed": {
+      "minecraft:zombie": 1
+    }
+  },
+  "DataVersion": 4671
+}

@@ -1,0 +1,35 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:netherite_sword": 58
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 2557,
+      "minecraft:time_since_rest": 1776,
+      "minecraft:walk_one_cm": 18774,
+      "minecraft:total_world_time": 1782,
+      "minecraft:leave_game": 1,
+      "minecraft:fly_one_cm": 5175,
+      "minecraft:mob_kills": 25,
+      "minecraft:play_time": 1776,
+      "minecraft:damage_dealt": 5614,
+      "minecraft:jump": 76,
+      "minecraft:time_since_death": 1776
+    },
+    "minecraft:picked_up": {
+      "minecraft:carrot": 1,
+      "minecraft:string": 1,
+      "minecraft:copper_helmet": 2,
+      "minecraft:golden_leggings": 1,
+      "minecraft:leather_boots": 1,
+      "minecraft:chainmail_helmet": 1,
+      "minecraft:leather_chestplate": 1,
+      "minecraft:copper_leggings": 1,
+      "minecraft:rotten_flesh": 232
+    },
+    "minecraft:killed": {
+      "minecraft:zombie": 25
+    }
+  },
+  "DataVersion": 4671
+}

@@ -1,0 +1,36 @@
+{
+  "stats": {
+    "minecraft:mined": {
+      "minecraft:deepslate": 27,
+      "minecraft:deepslate_diamond_ore": 8,
+      "minecraft:cobblestone": 2
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 1055,
+      "minecraft:time_since_rest": 3786,
+      "minecraft:fall_one_cm": 225,
+      "minecraft:walk_one_cm": 6403,
+      "minecraft:total_world_time": 4277,
+      "minecraft:leave_game": 6,
+      "minecraft:fly_one_cm": 9098,
+      "minecraft:play_time": 3786,
+      "minecraft:damage_dealt": 158,
+      "minecraft:jump": 112,
+      "minecraft:time_since_death": 3786
+    },
+    "minecraft:used": {
+      "minecraft:villager_spawn_egg": 1,
+      "minecraft:cobbled_deepslate": 4,
+      "minecraft:netherite_sword": 2,
+      "minecraft:netherite_pickaxe": 37,
+      "minecraft:zombie_villager_spawn_egg": 1,
+      "minecraft:cobblestone": 12
+    },
+    "minecraft:picked_up": {
+      "minecraft:cobblestone": 2,
+      "minecraft:gunpowder": 1,
+      "minecraft:cobbled_deepslate": 4
+    }
+  },
+  "DataVersion": 4671
+}

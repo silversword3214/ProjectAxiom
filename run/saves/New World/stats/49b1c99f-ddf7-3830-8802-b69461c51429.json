@@ -1,0 +1,42 @@
+{
+  "stats": {
+    "minecraft:killed": {
+      "minecraft:zombie": 1,
+      "minecraft:turtle": 2,
+      "minecraft:cow": 1
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 2570,
+      "minecraft:walk_one_cm": 4668,
+      "minecraft:leave_game": 2,
+      "minecraft:mob_kills": 4,
+      "minecraft:walk_under_water_one_cm": 2039,
+      "minecraft:damage_taken": 500,
+      "minecraft:damage_dealt": 1121,
+      "minecraft:play_time": 2570,
+      "minecraft:jump": 63,
+      "minecraft:time_since_death": 2570,
+      "minecraft:sprint_one_cm": 3487,
+      "minecraft:swim_one_cm": 1032,
+      "minecraft:total_world_time": 2591,
+      "minecraft:fly_one_cm": 21551,
+      "minecraft:walk_on_water_one_cm": 378,
+      "minecraft:crouch_one_cm": 26,
+      "minecraft:sneak_time": 21
+    },
+    "minecraft:used": {
+      "minecraft:flint_and_steel": 15,
+      "minecraft:netherite_sword": 12
+    },
+    "minecraft:picked_up": {
+      "minecraft:white_wool": 2,
+      "minecraft:sand": 4,
+      "minecraft:bucket": 1,
+      "minecraft:leather": 1,
+      "minecraft:beef": 3,
+      "minecraft:netherite_sword": 1,
+      "minecraft:rotten_flesh": 8
+    }
+  },
+  "DataVersion": 4671
+}

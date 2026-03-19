@@ -1,0 +1,23 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 2803,
+      "minecraft:walk_one_cm": 1812,
+      "minecraft:leave_game": 2,
+      "minecraft:damage_taken": 90,
+      "minecraft:play_time": 2803,
+      "minecraft:damage_dealt": 42,
+      "minecraft:jump": 12,
+      "minecraft:time_since_death": 2803,
+      "minecraft:sprint_one_cm": 414,
+      "minecraft:total_world_time": 4567,
+      "minecraft:fly_one_cm": 5913,
+      "minecraft:crouch_one_cm": 21,
+      "minecraft:sneak_time": 59
+    },
+    "minecraft:used": {
+      "minecraft:zombie_villager_spawn_egg": 8
+    }
+  },
+  "DataVersion": 4671
+}

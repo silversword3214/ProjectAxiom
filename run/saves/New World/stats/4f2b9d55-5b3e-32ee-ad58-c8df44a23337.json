@@ -1,0 +1,25 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 2165,
+      "minecraft:walk_one_cm": 5813,
+      "minecraft:leave_game": 2,
+      "minecraft:damage_taken": 250,
+      "minecraft:play_time": 3782,
+      "minecraft:damage_dealt": 89,
+      "minecraft:jump": 13,
+      "minecraft:time_since_death": 2139,
+      "minecraft:sprint_one_cm": 9443,
+      "minecraft:fall_one_cm": 3250,
+      "minecraft:total_world_time": 3986,
+      "minecraft:fly_one_cm": 3525,
+      "minecraft:deaths": 1
+    },
+    "minecraft:used": {
+      "minecraft:diamond_axe": 1,
+      "minecraft:sandstone": 1,
+      "minecraft:white_wool": 1
+    }
+  },
+  "DataVersion": 4671
+}

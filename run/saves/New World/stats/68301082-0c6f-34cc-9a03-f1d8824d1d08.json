@@ -1,0 +1,27 @@
+{
+  "stats": {
+    "minecraft:picked_up": {
+      "minecraft:leaf_litter": 19,
+      "minecraft:oak_sapling": 1
+    },
+    "minecraft:killed_by": {
+      "minecraft:creeper": 1
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 1416,
+      "minecraft:walk_one_cm": 1617,
+      "minecraft:leave_game": 2,
+      "minecraft:damage_taken": 935,
+      "minecraft:play_time": 2852,
+      "minecraft:damage_dealt": 171,
+      "minecraft:jump": 17,
+      "minecraft:time_since_death": 1416,
+      "minecraft:sprint_one_cm": 2121,
+      "minecraft:fall_one_cm": 450,
+      "minecraft:total_world_time": 3280,
+      "minecraft:fly_one_cm": 1423,
+      "minecraft:deaths": 1
+    }
+  },
+  "DataVersion": 4671
+}

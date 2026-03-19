@@ -1,0 +1,48 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:diamond_axe": 8,
+      "minecraft:diamond_pickaxe": 1,
+      "minecraft:spawner": 39,
+      "minecraft:shield": 1,
+      "minecraft:cobblestone": 64
+    },
+    "minecraft:killed_by": {
+      "minecraft:zombie_villager": 2
+    },
+    "minecraft:killed": {
+      "minecraft:zombie_villager": 2
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 1425,
+      "minecraft:walk_one_cm": 7242,
+      "minecraft:leave_game": 6,
+      "minecraft:mob_kills": 2,
+      "minecraft:damage_taken": 500,
+      "minecraft:damage_dealt": 903,
+      "minecraft:play_time": 4863,
+      "minecraft:jump": 53,
+      "minecraft:time_since_death": 1400,
+      "minecraft:drop": 4,
+      "minecraft:sprint_one_cm": 24818,
+      "minecraft:fall_one_cm": 900,
+      "minecraft:total_world_time": 5207,
+      "minecraft:fly_one_cm": 16705,
+      "minecraft:deaths": 2
+    },
+    "minecraft:picked_up": {
+      "minecraft:netherite_leggings": 1,
+      "minecraft:netherite_chestplate": 1,
+      "minecraft:netherite_helmet": 1,
+      "minecraft:leather_leggings": 1,
+      "minecraft:netherite_boots": 1
+    },
+    "minecraft:dropped": {
+      "minecraft:netherite_boots": 1,
+      "minecraft:netherite_helmet": 1,
+      "minecraft:netherite_leggings": 1,
+      "minecraft:netherite_chestplate": 1
+    }
+  },
+  "DataVersion": 4671
+}

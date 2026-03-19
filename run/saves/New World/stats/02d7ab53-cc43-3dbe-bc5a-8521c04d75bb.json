@@ -1,0 +1,22 @@
+{
+  "stats": {
+    "minecraft:killed": {
+      "minecraft:zombie": 1
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 135,
+      "minecraft:walk_one_cm": 78,
+      "minecraft:total_world_time": 140,
+      "minecraft:leave_game": 1,
+      "minecraft:mob_kills": 1,
+      "minecraft:play_time": 135,
+      "minecraft:damage_dealt": 308,
+      "minecraft:jump": 5,
+      "minecraft:time_since_death": 135
+    },
+    "minecraft:used": {
+      "minecraft:netherite_sword": 3
+    }
+  },
+  "DataVersion": 4671
+}

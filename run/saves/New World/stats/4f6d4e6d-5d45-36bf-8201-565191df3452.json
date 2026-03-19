@@ -1,0 +1,32 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 120,
+      "minecraft:walk_one_cm": 11114,
+      "minecraft:leave_game": 3,
+      "minecraft:damage_taken": 164,
+      "minecraft:play_time": 3615,
+      "minecraft:jump": 84,
+      "minecraft:time_since_death": 96,
+      "minecraft:drop": 4,
+      "minecraft:sprint_one_cm": 6295,
+      "minecraft:open_chest": 2,
+      "minecraft:fall_one_cm": 11106,
+      "minecraft:total_world_time": 3677,
+      "minecraft:fly_one_cm": 41096,
+      "minecraft:walk_on_water_one_cm": 43,
+      "minecraft:deaths": 1
+    },
+    "minecraft:used": {
+      "minecraft:cooked_beef": 1,
+      "minecraft:deepslate": 237
+    },
+    "minecraft:dropped": {
+      "minecraft:leather_chestplate": 1,
+      "minecraft:leather_boots": 1,
+      "minecraft:leather_leggings": 1,
+      "minecraft:leather_helmet": 1
+    }
+  },
+  "DataVersion": 4671
+}

@@ -1,0 +1,24 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 285,
+      "minecraft:walk_one_cm": 38,
+      "minecraft:total_world_time": 306,
+      "minecraft:leave_game": 1,
+      "minecraft:play_time": 285,
+      "minecraft:jump": 1,
+      "minecraft:time_since_death": 285
+    },
+    "minecraft:mined": {
+      "minecraft:deepslate": 10
+    },
+    "minecraft:picked_up": {
+      "minecraft:cobbled_deepslate": 8
+    },
+    "minecraft:used": {
+      "minecraft:netherite_pickaxe": 10,
+      "minecraft:cobblestone": 1
+    }
+  },
+  "DataVersion": 4671
+}

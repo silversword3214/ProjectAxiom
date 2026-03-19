@@ -1,0 +1,36 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:netherite_sword": 82,
+      "minecraft:netherite_pickaxe": 63,
+      "minecraft:cobblestone": 3
+    },
+    "minecraft:picked_up": {
+      "minecraft:tuff": 2,
+      "minecraft:diamond": 17,
+      "minecraft:cobbled_deepslate": 8,
+      "minecraft:rotten_flesh": 32
+    },
+    "minecraft:mined": {
+      "minecraft:deepslate": 46,
+      "minecraft:deepslate_diamond_ore": 17
+    },
+    "minecraft:killed": {
+      "minecraft:zombie": 38
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 4557,
+      "minecraft:time_since_rest": 3256,
+      "minecraft:walk_one_cm": 9605,
+      "minecraft:total_world_time": 3306,
+      "minecraft:leave_game": 2,
+      "minecraft:fly_one_cm": 18878,
+      "minecraft:mob_kills": 38,
+      "minecraft:play_time": 3256,
+      "minecraft:damage_dealt": 7994,
+      "minecraft:jump": 81,
+      "minecraft:time_since_death": 3256
+    }
+  },
+  "DataVersion": 4671
+}

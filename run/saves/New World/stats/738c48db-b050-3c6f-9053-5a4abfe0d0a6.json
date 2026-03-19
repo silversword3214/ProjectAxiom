@@ -1,0 +1,39 @@
+{
+  "stats": {
+    "minecraft:crafted": {
+      "minecraft:oak_planks": 32
+    },
+    "minecraft:killed_by": {
+      "minecraft:spider": 1
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 1490,
+      "minecraft:fall_one_cm": 5350,
+      "minecraft:walk_one_cm": 1230,
+      "minecraft:total_world_time": 5730,
+      "minecraft:leave_game": 6,
+      "minecraft:damage_taken": 760,
+      "minecraft:play_time": 5531,
+      "minecraft:damage_dealt": 10,
+      "minecraft:deaths": 3,
+      "minecraft:jump": 56,
+      "minecraft:time_since_death": 1466
+    },
+    "minecraft:used": {
+      "minecraft:dirt": 52
+    },
+    "minecraft:picked_up": {
+      "minecraft:netherite_axe": 1,
+      "minecraft:string": 1,
+      "minecraft:netherite_shovel": 1,
+      "minecraft:cobblestone": 5,
+      "minecraft:chicken": 3,
+      "minecraft:granite": 2,
+      "minecraft:spruce_fence": 37,
+      "minecraft:flint_and_steel": 1,
+      "minecraft:arrow": 1,
+      "minecraft:horse_spawn_egg": 51
+    }
+  },
+  "DataVersion": 4671
+}

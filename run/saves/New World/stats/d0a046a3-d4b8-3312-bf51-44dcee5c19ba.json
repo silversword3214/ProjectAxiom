@@ -1,0 +1,31 @@
+{
+  "stats": {
+    "minecraft:mined": {
+      "minecraft:spawner": 12,
+      "minecraft:fire": 1,
+      "minecraft:cobbled_deepslate": 9
+    },
+    "minecraft:used": {
+      "minecraft:lava_bucket": 1,
+      "minecraft:flint_and_steel": 1,
+      "minecraft:netherite_pickaxe": 21
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 3259,
+      "minecraft:walk_one_cm": 1096,
+      "minecraft:leave_game": 5,
+      "minecraft:damage_taken": 270,
+      "minecraft:play_time": 4088,
+      "minecraft:jump": 28,
+      "minecraft:time_since_death": 3237,
+      "minecraft:sprint_one_cm": 2330,
+      "minecraft:fall_one_cm": 2076,
+      "minecraft:total_world_time": 4441,
+      "minecraft:fly_one_cm": 8439,
+      "minecraft:crouch_one_cm": 3,
+      "minecraft:sneak_time": 1,
+      "minecraft:deaths": 1
+    }
+  },
+  "DataVersion": 4671
+}

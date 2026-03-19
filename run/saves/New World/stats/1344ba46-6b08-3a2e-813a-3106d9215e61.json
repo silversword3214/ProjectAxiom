@@ -1,0 +1,27 @@
+{
+  "stats": {
+    "minecraft:killed": {
+      "minecraft:chicken": 2
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 1711,
+      "minecraft:time_since_rest": 1386,
+      "minecraft:walk_one_cm": 431,
+      "minecraft:total_world_time": 2099,
+      "minecraft:leave_game": 2,
+      "minecraft:fly_one_cm": 5617,
+      "minecraft:mob_kills": 2,
+      "minecraft:play_time": 1386,
+      "minecraft:damage_dealt": 80,
+      "minecraft:jump": 15,
+      "minecraft:time_since_death": 1386
+    },
+    "minecraft:used": {
+      "minecraft:netherite_sword": 2
+    },
+    "minecraft:picked_up": {
+      "minecraft:chicken": 1
+    }
+  },
+  "DataVersion": 4671
+}

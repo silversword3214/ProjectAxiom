@@ -1,0 +1,46 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 736,
+      "minecraft:walk_one_cm": 26318,
+      "minecraft:leave_game": 2,
+      "minecraft:mob_kills": 46,
+      "minecraft:damage_taken": 215,
+      "minecraft:damage_dealt": 8652,
+      "minecraft:play_time": 7259,
+      "minecraft:jump": 330,
+      "minecraft:time_since_death": 714,
+      "minecraft:drop": 1,
+      "minecraft:sprint_one_cm": 19714,
+      "minecraft:fall_one_cm": 11400,
+      "minecraft:total_world_time": 7285,
+      "minecraft:fly_one_cm": 32383,
+      "minecraft:walk_on_water_one_cm": 511,
+      "minecraft:crouch_one_cm": 15,
+      "minecraft:sneak_time": 35,
+      "minecraft:deaths": 1
+    },
+    "minecraft:picked_up": {
+      "minecraft:potato": 1,
+      "minecraft:cooked_beef": 1,
+      "minecraft:leather_boots": 1,
+      "minecraft:rotten_flesh": 23
+    },
+    "minecraft:used": {
+      "minecraft:cooked_beef": 1,
+      "minecraft:netherite_sword": 92,
+      "minecraft:deepslate": 537,
+      "minecraft:zombie_spawn_egg": 15,
+      "minecraft:netherite_shovel": 2
+    },
+    "minecraft:killed": {
+      "minecraft:zombie": 44,
+      "minecraft:creeper": 1,
+      "minecraft:cow": 1
+    },
+    "minecraft:dropped": {
+      "minecraft:cooked_beef": 1
+    }
+  },
+  "DataVersion": 4671
+}

@@ -1,0 +1,32 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:diamond_axe": 1,
+      "minecraft:pig_spawn_egg": 1,
+      "minecraft:zombie_villager_spawn_egg": 2
+    },
+    "minecraft:killed": {
+      "minecraft:sheep": 1,
+      "minecraft:pig": 1
+    },
+    "minecraft:picked_up": {
+      "minecraft:white_wool": 1,
+      "minecraft:mutton": 1
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 3282,
+      "minecraft:time_since_rest": 3186,
+      "minecraft:walk_one_cm": 4424,
+      "minecraft:total_world_time": 3403,
+      "minecraft:leave_game": 4,
+      "minecraft:fly_one_cm": 5882,
+      "minecraft:mob_kills": 2,
+      "minecraft:walk_on_water_one_cm": 65,
+      "minecraft:play_time": 3186,
+      "minecraft:damage_dealt": 180,
+      "minecraft:jump": 31,
+      "minecraft:time_since_death": 3186
+    }
+  },
+  "DataVersion": 4671
+}

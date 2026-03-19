@@ -1,0 +1,52 @@
+{
+  "stats": {
+    "minecraft:killed": {
+      "minecraft:horse": 3,
+      "minecraft:chicken": 4,
+      "minecraft:pig": 1,
+      "minecraft:villager": 1,
+      "minecraft:spider": 1
+    },
+    "minecraft:picked_up": {
+      "minecraft:egg": 1,
+      "minecraft:porkchop": 1,
+      "minecraft:leaf_litter": 3,
+      "minecraft:chicken": 1,
+      "minecraft:leather": 1,
+      "minecraft:bone": 1
+    },
+    "minecraft:killed_by": {
+      "minecraft:skeleton": 1
+    },
+    "minecraft:used": {
+      "minecraft:spruce_fence": 8,
+      "minecraft:diamond_axe": 8,
+      "minecraft:oak_sign": 10,
+      "minecraft:netherite_sword": 18,
+      "minecraft:horse_spawn_egg": 4,
+      "minecraft:red_concrete": 9
+    },
+    "minecraft:mined": {
+      "minecraft:short_grass": 1,
+      "minecraft:leaf_litter": 1
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 1550,
+      "minecraft:walk_one_cm": 20133,
+      "minecraft:leave_game": 3,
+      "minecraft:mob_kills": 10,
+      "minecraft:damage_taken": 170,
+      "minecraft:damage_dealt": 1549,
+      "minecraft:play_time": 7604,
+      "minecraft:jump": 93,
+      "minecraft:time_since_death": 1523,
+      "minecraft:sprint_one_cm": 15578,
+      "minecraft:fall_one_cm": 1220,
+      "minecraft:total_world_time": 7779,
+      "minecraft:fly_one_cm": 20249,
+      "minecraft:sneak_time": 3,
+      "minecraft:deaths": 1
+    }
+  },
+  "DataVersion": 4671
+}

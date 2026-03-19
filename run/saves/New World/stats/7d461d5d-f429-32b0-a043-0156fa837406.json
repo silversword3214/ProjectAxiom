@@ -1,0 +1,23 @@
+{
+  "stats": {
+    "minecraft:picked_up": {
+      "minecraft:birch_sapling": 1,
+      "minecraft:gunpowder": 2
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 3843,
+      "minecraft:time_since_rest": 4248,
+      "minecraft:walk_one_cm": 5137,
+      "minecraft:total_world_time": 4402,
+      "minecraft:leave_game": 3,
+      "minecraft:fly_one_cm": 5163,
+      "minecraft:play_time": 4248,
+      "minecraft:jump": 32,
+      "minecraft:time_since_death": 4248
+    },
+    "minecraft:used": {
+      "minecraft:potion": 2
+    }
+  },
+  "DataVersion": 4671
+}

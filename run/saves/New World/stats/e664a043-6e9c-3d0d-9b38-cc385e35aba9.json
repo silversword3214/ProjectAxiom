@@ -1,0 +1,41 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 3801,
+      "minecraft:walk_one_cm": 17336,
+      "minecraft:leave_game": 5,
+      "minecraft:mob_kills": 149,
+      "minecraft:damage_taken": 302,
+      "minecraft:damage_dealt": 32685,
+      "minecraft:play_time": 4119,
+      "minecraft:jump": 777,
+      "minecraft:time_since_death": 3780,
+      "minecraft:sprint_one_cm": 5057,
+      "minecraft:total_world_time": 4169,
+      "minecraft:fly_one_cm": 17400,
+      "minecraft:deaths": 1
+    },
+    "minecraft:killed": {
+      "minecraft:zombie": 137,
+      "minecraft:pig": 3,
+      "minecraft:iron_golem": 4
+    },
+    "minecraft:picked_up": {
+      "minecraft:porkchop": 5,
+      "minecraft:carrot": 1,
+      "minecraft:chainmail_leggings": 1,
+      "minecraft:poppy": 3,
+      "minecraft:potato": 3,
+      "minecraft:iron_ingot": 12,
+      "minecraft:rotten_flesh": 53
+    },
+    "minecraft:mined": {
+      "minecraft:sand": 6
+    },
+    "minecraft:used": {
+      "minecraft:flint_and_steel": 3,
+      "minecraft:netherite_sword": 410
+    }
+  },
+  "DataVersion": 4671
+}

@@ -1,0 +1,25 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 59,
+      "minecraft:time_since_rest": 501,
+      "minecraft:fall_one_cm": 426,
+      "minecraft:walk_one_cm": 100,
+      "minecraft:total_world_time": 532,
+      "minecraft:leave_game": 2,
+      "minecraft:fly_one_cm": 861,
+      "minecraft:damage_taken": 10,
+      "minecraft:sneak_time": 76,
+      "minecraft:play_time": 501,
+      "minecraft:jump": 9,
+      "minecraft:time_since_death": 501
+    },
+    "minecraft:mined": {
+      "minecraft:stone": 1
+    },
+    "minecraft:used": {
+      "minecraft:netherite_pickaxe": 1
+    }
+  },
+  "DataVersion": 4671
+}

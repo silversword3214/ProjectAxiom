@@ -1,0 +1,23 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:totem_of_undying": 1
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 669,
+      "minecraft:walk_one_cm": 2977,
+      "minecraft:leave_game": 3,
+      "minecraft:damage_taken": 270,
+      "minecraft:play_time": 669,
+      "minecraft:damage_dealt": 60,
+      "minecraft:damage_absorbed": 70,
+      "minecraft:jump": 10,
+      "minecraft:time_since_death": 669,
+      "minecraft:sprint_one_cm": 1045,
+      "minecraft:fall_one_cm": 900,
+      "minecraft:total_world_time": 761,
+      "minecraft:fly_one_cm": 3263
+    }
+  },
+  "DataVersion": 4671
+}

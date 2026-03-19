@@ -1,0 +1,23 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:chest": 1,
+      "minecraft:netherite_shovel": 1
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 281,
+      "minecraft:open_chest": 2,
+      "minecraft:time_since_rest": 1682,
+      "minecraft:walk_one_cm": 1069,
+      "minecraft:total_world_time": 2419,
+      "minecraft:leave_game": 3,
+      "minecraft:fly_one_cm": 307,
+      "minecraft:sneak_time": 1,
+      "minecraft:play_time": 1682,
+      "minecraft:damage_dealt": 64,
+      "minecraft:jump": 14,
+      "minecraft:time_since_death": 1682
+    }
+  },
+  "DataVersion": 4671
+}

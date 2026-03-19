@@ -1,0 +1,49 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:cobbled_deepslate": 16,
+      "minecraft:flint_and_steel": 3,
+      "minecraft:netherite_sword": 51,
+      "minecraft:netherite_pickaxe": 104,
+      "minecraft:tnt": 3,
+      "minecraft:cobblestone": 55
+    },
+    "minecraft:killed": {
+      "minecraft:zombie": 7,
+      "minecraft:skeleton": 9,
+      "minecraft:creeper": 5,
+      "minecraft:spider": 2
+    },
+    "minecraft:picked_up": {
+      "minecraft:cobblestone": 55,
+      "minecraft:gunpowder": 3,
+      "minecraft:bone": 3,
+      "minecraft:arrow": 3,
+      "minecraft:spider_eye": 1,
+      "minecraft:rotten_flesh": 2
+    },
+    "minecraft:mined": {
+      "minecraft:andesite": 9,
+      "minecraft:diorite": 35,
+      "minecraft:stone": 59,
+      "minecraft:lapis_ore": 1
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 6482,
+      "minecraft:walk_one_cm": 10589,
+      "minecraft:leave_game": 4,
+      "minecraft:mob_kills": 23,
+      "minecraft:damage_taken": 31,
+      "minecraft:damage_dealt": 4586,
+      "minecraft:play_time": 6482,
+      "minecraft:jump": 191,
+      "minecraft:time_since_death": 6482,
+      "minecraft:sprint_one_cm": 7691,
+      "minecraft:fall_one_cm": 4168,
+      "minecraft:total_world_time": 6780,
+      "minecraft:fly_one_cm": 35270,
+      "minecraft:walk_on_water_one_cm": 822
+    }
+  },
+  "DataVersion": 4671
+}

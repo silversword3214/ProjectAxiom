@@ -1,0 +1,63 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 12982,
+      "minecraft:walk_one_cm": 17950,
+      "minecraft:leave_game": 6,
+      "minecraft:damage_taken": 450,
+      "minecraft:play_time": 15280,
+      "minecraft:jump": 27,
+      "minecraft:time_since_death": 12958,
+      "minecraft:sprint_one_cm": 4639,
+      "minecraft:fall_one_cm": 5100,
+      "minecraft:total_world_time": 15590,
+      "minecraft:fly_one_cm": 21517,
+      "minecraft:interact_with_anvil": 2,
+      "minecraft:walk_on_water_one_cm": 962,
+      "minecraft:crouch_one_cm": 104,
+      "minecraft:sneak_time": 118,
+      "minecraft:deaths": 1
+    },
+    "minecraft:picked_up": {
+      "minecraft:tuff": 1,
+      "minecraft:porkchop": 16,
+      "minecraft:diorite": 17,
+      "minecraft:cobblestone": 57,
+      "minecraft:sand": 4,
+      "minecraft:diamond": 6,
+      "minecraft:granite": 3,
+      "minecraft:sandstone": 1,
+      "minecraft:gravel": 6,
+      "minecraft:cobbled_deepslate": 51,
+      "minecraft:glow_ink_sac": 2,
+      "minecraft:raw_iron": 1
+    },
+    "minecraft:broken": {
+      "minecraft:diamond_pickaxe": 1
+    },
+    "minecraft:mined": {
+      "minecraft:sandstone": 1,
+      "minecraft:granite": 3,
+      "minecraft:netherrack": 1,
+      "minecraft:diorite": 17,
+      "minecraft:cobblestone": 7,
+      "minecraft:gravel": 8,
+      "minecraft:tuff": 1,
+      "minecraft:deepslate": 94,
+      "minecraft:sand": 5,
+      "minecraft:oak_leaves": 5,
+      "minecraft:deepslate_diamond_ore": 10,
+      "minecraft:deepslate_iron_ore": 1,
+      "minecraft:leaf_litter": 7,
+      "minecraft:stone": 52
+    },
+    "minecraft:used": {
+      "minecraft:cobbled_deepslate": 7,
+      "minecraft:diamond_pickaxe": 111,
+      "minecraft:anvil": 1,
+      "minecraft:netherite_pickaxe": 97,
+      "minecraft:cobblestone": 12
+    }
+  },
+  "DataVersion": 4671
+}

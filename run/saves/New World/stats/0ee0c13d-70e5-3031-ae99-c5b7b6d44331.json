@@ -1,0 +1,19 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:villager_spawn_egg": 1,
+      "minecraft:obsidian": 13
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 1142,
+      "minecraft:time_since_rest": 1144,
+      "minecraft:walk_one_cm": 1206,
+      "minecraft:total_world_time": 1160,
+      "minecraft:leave_game": 2,
+      "minecraft:play_time": 1144,
+      "minecraft:damage_dealt": 10,
+      "minecraft:time_since_death": 1144
+    }
+  },
+  "DataVersion": 4671
+}

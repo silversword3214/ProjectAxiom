@@ -1,0 +1,47 @@
+{
+  "stats": {
+    "minecraft:killed": {
+      "minecraft:iron_golem": 5,
+      "minecraft:villager": 1,
+      "minecraft:wandering_trader": 1
+    },
+    "minecraft:dropped": {
+      "minecraft:netherite_boots": 1,
+      "minecraft:netherite_helmet": 1,
+      "minecraft:netherite_leggings": 1,
+      "minecraft:netherite_chestplate": 1
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 3530,
+      "minecraft:walk_one_cm": 8272,
+      "minecraft:leave_game": 6,
+      "minecraft:mob_kills": 7,
+      "minecraft:damage_taken": 240,
+      "minecraft:damage_dealt": 4526,
+      "minecraft:play_time": 5434,
+      "minecraft:jump": 24,
+      "minecraft:time_since_death": 3508,
+      "minecraft:drop": 4,
+      "minecraft:sprint_one_cm": 2590,
+      "minecraft:fall_one_cm": 9550,
+      "minecraft:total_world_time": 5499,
+      "minecraft:fly_one_cm": 2195,
+      "minecraft:sneak_time": 210,
+      "minecraft:deaths": 1
+    },
+    "minecraft:used": {
+      "minecraft:diamond_axe": 4,
+      "minecraft:netherite_sword": 40,
+      "minecraft:netherite_pickaxe": 2
+    },
+    "minecraft:picked_up": {
+      "minecraft:poppy": 2,
+      "minecraft:netherite_leggings": 1,
+      "minecraft:netherite_chestplate": 1,
+      "minecraft:netherite_helmet": 1,
+      "minecraft:netherite_boots": 1,
+      "minecraft:iron_ingot": 8
+    }
+  },
+  "DataVersion": 4671
+}

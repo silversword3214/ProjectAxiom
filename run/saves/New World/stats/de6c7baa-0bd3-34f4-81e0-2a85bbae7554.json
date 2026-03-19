@@ -1,0 +1,42 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 4724,
+      "minecraft:time_since_rest": 4331,
+      "minecraft:walk_one_cm": 24761,
+      "minecraft:total_world_time": 4411,
+      "minecraft:leave_game": 2,
+      "minecraft:fly_one_cm": 103750,
+      "minecraft:damage_taken": 200,
+      "minecraft:sneak_time": 22,
+      "minecraft:play_time": 4331,
+      "minecraft:jump": 220,
+      "minecraft:time_since_death": 4331
+    },
+    "minecraft:used": {
+      "minecraft:cooked_beef": 3,
+      "minecraft:cobbled_deepslate": 25,
+      "minecraft:netherite_pickaxe": 176
+    },
+    "minecraft:picked_up": {
+      "minecraft:tuff": 5,
+      "minecraft:cobblestone": 4,
+      "minecraft:diamond": 24,
+      "minecraft:gravel": 3,
+      "minecraft:lapis_lazuli": 10,
+      "minecraft:cobbled_deepslate": 89,
+      "minecraft:andesite": 6
+    },
+    "minecraft:mined": {
+      "minecraft:gravel": 15,
+      "minecraft:tuff": 5,
+      "minecraft:deepslate": 115,
+      "minecraft:deepslate_lapis_ore": 2,
+      "minecraft:deepslate_diamond_ore": 24,
+      "minecraft:dirt": 5,
+      "minecraft:andesite": 6,
+      "minecraft:stone": 4
+    }
+  },
+  "DataVersion": 4671
+}

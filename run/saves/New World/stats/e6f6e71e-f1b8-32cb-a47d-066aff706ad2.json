@@ -1,0 +1,23 @@
+{
+  "stats": {
+    "minecraft:picked_up": {
+      "minecraft:rotten_flesh": 2
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 771,
+      "minecraft:time_since_rest": 1912,
+      "minecraft:walk_one_cm": 7969,
+      "minecraft:total_world_time": 2107,
+      "minecraft:leave_game": 5,
+      "minecraft:fly_one_cm": 47,
+      "minecraft:play_time": 1912,
+      "minecraft:damage_dealt": 28,
+      "minecraft:jump": 8,
+      "minecraft:time_since_death": 1912
+    },
+    "minecraft:used": {
+      "minecraft:zombie_spawn_egg": 1
+    }
+  },
+  "DataVersion": 4671
+}

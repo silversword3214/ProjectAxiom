@@ -1,0 +1,37 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 1121,
+      "minecraft:time_since_rest": 1028,
+      "minecraft:walk_one_cm": 1971,
+      "minecraft:total_world_time": 6927,
+      "minecraft:leave_game": 1,
+      "minecraft:fly_one_cm": 873,
+      "minecraft:walk_on_water_one_cm": 1436,
+      "minecraft:damage_taken": 24,
+      "minecraft:play_time": 1028,
+      "minecraft:jump": 26,
+      "minecraft:time_since_death": 1028,
+      "minecraft:drop": 1
+    },
+    "minecraft:picked_up": {
+      "minecraft:netherite_shovel": 1,
+      "minecraft:gravel": 1,
+      "minecraft:cobbled_deepslate": 3
+    },
+    "minecraft:mined": {
+      "minecraft:gravel": 2,
+      "minecraft:deepslate": 3
+    },
+    "minecraft:dropped": {
+      "minecraft:netherite_shovel": 1
+    },
+    "minecraft:used": {
+      "minecraft:flint_and_steel": 1,
+      "minecraft:netherite_pickaxe": 4,
+      "minecraft:netherite_shovel": 1,
+      "minecraft:tnt": 1
+    }
+  },
+  "DataVersion": 4671
+}

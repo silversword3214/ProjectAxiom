@@ -1,0 +1,91 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "silversword.axiom.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+
+    "client.CameraMixin",
+    "client.InGameHudMixin",
+    "client.MouseMixin",
+    "client.NoDamageShakeMixin",
+    "client.ReachMixin",
+    "client.WorldRendererMixin",
+    "client.EntityRendererMixin",
+    "client.EntityRenderStateMixin",
+    "client.VertexConsumerProviderImmediateMixin",
+    "client.ClientPlayerInteractionManagerMixin",
+    "client.KeyboardInputMixin",
+    "client.MinecraftClientMixin",
+
+
+
+    "client.MouseScrollMixin",
+    "client.KeyboardMixin",
+
+    "client.combat.CriticalsAttackMixin",
+
+    "client.entity.LivingEntityMixin",
+    "client.entity.ClientPlayerEntityMixin",
+
+    "client.hand.LowerShieldMixin",
+
+    "client.block.PowderSnowBlockMixin",
+    "client.block.CobwebBlockMixin",
+    "client.block.SweetBerryBushBlockMixin",
+    "client.block.SlimeBlockMixin",
+    "client.block.HoneyBlockMixin",
+    "client.world.ClientWorldPropertiesMixin",
+
+
+    "client.movement.FluidBlockCollisionMixin",
+    "client.movement.PlayerEntityStepAttributeMixin",
+
+    "client.net.ClientConnectionMixin",
+    "client.net.ResourcePackSendS2CPacketMixin",
+
+    "client.player.PlayerAttackCooldownMixin",
+    "client.player.MixinServerPlayerInteractionManager",
+
+    "client.gui.TitleScreenMixin",
+    "client.gui.GameMenuScreenMixin",
+    "client.gui.HandledScreenMixin",
+
+    "client.overlays.NoFireOverlayEntityMixin",
+    "client.overlays.NoFreezingOverlayMixin",
+    "client.overlays.NoPumpkinOverlayMixin",
+    "client.overlays.NoTotemOverlayMixin",
+
+    "client.render.GameRendererMixin",
+    "client.render.LightmapTextureManagerMixin",
+    "client.render.XRayAbstractBlockStateMixin",
+    "client.render.XRayOcclusionMixin",
+    "client.render.XRayShouldDrawSideMixin",
+    "client.render.XRaySideCullingMixin",
+    "client.render.MixinBlockRenderView_Fullbright",
+    "client.render.XRayLightmapMixin",
+    "client.render.XRayAmbientOcclusionMixin",
+    "client.render.FogRendererMixin",
+    "client.render.RenderSystemMixin",
+
+    "client.render.rendersystem.GlBackendMixin",
+    "client.render.rendersystem.GlCommandEncoderMixin",
+    "client.render.rendersystem.RenderPipelineMixin",
+
+    "client.accessors.CameraAccessor",
+    "client.accessors.ClientPlayerInteractionManagerAccessor",
+    "client.accessors.EntityFireTicksAccessor",
+    "client.accessors.MinecraftClientAccessor",
+    "client.accessors.PlayerMoveC2SPacketAccessor",
+    "client.accessors.KeyBindingAccessor",
+    "client.accessors.EntityStatusS2CPacketAccessor",
+    "client.OrderedRenderCommandQueueImplAccessor",
+    "client.CameraInvoker"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

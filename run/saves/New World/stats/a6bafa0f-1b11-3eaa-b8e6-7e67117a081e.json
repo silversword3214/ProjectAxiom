@@ -1,0 +1,22 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:netherite_pickaxe": 90
+    },
+    "minecraft:mined": {
+      "minecraft:deepslate": 78,
+      "minecraft:deepslate_diamond_ore": 12
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 14,
+      "minecraft:time_since_rest": 757,
+      "minecraft:walk_one_cm": 2395,
+      "minecraft:total_world_time": 766,
+      "minecraft:leave_game": 1,
+      "minecraft:play_time": 757,
+      "minecraft:jump": 31,
+      "minecraft:time_since_death": 757
+    }
+  },
+  "DataVersion": 4671
+}

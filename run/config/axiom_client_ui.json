@@ -1,0 +1,61 @@
+{
+  "version": 2,
+  "gui": {
+    "windows": [
+      {
+        "id": "category:movement",
+        "title": "Movement",
+        "x": 10,
+        "y": 40,
+        "w": 152,
+        "h": 425,
+        "minimized": false
+      },
+      {
+        "id": "category:combat",
+        "title": "Combat",
+        "x": 166,
+        "y": 40,
+        "w": 152,
+        "h": 425,
+        "minimized": false
+      },
+      {
+        "id": "category:player",
+        "title": "Player",
+        "x": 322,
+        "y": 40,
+        "w": 152,
+        "h": 425,
+        "minimized": false
+      },
+      {
+        "id": "category:misc",
+        "title": "Misc",
+        "x": 790,
+        "y": 40,
+        "w": 152,
+        "h": 425,
+        "minimized": false
+      },
+      {
+        "id": "category:world",
+        "title": "World",
+        "x": 478,
+        "y": 40,
+        "w": 152,
+        "h": 425,
+        "minimized": false
+      },
+      {
+        "id": "category:render",
+        "title": "Render",
+        "x": 634,
+        "y": 40,
+        "w": 152,
+        "h": 425,
+        "minimized": false
+      }
+    ]
+  }
+}

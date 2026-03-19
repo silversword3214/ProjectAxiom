@@ -1,0 +1,57 @@
+{
+  "stats": {
+    "minecraft:killed": {
+      "minecraft:skeleton": 1
+    },
+    "minecraft:picked_up": {
+      "minecraft:diorite": 7,
+      "minecraft:gravel": 2,
+      "minecraft:cobbled_deepslate": 22,
+      "minecraft:andesite": 7,
+      "minecraft:raw_iron": 4
+    },
+    "minecraft:used": {
+      "minecraft:cobbled_deepslate": 26,
+      "minecraft:diamond_axe": 2,
+      "minecraft:netherite_pickaxe": 367,
+      "minecraft:netherite_shovel": 2,
+      "minecraft:deepslate_diamond_ore": 4
+    },
+    "minecraft:mined": {
+      "minecraft:sandstone": 2,
+      "minecraft:gravel": 4,
+      "minecraft:tuff": 45,
+      "minecraft:deepslate": 206,
+      "minecraft:sand": 4,
+      "minecraft:granite": 7,
+      "minecraft:deepslate_diamond_ore": 41,
+      "minecraft:deepslate_iron_ore": 4,
+      "minecraft:andesite": 7,
+      "minecraft:diorite": 7,
+      "minecraft:stone": 31,
+      "minecraft:cobbled_deepslate": 11
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 3586,
+      "minecraft:walk_one_cm": 13326,
+      "minecraft:leave_game": 1,
+      "minecraft:mob_kills": 1,
+      "minecraft:walk_under_water_one_cm": 236,
+      "minecraft:damage_taken": 400,
+      "minecraft:damage_dealt": 160,
+      "minecraft:play_time": 5738,
+      "minecraft:jump": 31,
+      "minecraft:time_since_death": 3563,
+      "minecraft:sprint_one_cm": 418,
+      "minecraft:fall_one_cm": 4465,
+      "minecraft:swim_one_cm": 322,
+      "minecraft:total_world_time": 5795,
+      "minecraft:fly_one_cm": 12157,
+      "minecraft:walk_on_water_one_cm": 189,
+      "minecraft:crouch_one_cm": 89,
+      "minecraft:sneak_time": 85,
+      "minecraft:deaths": 2
+    }
+  },
+  "DataVersion": 4671
+}

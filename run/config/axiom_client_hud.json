@@ -1,0 +1,197 @@
+{
+  "elements": {
+    "ReachDisplay": {
+      "x": 10,
+      "y": 120,
+      "enabled": false,
+      "settings": {}
+    },
+    "PlayerModel": {
+      "x": 10,
+      "y": 10,
+      "enabled": false,
+      "settings": {}
+    },
+    "Radar": {
+      "x": 10,
+      "y": 10,
+      "enabled": false,
+      "settings": {}
+    },
+    "TargetHUD": {
+      "x": 10,
+      "y": 80,
+      "enabled": false,
+      "settings": {}
+    },
+    "PlayerINFO": {
+      "x": 10,
+      "y": 160,
+      "enabled": false,
+      "settings": {}
+    },
+    "ArmorHUD": {
+      "x": 10,
+      "y": 200,
+      "enabled": false,
+      "settings": {}
+    },
+    "PotionEffects": {
+      "x": 10,
+      "y": 220,
+      "enabled": false,
+      "settings": {}
+    },
+    "Watermark": {
+      "x": 10,
+      "y": 10,
+      "enabled": true,
+      "settings": {
+        "Logo Scale": 0.05,
+        "Text Scale": 0.8,
+        "Background Padding": 3.0,
+        "Background Radius": 6.0,
+        "Outline Thickness": 2.0,
+        "Text Color": [
+          255,
+          255,
+          255,
+          255,
+          0,
+          1.0
+        ],
+        "Background Color": [
+          0,
+          0,
+          0,
+          128,
+          0,
+          1.0
+        ],
+        "Outline Color": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1.0
+        ]
+      }
+    },
+    "Module list": {
+      "x": 6,
+      "y": 20,
+      "enabled": true,
+      "settings": {
+        "Scale": 1.0,
+        "Custom Colors": false,
+        "Text Color": [
+          255,
+          255,
+          255,
+          255,
+          0,
+          1.0
+        ],
+        "Bar Color": [
+          138,
+          43,
+          226,
+          255,
+          0,
+          1.0
+        ],
+        "BG Color": [
+          0,
+          0,
+          0,
+          204,
+          0,
+          1.0
+        ]
+      }
+    },
+    "Coordinates": {
+      "x": 10,
+      "y": 100,
+      "enabled": true,
+      "settings": {
+        "Text Scale": 1.0,
+        "Background Padding": 4.0,
+        "Background Radius": 4.0,
+        "Outline Thickness": 1.0,
+        "Show Facing": true,
+        "Background": [
+          0,
+          0,
+          0,
+          128,
+          0,
+          1.0
+        ],
+        "Border": [
+          170,
+          170,
+          170,
+          255,
+          0,
+          1.0
+        ],
+        "Text": [
+          255,
+          255,
+          255,
+          255,
+          0,
+          1.0
+        ]
+      }
+    },
+    "Hardware Monitor": {
+      "x": 10,
+      "y": 150,
+      "enabled": true,
+      "settings": {
+        "CPU Usage": true,
+        "RAM Usage": true,
+        "RAM as %": true,
+        "Text Scale": 1.0,
+        "Background Padding": 4.0,
+        "Background Radius": 4.0,
+        "Outline Thickness": 1.0,
+        "Background": [
+          0,
+          0,
+          0,
+          128,
+          0,
+          1.0
+        ],
+        "Border": [
+          170,
+          170,
+          170,
+          255,
+          0,
+          1.0
+        ],
+        "Text": [
+          255,
+          255,
+          255,
+          255,
+          0,
+          1.0
+        ],
+        "Value": [
+          0,
+          255,
+          0,
+          255,
+          0,
+          1.0
+        ]
+      }
+    }
+  }
+}

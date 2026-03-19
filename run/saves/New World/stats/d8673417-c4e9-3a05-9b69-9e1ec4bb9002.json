@@ -1,0 +1,26 @@
+{
+  "stats": {
+    "minecraft:killed": {
+      "minecraft:spider": 1
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 185,
+      "minecraft:walk_one_cm": 803,
+      "minecraft:total_world_time": 203,
+      "minecraft:leave_game": 1,
+      "minecraft:mob_kills": 1,
+      "minecraft:damage_taken": 10,
+      "minecraft:play_time": 185,
+      "minecraft:damage_dealt": 160,
+      "minecraft:jump": 1,
+      "minecraft:time_since_death": 185
+    },
+    "minecraft:used": {
+      "minecraft:diamond_axe": 2
+    },
+    "minecraft:picked_up": {
+      "minecraft:leaf_litter": 4
+    }
+  },
+  "DataVersion": 4671
+}

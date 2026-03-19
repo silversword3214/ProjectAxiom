@@ -1,0 +1,21 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:water_bucket": 1,
+      "minecraft:flint_and_steel": 2,
+      "minecraft:bucket": 1
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 682,
+      "minecraft:walk_one_cm": 364,
+      "minecraft:total_world_time": 781,
+      "minecraft:leave_game": 2,
+      "minecraft:damage_taken": 130,
+      "minecraft:play_time": 758,
+      "minecraft:deaths": 1,
+      "minecraft:jump": 1,
+      "minecraft:time_since_death": 658
+    }
+  },
+  "DataVersion": 4671
+}

@@ -1,0 +1,20 @@
+{
+  "stats": {
+    "minecraft:used": {
+      "minecraft:netherite_boots": 2,
+      "minecraft:leather_boots": 2
+    },
+    "minecraft:custom": {
+      "minecraft:sprint_one_cm": 2813,
+      "minecraft:time_since_rest": 843,
+      "minecraft:walk_one_cm": 311,
+      "minecraft:total_world_time": 869,
+      "minecraft:leave_game": 2,
+      "minecraft:fly_one_cm": 1149,
+      "minecraft:play_time": 843,
+      "minecraft:jump": 7,
+      "minecraft:time_since_death": 843
+    }
+  },
+  "DataVersion": 4671
+}

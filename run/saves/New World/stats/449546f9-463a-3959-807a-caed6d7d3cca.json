@@ -1,0 +1,50 @@
+{
+  "stats": {
+    "minecraft:picked_up": {
+      "minecraft:dirt": 4,
+      "minecraft:coal": 12,
+      "minecraft:cobblestone": 54,
+      "minecraft:gravel": 13,
+      "minecraft:raw_copper": 4,
+      "minecraft:cobbled_deepslate": 30
+    },
+    "minecraft:used": {
+      "minecraft:lava_bucket": 1,
+      "minecraft:water_bucket": 2,
+      "minecraft:cobbled_deepslate": 35,
+      "minecraft:diamond_pickaxe": 115,
+      "minecraft:bucket": 2,
+      "minecraft:cobblestone": 10
+    },
+    "minecraft:dropped": {
+      "minecraft:wildflowers": 3,
+      "minecraft:wheat_seeds": 1,
+      "minecraft:feather": 2,
+      "minecraft:gravel": 13
+    },
+    "minecraft:mined": {
+      "minecraft:dirt": 14,
+      "minecraft:coal_ore": 14,
+      "minecraft:cobblestone": 5,
+      "minecraft:stone": 53,
+      "minecraft:cobbled_deepslate": 30
+    },
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 5786,
+      "minecraft:walk_one_cm": 11059,
+      "minecraft:leave_game": 1,
+      "minecraft:play_time": 5786,
+      "minecraft:jump": 16,
+      "minecraft:time_since_death": 5786,
+      "minecraft:drop": 4,
+      "minecraft:sprint_one_cm": 352,
+      "minecraft:fall_one_cm": 300,
+      "minecraft:total_world_time": 7399,
+      "minecraft:fly_one_cm": 72,
+      "minecraft:walk_on_water_one_cm": 680,
+      "minecraft:crouch_one_cm": 283,
+      "minecraft:sneak_time": 101
+    }
+  },
+  "DataVersion": 4671
+}

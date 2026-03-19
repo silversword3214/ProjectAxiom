@@ -1,0 +1,1625 @@
+{
+  "leather_boots": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "reach": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Reach Distance": 3.0,
+    "enabled": false
+  },
+  "auto_clicker": {
+    "Delay (s)": 0.2,
+    "Button": "Left",
+    "Random (ms)": 0.0,
+    "Only While Holding": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "reach_display": {
+    "Target": "Players",
+    "Show Ping": false,
+    "Background Color": [
+      0,
+      0,
+      0,
+      144,
+      0,
+      1.0
+    ],
+    "Text Color": [
+      255,
+      255,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Border Color": [
+      0,
+      170,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Max Range": 64.0,
+    "enabled": false
+  },
+  "xray": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "no_pumpkin_overlay": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "blocknametag": {
+    "Background": [
+      0,
+      0,
+      0,
+      75,
+      0,
+      1.0
+    ],
+    "Name Offset": 0.5,
+    "Text Color": [
+      255,
+      255,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Scale": 1.5,
+    "Outline": [
+      255,
+      255,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Render Distance": 96.0,
+    "enabled": false
+  },
+  "no_hurt_cam": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "skeletonesp": {
+    "Player Color": [
+      0,
+      255,
+      200,
+      255,
+      0,
+      1.0
+    ],
+    "Passive Color": [
+      50,
+      255,
+      50,
+      255,
+      0,
+      1.0
+    ],
+    "Draw Boss": true,
+    "Draw Players": true,
+    "enabled": false,
+    "Neutral Color": [
+      255,
+      255,
+      0,
+      255,
+      0,
+      1.0
+    ],
+    "Water Color": [
+      50,
+      150,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Hostile Color": [
+      255,
+      50,
+      50,
+      255,
+      0,
+      1.0
+    ],
+    "Draw Hostile": true,
+    "Draw Passive": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Draw Neutral": true,
+    "Render Distance": 96.0,
+    "Draw Water": true,
+    "Boss Color": [
+      200,
+      0,
+      200,
+      255,
+      0,
+      1.0
+    ]
+  },
+  "no_totem_overlay": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "fakeplayer": {
+    "Toggle Key": [
+      -1,
+      true
+    ],
+    "enabled": false
+  },
+  "fullbright": {
+    "Entity Brightness": 15.0,
+    "Light Type": "Both",
+    "Toggle Key": [
+      -1,
+      true
+    ],
+    "enabled": false
+  },
+  "auto_totem": {
+    "Health Threshold": 16.0,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Count Absorption": true,
+    "Stop In Inventory": true,
+    "Cooldown Ticks": 8.0,
+    "enabled": false
+  },
+  "air_place": {
+    "Side Color": [
+      204,
+      0,
+      0,
+      10,
+      0,
+      1.0
+    ],
+    "Line Color": [
+      204,
+      0,
+      0,
+      255,
+      0,
+      1.0
+    ],
+    "Custom Range": true,
+    "Render": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Shape Mode": "Both",
+    "Range": 5.0,
+    "enabled": false
+  },
+  "tp_aura": {
+    "Check Walls": true,
+    "Priority": "Distance",
+    "Attack Range": 4.0,
+    "Ignore Bots": true,
+    "enabled": false,
+    "TP Mode": "Random",
+    "Target Mode": "Players",
+    "Min CPS": 8.0,
+    "Draw Box": true,
+    "TP Range": 4.0,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Max CPS": 12.0,
+    "Box Color": [
+      0,
+      255,
+      0,
+      255,
+      0,
+      1.0
+    ],
+    "Predict Movement": true
+  },
+  "camera_clip": {
+    "enabled": false
+  },
+  "nofog": {
+    "Powder Snow Fog": true,
+    "Water Fog": true,
+    "Atmospheric Fog": true,
+    "Lava Fog": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "shaderesp": {
+    "Player Color": [
+      0,
+      255,
+      200,
+      180,
+      0,
+      1.0
+    ],
+    "Passive Color": [
+      50,
+      255,
+      50,
+      180,
+      0,
+      1.0
+    ],
+    "Mode": "Shader",
+    "Glow Multiplier": 1.0,
+    "Draw Boss": true,
+    "Shape Mode": "Both",
+    "Draw Players": true,
+    "enabled": false,
+    "Neutral Color": [
+      255,
+      255,
+      0,
+      180,
+      0,
+      1.0
+    ],
+    "Water Color": [
+      50,
+      150,
+      255,
+      180,
+      0,
+      1.0
+    ],
+    "Outline Width": 2.0,
+    "Hostile Color": [
+      255,
+      50,
+      50,
+      180,
+      0,
+      1.0
+    ],
+    "Draw Hostile": true,
+    "Draw Passive": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Draw Neutral": true,
+    "Render Distance": 96.0,
+    "Draw Water": true,
+    "Boss Color": [
+      200,
+      0,
+      200,
+      180,
+      0,
+      1.0
+    ],
+    "Fill Opacity": 0.3
+  },
+  "night_vision": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "tracers": {
+    "Draw Behind": true,
+    "Player Color": [
+      0,
+      255,
+      200,
+      180,
+      0,
+      1.0
+    ],
+    "Passive Color": [
+      50,
+      255,
+      50,
+      180,
+      0,
+      1.0
+    ],
+    "Draw Boss": true,
+    "Draw Players": true,
+    "Target Point": "Body",
+    "Draw Stem": true,
+    "enabled": false,
+    "Neutral Color": [
+      255,
+      255,
+      0,
+      180,
+      0,
+      1.0
+    ],
+    "Water Color": [
+      50,
+      150,
+      255,
+      180,
+      0,
+      1.0
+    ],
+    "Hostile Color": [
+      255,
+      50,
+      50,
+      180,
+      0,
+      1.0
+    ],
+    "Draw Hostile": true,
+    "Draw Passive": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Draw Neutral": true,
+    "Render Distance": 96.0,
+    "Draw Water": true,
+    "Boss Color": [
+      200,
+      0,
+      200,
+      180,
+      0,
+      1.0
+    ]
+  },
+  "criticals": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "reach_check": {
+    "Target": "Players",
+    "Circle Radius": 12.0,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Require Full Cooldown": true,
+    "Circle Segments": 32.0,
+    "Active Color": [
+      0,
+      255,
+      0,
+      255,
+      0,
+      1.0
+    ],
+    "Reach Distance": 3.0,
+    "enabled": false
+  },
+  "auto_tool": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "trigger_bot": {
+    "Target Mode": "Both",
+    "Min CPS": 8.0,
+    "Check Walls": false,
+    "Only When Holding": false,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Max CPS": 12.0,
+    "Ignore Bots": true,
+    "Range": 4.5,
+    "enabled": false
+  },
+  "no_viewbobbing_tilt": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Disable Hurt Tilt": false,
+    "enabled": false
+  },
+  "jesus": {
+    "Sneak To Sink": true,
+    "enabled": false
+  },
+  "air_jump": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "hit_effect": {
+    "Particle Speed": 0.2,
+    "Enable Sound": true,
+    "Only Players": true,
+    "Sound Pitch": 1.0,
+    "Enable Particles": true,
+    "Particle Spread": 0.30000000000000004,
+    "Sound Type": "ENTITY_PLAYER_ATTACK_CRIT",
+    "Sound Volume": 0.5,
+    "Particle Count": 5.0,
+    "enabled": false,
+    "Particle Type": "CRIT"
+  },
+  "tunnelminer": {
+    "Place Below": true,
+    "Line Color": [
+      255,
+      0,
+      0,
+      255,
+      0,
+      1.0
+    ],
+    "Fill Material": "Cobblestone",
+    "Auto Walk": true,
+    "Enabled": true,
+    "Replace Water": true,
+    "TargetBlocks": [],
+    "Target Line Color": [
+      255,
+      255,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Target Range": 48.0,
+    "Shape Mode": "Both",
+    "Target Box Color": [
+      255,
+      255,
+      255,
+      50,
+      0,
+      1.0
+    ],
+    "enabled": false,
+    "Replace Lava": true,
+    "Side Color": [
+      255,
+      0,
+      0,
+      30,
+      0,
+      1.0
+    ],
+    "Target Mode": true,
+    "Auto Break": true,
+    "Length": 20.0,
+    "Fill Gaps": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Height": 2.0,
+    "Width": 1.0
+  },
+  "nofall": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "fast_break": {
+    "Speed": 2.0,
+    "Legit Mode": false,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "breadcrumbs": {
+    "Trail Color": [
+      0,
+      255,
+      255,
+      200,
+      0,
+      1.0
+    ],
+    "Max Points": 200.0,
+    "Fade Time (sec)": 10.0,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Interval (sec)": 0.05,
+    "enabled": false
+  },
+  "auto_sprint": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "fast_place": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "flight": {
+    "Speed": 1.0,
+    "Anti-Kick Mode": "Packet",
+    "Anti‑Kick Amount": 0.05,
+    "Hover Offset": 5.0E-10,
+    "Mode": "Packet",
+    "Vertical Speed": 0.6,
+    "Anti‑Kick Interval": 60.0,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "no_vignette": {
+    "Toggle Key": [
+      -1,
+      true
+    ],
+    "enabled": false
+  },
+  "trajectories": {
+    "Line Color": [
+      0,
+      255,
+      0,
+      180,
+      0,
+      1.0
+    ],
+    "Draw Impact Point": true,
+    "Impact Color": [
+      0,
+      255,
+      0,
+      180,
+      0,
+      1.0
+    ],
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Draw Through Blocks": false,
+    "Line Style": "Solid",
+    "enabled": false
+  },
+  "player_model": {
+    "Show Border": true,
+    "Look At": "PLAYER",
+    "Camera Height": 1.5,
+    "Camera Distance": 4.0,
+    "FOV": 70.0,
+    "Camera Side": 0.0,
+    "Border Color": [
+      255,
+      255,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "enabled": false,
+    "Camera Position": "BEHIND",
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Height": 160.0,
+    "Width": 80.0,
+    "Render Distance": 64.0
+  },
+  "camera_distance": {
+    "Distance": 4.0,
+    "enabled": false
+  },
+  "blink": {
+    "Text Scale": 1.5,
+    "Toggle Key": [
+      -1,
+      true
+    ],
+    "Limit": 0.0,
+    "enabled": false
+  },
+  "waypoints": {
+    "Show Background": true,
+    "Shape": "Rounded",
+    "Show Distance": true,
+    "Show Waypoints": true,
+    "Outline Color": [
+      255,
+      255,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Background Color": [
+      0,
+      0,
+      0,
+      100,
+      0,
+      1.0
+    ],
+    "Show Outline": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Scale": 1.0,
+    "Max Distance": 1000.0,
+    "enabled": false
+  },
+  "speed": {
+    "Speed": 0.3,
+    "Ground Only": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "clicktp": {
+    "Toggle Key": [
+      -1,
+      true
+    ],
+    "enabled": false
+  },
+  "target_hud": {
+    "Linger (ms)": 1500.0,
+    "Text Scale": 0.6000000000000001,
+    "Text Color": [
+      255,
+      255,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Show Health Text": true,
+    "Border Color": [
+      106,
+      0,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "enabled": false,
+    "Outline Scale": 1.0,
+    "Show Distance": true,
+    "Fade Out": true,
+    "Fade (ms)": 250.0,
+    "Show Name": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Background Scale": 1.0,
+    "Max Range": 48.0,
+    "Show Health Bar": true
+  },
+  "autoarmor": {
+    "Elytra threshold %": 10.0,
+    "Priority": "Both",
+    "Only if better": true,
+    "Pick from ground": false,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Replace Elytra": true,
+    "Pick range": 5.0,
+    "Delay": 5.0,
+    "enabled": false
+  },
+  "no_hit_delay": {
+    "Only Players": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "search": {
+    "TargetBlocks": [],
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Render Distance": 64.0,
+    "BlockColors": {},
+    "enabled": false
+  },
+  "keybinds": {
+    "ClickGUI Key": [
+      258,
+      true
+    ],
+    "enabled": true
+  },
+  "boxesp": {
+    "Player Color": [
+      0,
+      255,
+      200,
+      180,
+      0,
+      1.0
+    ],
+    "Passive Color": [
+      50,
+      255,
+      50,
+      180,
+      0,
+      1.0
+    ],
+    "Draw Boss": true,
+    "Draw Players": true,
+    "enabled": false,
+    "Neutral Color": [
+      255,
+      255,
+      0,
+      180,
+      0,
+      1.0
+    ],
+    "Water Color": [
+      50,
+      150,
+      255,
+      180,
+      0,
+      1.0
+    ],
+    "Hostile Color": [
+      255,
+      50,
+      50,
+      180,
+      0,
+      1.0
+    ],
+    "Box Mode": "Outline",
+    "Draw Hostile": true,
+    "Draw Passive": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Draw Neutral": true,
+    "Render Distance": 96.0,
+    "Draw Water": true,
+    "Boss Color": [
+      200,
+      0,
+      200,
+      180,
+      0,
+      1.0
+    ]
+  },
+  "ghost_hand": {
+    "Background": [
+      0,
+      0,
+      0,
+      75,
+      0,
+      1.0
+    ],
+    "Render Blocks": true,
+    "Text Color": [
+      255,
+      255,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Outline": [
+      255,
+      255,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Range": 6.0,
+    "Nametag Offset": -0.2,
+    "Show Block Name": true,
+    "enabled": false,
+    "Render Mode": "Outline",
+    "Only Through Walls": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Max Blocks": 50.0,
+    "Nametag Scale": 1.5
+  },
+  "no_fire_overlay": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "chestesp": {
+    "Draw Furnaces": true,
+    "Draw Trapped Chests": true,
+    "Chest Color": [
+      255,
+      255,
+      0,
+      180,
+      0,
+      1.0
+    ],
+    "enabled": false,
+    "Ender Chest Color": [
+      120,
+      0,
+      150,
+      180,
+      0,
+      1.0
+    ],
+    "Barrel Color": [
+      150,
+      100,
+      50,
+      180,
+      0,
+      1.0
+    ],
+    "Shulker Color": [
+      255,
+      105,
+      180,
+      180,
+      0,
+      1.0
+    ],
+    "Draw Ender Chests": true,
+    "Draw Shulkers": true,
+    "Box Mode": "Outline",
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Furnace Color": [
+      120,
+      120,
+      120,
+      180,
+      0,
+      1.0
+    ],
+    "Draw Barrels": true,
+    "Render Distance": 64.0,
+    "Draw Chests": true,
+    "Trapped Chest Color": [
+      255,
+      80,
+      80,
+      180,
+      0,
+      1.0
+    ]
+  },
+  "chams": {
+    "Color": [
+      255,
+      255,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Draw Boss": true,
+    "Draw Players": true,
+    "enabled": false,
+    "Render Mode": "Textured",
+    "Alpha": 175.0,
+    "Draw Hostile": true,
+    "Draw Passive": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Draw Neutral": true,
+    "Through Walls": true,
+    "Render Distance": 96.0,
+    "Draw Water": true
+  },
+  "freecam": {
+    "Toggle on Logout": true,
+    "Speed": 1.0,
+    "Stay Sneaking": true,
+    "Rotate": false,
+    "Click to Path": false,
+    "Show Hands": true,
+    "Speed Scroll Sensitivity": 0.0,
+    "Toggle on Death": false,
+    "enabled": false,
+    "Toggle on Damage": false,
+    "Double Click": false,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Static View": true,
+    "Reload Chunks": true
+  },
+  "aimbot": {
+    "Target": "Both",
+    "Body Part": "Body",
+    "Smooth": 25.0,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Hold Key": [
+      0,
+      false
+    ],
+    "Range": 64.0,
+    "Hold": true,
+    "Manual Override": 2.0,
+    "enabled": false
+  },
+  "chunk_borders": {
+    "Vertical Lines": true,
+    "Highlight only from player": false,
+    "Highlight Color": [
+      255,
+      255,
+      0,
+      255,
+      0,
+      1.0
+    ],
+    "Grid Color": [
+      150,
+      150,
+      255,
+      150,
+      0,
+      1.0
+    ],
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Render Distance (chunks)": 2.0,
+    "Highlight Current Chunk": true,
+    "enabled": false,
+    "Horizontal Lines": false
+  },
+  "invwalk": {
+    "Minecraft Gui": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Click Gui": true,
+    "enabled": false
+  },
+  "roof_phase": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "nametags": {
+    "Show Ping": true,
+    "Ignore Friends": false,
+    "Text Color": [
+      255,
+      255,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Draw Players": true,
+    "Ignore Self": true,
+    "Draw Items": true,
+    "enabled": false,
+    "Draw Hostile": true,
+    "Draw Passive": true,
+    "Draw Neutral": true,
+    "Culling": false,
+    "Draw Water": true,
+    "Show Armor Icons": true,
+    "Background": [
+      0,
+      0,
+      0,
+      75,
+      0,
+      1.0
+    ],
+    "Draw TNT": true,
+    "Name Offset": 0.5,
+    "Scale": 1.5,
+    "Draw Boss": true,
+    "Show Health": true,
+    "Outline": [
+      255,
+      255,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Show Gamemode": false,
+    "Draw Item Frames": true,
+    "Show Distance": false,
+    "Culling Count": 1.0,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Render Distance": 96.0,
+    "Culling Range": 0.0
+  },
+  "caveesp": {
+    "Cave Color": [
+      255,
+      255,
+      255,
+      180,
+      0,
+      1.0
+    ],
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Max Y Level": 40.0,
+    "Render Distance": 64.0,
+    "enabled": false
+  },
+  "shieldbreaker": {
+    "Range": 4.5,
+    "Trigger Key": [
+      0,
+      false
+    ],
+    "enabled": false
+  },
+  "zoom": {
+    "Scroll Sensitivity": 1.0,
+    "Cinematic": false,
+    "Smooth": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false,
+    "Hide HUD": false
+  },
+  "cheststealer": {
+    "Steal All": true,
+    "Silent": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Delay": 1.0,
+    "enabled": false
+  },
+  "weather_changer": {
+    "Mode": "Clear",
+    "Thunder Strength": 1.0,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Rain Strength": 1.0,
+    "Lock Weather": true,
+    "enabled": false
+  },
+  "kill_aura": {
+    "Simulate Jitter": true,
+    "Check Walls": true,
+    "Priority": "Distance",
+    "Mode": "Silent",
+    "Attack Range": 4.0,
+    "Ignore Bots": true,
+    "Turn Speed (deg/tick)": 20.0,
+    "enabled": false,
+    "Target Mode": "Players",
+    "Min CPS": 8.0,
+    "Draw Box": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Max CPS": 12.0,
+    "Box Color": [
+      0,
+      255,
+      0,
+      255,
+      0,
+      1.0
+    ],
+    "Jitter Amount": 2.0,
+    "Predict Movement": true
+  },
+  "lavaesp": {
+    "Min Pool Size": 1.0,
+    "Max Pool Size": 50.0,
+    "Lava Color": [
+      255,
+      100,
+      0,
+      180,
+      0,
+      1.0
+    ],
+    "Box Mode": "Sides",
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Render Distance": 16.0,
+    "enabled": false
+  },
+  "antiknockback": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Knockback %": 0.0,
+    "enabled": false
+  },
+  "radar": {
+    "Radar Shape": "SQUARE",
+    "Entity Circle Size": 8.0,
+    "Show Compass": true,
+    "Below Color": [
+      100,
+      100,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Radar Size": 120.0,
+    "Text Scale": 1.0,
+    "Passive Color": [
+      50,
+      255,
+      50,
+      255,
+      0,
+      1.0
+    ],
+    "Same Level Color": [
+      255,
+      255,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Draw Players": true,
+    "Dot Scale": 1.0,
+    "enabled": false,
+    "Height Indicator": "OPACITY",
+    "Draw Hostile": true,
+    "Draw Passive": true,
+    "Above Color": [
+      255,
+      100,
+      100,
+      255,
+      0,
+      1.0
+    ],
+    "Draw Neutral": true,
+    "Draw Water": true,
+    "Boss Color": [
+      200,
+      0,
+      200,
+      255,
+      0,
+      1.0
+    ],
+    "Player Color": [
+      0,
+      255,
+      200,
+      255,
+      0,
+      1.0
+    ],
+    "Show Entity Circles": false,
+    "Draw Boss": true,
+    "Neutral Color": [
+      255,
+      255,
+      0,
+      255,
+      0,
+      1.0
+    ],
+    "Water Color": [
+      50,
+      150,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Radar Scale": 1.0,
+    "Hostile Color": [
+      255,
+      50,
+      50,
+      255,
+      0,
+      1.0
+    ],
+    "Height Range": 32.0,
+    "Dot Size": 2.0,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Render Distance": 64.0
+  },
+  "armorhud": {
+    "Show Leggings": true,
+    "Linger Ms": 1500.0,
+    "Fade Ms": 250.0,
+    "Text Scale": 0.5,
+    "Show Durability %": true,
+    "Mode": "SELF",
+    "Show Boots": true,
+    "Text Color": [
+      255,
+      255,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Show Helmet": true,
+    "Border Color": [
+      106,
+      0,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "enabled": false,
+    "Show Chestplate": true,
+    "Background Color": [
+      0,
+      0,
+      0,
+      128,
+      0,
+      1.0
+    ],
+    "Fade Out": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Background Scale": 1.0,
+    "Show Durability": true,
+    "Compact": false,
+    "Max Range": 64.0
+  },
+  "potion_effects": {
+    "Show Durations": true,
+    "Linger Ms": 1500.0,
+    "Fade Ms": 250.0,
+    "Text Scale": 0.6000000000000001,
+    "Max Effects": 8.0,
+    "Mode": "SELF",
+    "Text Color": [
+      255,
+      255,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "Border Color": [
+      106,
+      0,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "enabled": false,
+    "Outline Scale": 1.0,
+    "Background Color": [
+      0,
+      0,
+      0,
+      144,
+      0,
+      1.0
+    ],
+    "Fade Out": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Background Scale": 1.0,
+    "Compact": false,
+    "Max Range": 64.0
+  },
+  "block_outline": {
+    "Only Interactable": true,
+    "Box Mode": "Outline",
+    "Color": [
+      255,
+      255,
+      255,
+      180,
+      0,
+      1.0
+    ],
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Render Distance": 64.0,
+    "enabled": false
+  },
+  "no_freezing_overlay": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false
+  },
+  "scaffold": {
+    "Delay Randomness": 100.0,
+    "Blocks to Eagle": 3.0,
+    "Line Color": [
+      0,
+      204,
+      0,
+      255,
+      0,
+      1.0
+    ],
+    "Rotation Mode": "Center",
+    "Render": true,
+    "Place Delay (ms)": 50.0,
+    "Sneak Ticks": 2.0,
+    "enabled": false,
+    "Force Sneak Below": 3.0,
+    "Eagle Edge Distance": 1.0,
+    "Eagle": true,
+    "Zitter Amount": 2.0,
+    "Min Distance": 0.2,
+    "Shape Mode": "Both",
+    "Range": 4.0,
+    "Tower Mode": false,
+    "Silent Rotation": true,
+    "Random Delay": true,
+    "Zitter": false,
+    "Ledge Action": "Jump",
+    "Zitter Mode": "Smooth",
+    "Side Color": [
+      0,
+      204,
+      0,
+      30,
+      0,
+      1.0
+    ],
+    "Custom Range": false,
+    "GodBridge Mode": true,
+    "Blocks/s": 20.0,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Keep Rotation Ticks": 3.0
+  },
+  "antiblind": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "No Darkness": true,
+    "No Blindness": false,
+    "enabled": false
+  },
+  "no_slow": {
+    "No Berry Bush Slow": true,
+    "No Soul Sand Slow": true,
+    "No Slime Block Slow": true,
+    "No Item Use Slow": true,
+    "No Slowness Potion": true,
+    "No Water Slow": false,
+    "No Cobweb Slow": true,
+    "No Lava Slow": false,
+    "No Sneaking Slow": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "No Honey Block Slow": true,
+    "enabled": false
+  },
+  "auto_gapple": {
+    "Start Cooldown (t)": 10.0,
+    "Pearl Window (s)": 1.0,
+    "Trigger Health": 18.0,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Count Absorption": true,
+    "No Damage (s)": 5.0,
+    "Stop In Inventory": true,
+    "Max Hold (s)": 12.0,
+    "enabled": false,
+    "Apple Type": "Any"
+  },
+  "deathlocation": {
+    "Show Message": true,
+    "Open List Key": [
+      0,
+      true
+    ],
+    "Enabled": true,
+    "enabled": false
+  },
+  "step": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Step Height": 2.0,
+    "enabled": false
+  },
+  "lower_shield": {
+    "Always Lower": true,
+    "Blocking Offset": 0.4,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "enabled": false,
+    "Idle Offset": 0.25
+  },
+  "player_info": {
+    "Text Scale": 1.0,
+    "ShowDistance": true,
+    "Mode": "SELF",
+    "ShowHealth": true,
+    "Text Color": [
+      255,
+      255,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "ShowPing": true,
+    "ShowName": true,
+    "Border Color": [
+      106,
+      0,
+      255,
+      255,
+      0,
+      1.0
+    ],
+    "enabled": false,
+    "MaxRange": 64.0,
+    "ShowHands": true,
+    "Background Color": [
+      0,
+      0,
+      0,
+      170,
+      0,
+      1.0
+    ],
+    "FadeOut": true,
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Background Scale": 1.0,
+    "ShowArmor": true,
+    "FadeMs": 250.0,
+    "Compact": false,
+    "LingerMs": 1500.0,
+    "ShowDurability": true
+  },
+  "time_changer": {
+    "Toggle Key": [
+      0,
+      true
+    ],
+    "Custom Time": 6000.0,
+    "Time Mode": "Day",
+    "enabled": false
+  }
+}
