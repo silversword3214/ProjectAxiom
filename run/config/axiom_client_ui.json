@@ -30,18 +30,18 @@
         "minimized": false
       },
       {
-        "id": "category:misc",
-        "title": "Misc",
-        "x": 790,
+        "id": "category:world",
+        "title": "World",
+        "x": 478,
         "y": 40,
         "w": 152,
         "h": 425,
         "minimized": false
       },
       {
-        "id": "category:world",
-        "title": "World",
-        "x": 478,
+        "id": "category:misc",
+        "title": "Misc",
+        "x": 790,
         "y": 40,
         "w": 152,
         "h": 425,

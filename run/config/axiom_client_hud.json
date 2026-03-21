@@ -148,8 +148,8 @@
       }
     },
     "Hardware Monitor": {
-      "x": 10,
-      "y": 150,
+      "x": 0,
+      "y": 160,
       "enabled": true,
       "settings": {
         "CPU Usage": true,

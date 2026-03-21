@@ -800,7 +800,7 @@
       258,
       true
     ],
-    "enabled": true
+    "enabled": false
   },
   "boxesp": {
     "Player Color": [
@@ -821,7 +821,7 @@
     ],
     "Draw Boss": true,
     "Draw Players": true,
-    "enabled": false,
+    "enabled": true,
     "Neutral Color": [
       255,
       255,
