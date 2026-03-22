@@ -1,8 +1,8 @@
 package silversword.axiom.client.mixininterface;
 
-import net.minecraft.client.gl.Framebuffer;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 
 public interface IWorldRenderer {
-    void axiom$pushEntityOutlineFramebuffer(Framebuffer fb);
+    void axiom$pushEntityOutlineFramebuffer(RenderTarget fb);
     void axiom$popEntityOutlineFramebuffer();
 }

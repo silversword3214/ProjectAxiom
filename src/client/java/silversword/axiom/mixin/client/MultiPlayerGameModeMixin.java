@@ -1,14 +1,14 @@
 package silversword.axiom.mixin.client;
 
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.network.ClientPlayerInteractionManager;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.multiplayer.MultiPlayerGameMode;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -19,11 +19,11 @@ import silversword.axiom.client.hud.util.ComboCounter;
 import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.modules.moduleutils.InteractItemEvent;
 
-@Mixin(ClientPlayerInteractionManager.class)
-public class ClientPlayerInteractionManagerMixin {
+@Mixin(MultiPlayerGameMode.class)
+public class MultiPlayerGameModeMixin {
 
-    @Inject(method = "interactItem", at = @At("HEAD"), cancellable = true)
-    private void onInteractItem(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
+    @Inject(method = "useItem", at = @At("HEAD"), cancellable = true)
+    private void onInteractItem(Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
         // Luodaan eventti ja postataan se
         InteractItemEvent event = InteractItemEvent.get(hand);
         AxiomInitialize.EVENT_BUS.post(event);
@@ -34,16 +34,16 @@ public class ClientPlayerInteractionManagerMixin {
         }
     }
 
-    @Inject(method = "interactBlock", at = @At("HEAD"), cancellable = true)
-    private void onInteractBlock(ClientPlayerEntity player, Hand hand, BlockHitResult hitResult, CallbackInfoReturnable<ActionResult> cir) {
+    @Inject(method = "useItemOn", at = @At("HEAD"), cancellable = true)
+    private void onInteractBlock(LocalPlayer player, InteractionHand hand, BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
         UseBlockEvent event = new UseBlockEvent(hitResult);
         AxiomInitialize.EVENT_BUS.post(event);
         if (event.isCancelled()) {
-            cir.setReturnValue(ActionResult.SUCCESS);
+            cir.setReturnValue(InteractionResult.SUCCESS);
         }
     }
 
-    @Inject(method = "breakBlock", at = @At("HEAD"))
+    @Inject(method = "destroyBlock", at = @At("HEAD"))
     private void onBreakBlock(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
         // Get the SearchBlocks module and call onBlockBreak if enabled
         silversword.axiom.client.modules.render.SearchBlocks search =
@@ -53,9 +53,9 @@ public class ClientPlayerInteractionManagerMixin {
         }
     }
 
-    @Inject(method = "attackEntity", at = @At("HEAD"))
-    private void onAttackEntity(PlayerEntity player, Entity target, CallbackInfo ci) {
-        if (player != null && player.isMainPlayer() && target instanceof LivingEntity) {
+    @Inject(method = "attack", at = @At("HEAD"))
+    private void onAttackEntity(Player player, Entity target, CallbackInfo ci) {
+        if (player != null && player.isLocalPlayer() && target instanceof LivingEntity) {
             ComboCounter.onHit();
         }
     }

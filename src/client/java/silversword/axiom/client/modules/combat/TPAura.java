@@ -1,12 +1,12 @@
 package silversword.axiom.client.modules.combat;
 
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.ClipContext;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
@@ -103,11 +103,11 @@ public class TPAura extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onTick() {
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
         LivingEntity target = targetManager.selectTarget(
                 mc.player,
-                mc.world,
+                mc.level,
                 priorityMode.getMode(),
                 ignoreBots.get(),
                 targetMode.getMode()
@@ -123,23 +123,23 @@ public class TPAura extends AxiomMod implements KeybindConfigurable {
         if (checkWalls.get() && !isTargetVisible(target)) return;
 
         if (attackController.canAttack(mc.player, minCps.getValue(), maxCps.getValue())) {
-            Vec3d tpPos = calculateTpPosition(target);
+            Vec3 tpPos = calculateTpPosition(target);
             if (tpPos != null && isSafePosition(tpPos)) {
                 // Teleporttaa serverille ja clientille
-                mc.player.networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(tpPos.x, tpPos.y, tpPos.z, true, true));
-                mc.player.setPosition(tpPos);
-                mc.player.setVelocity(0, 0, 0);
+                mc.player.connection.send(new ServerboundMovePlayerPacket.Pos(tpPos.x, tpPos.y, tpPos.z, true, true));
+                mc.player.setPos(tpPos);
+                mc.player.setDeltaMovement(0, 0, 0);
 
                 // Hyökkää
-                mc.interactionManager.attackEntity(mc.player, target);
-                mc.player.swingHand(mc.player.getActiveHand());
+                mc.gameMode.attack(mc.player, target);
+                mc.player.swing(mc.player.getUsedItemHand());
                 attackController.recordAttack();
             }
         }
     }
 
-    private Vec3d calculateTpPosition(LivingEntity target) {
-        Vec3d targetPos = target.getEntityPos();
+    private Vec3 calculateTpPosition(LivingEntity target) {
+        Vec3 targetPos = target.position();
         double radius = tpRange.getValue() * 0.9; // pieni marginaali
         double angle;
 
@@ -153,7 +153,7 @@ public class TPAura extends AxiomMod implements KeybindConfigurable {
             case "Above":
                 return targetPos.add(0, radius, 0);
             case "Behind":
-                float yaw = target.getYaw();
+                float yaw = target.getYRot();
                 double rad = Math.toRadians(yaw);
                 return targetPos.add(-Math.sin(rad) * radius, 0, Math.cos(rad) * radius);
             default:
@@ -162,19 +162,19 @@ public class TPAura extends AxiomMod implements KeybindConfigurable {
         double x = targetPos.x + Math.cos(angle) * radius;
         double z = targetPos.z + Math.sin(angle) * radius;
         double y = targetPos.y; // pyritään samalle tasolle
-        return new Vec3d(x, y, z);
+        return new Vec3(x, y, z);
     }
 
-    private boolean isSafePosition(Vec3d pos) {
-        Box playerBox = mc.player.getBoundingBox().offset(pos.subtract(mc.player.getEntityPos()));
-        return mc.world.isSpaceEmpty(playerBox);
+    private boolean isSafePosition(Vec3 pos) {
+        AABB playerBox = mc.player.getBoundingBox().move(pos.subtract(mc.player.position()));
+        return mc.level.noCollision(playerBox);
     }
 
     private boolean isTargetVisible(LivingEntity target) {
-        Vec3d start = mc.player.getEyePos();
-        Vec3d end = target.getBoundingBox().getCenter();
-        BlockHitResult result = mc.world.raycast(new RaycastContext(
-                start, end, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, mc.player
+        Vec3 start = mc.player.getEyePosition();
+        Vec3 end = target.getBoundingBox().getCenter();
+        BlockHitResult result = mc.level.clip(new ClipContext(
+                start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mc.player
         ));
         return result.getType() == HitResult.Type.MISS;
     }
@@ -184,7 +184,7 @@ public class TPAura extends AxiomMod implements KeybindConfigurable {
         if (!isEnabled() || currentTarget == null || !renderTargetBox.get()) return;
 
         Renderer3D renderer = event.render; // Oletetaan, että event.renderer on nyt tyyppiä WorldRenderer
-        Box box = currentTarget.getBoundingBox();
+        AABB box = currentTarget.getBoundingBox();
         Color color = boxColor.getCurrentColor().copy().a(255);
         renderer.boxOutline(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, color, 0);
     }

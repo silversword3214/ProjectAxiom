@@ -1,13 +1,13 @@
 package silversword.axiom.client.modules.moduleutils.SmartKillAura;
 
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.entity.player.Player;
 
 public class AttackController {
 
     private long lastAttackTime = 0;
     private double currentDelay = 0;
 
-    public boolean canAttack(PlayerEntity player, double minCps, double maxCps) {
+    public boolean canAttack(Player player, double minCps, double maxCps) {
         // Lasketaan satunnainen viive annetulla CPS-välillä
         if (currentDelay == 0) {
             double cps = minCps + Math.random() * (maxCps - minCps);
@@ -17,7 +17,7 @@ public class AttackController {
         long now = System.currentTimeMillis();
         if (now - lastAttackTime >= currentDelay) {
             // Lisäksi tarkista 1.9+ cooldown
-            float progress = player.getAttackCooldownProgress(0.5f);
+            float progress = player.getAttackStrengthScale(0.5f);
             return progress > 0.92f;
         }
         return false;

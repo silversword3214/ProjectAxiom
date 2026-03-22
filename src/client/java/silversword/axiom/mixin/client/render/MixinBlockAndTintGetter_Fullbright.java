@@ -1,23 +1,23 @@
 package silversword.axiom.mixin.client.render;
 
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.BlockRenderView;
-import net.minecraft.world.LightType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.LightLayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import silversword.axiom.client.modules.render.FullbrightState;
 
-@Mixin(BlockRenderView.class)
-public interface MixinBlockRenderView_Fullbright {
+@Mixin(BlockAndTintGetter.class)
+public interface MixinBlockAndTintGetter_Fullbright {
 
     @Inject(
-            method = "getLightLevel(Lnet/minecraft/world/LightType;Lnet/minecraft/util/math/BlockPos;)I",
+            method = "getBrightness(Lnet/minecraft/world/level/LightLayer;Lnet/minecraft/core/BlockPos;)I",
             at = @At("HEAD"),
             cancellable = true
     )
-    default void axiom_fullbright_getLightLevel(LightType type, BlockPos pos, CallbackInfoReturnable<Integer> cir) {
+    default void axiom_fullbright_getLightLevel(LightLayer type, BlockPos pos, CallbackInfoReturnable<Integer> cir) {
         if (!FullbrightState.enabled) return;
 
         // null = molemmat, muuten rajaa
@@ -27,7 +27,7 @@ public interface MixinBlockRenderView_Fullbright {
     }
 
     @Inject(
-            method = "getBaseLightLevel(Lnet/minecraft/util/math/BlockPos;I)I",
+            method = "getRawBrightness(Lnet/minecraft/core/BlockPos;I)I",
             at = @At("HEAD"),
             cancellable = true
     )

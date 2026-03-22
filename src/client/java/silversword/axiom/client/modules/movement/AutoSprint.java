@@ -1,8 +1,8 @@
 package silversword.axiom.client.modules.movement;
 
 import silversword.axiom.client.main.AxiomMod;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.player.Player;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.setting.SettingKeybind;
@@ -28,12 +28,12 @@ public class AutoSprint extends AxiomMod implements KeybindConfigurable {
     public void onTick() {
         if (!isEnabled()) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        PlayerEntity player = mc.player;
+        Minecraft mc = Minecraft.getInstance();
+        Player player = mc.player;
         if (player == null) return;
 
         // Jos pelaaja liikkuu eteenpäin, sprints
-        if (player.forwardSpeed > 0) {
+        if (player.zza > 0) {
             player.setSprinting(true);
         } else {
             player.setSprinting(false);
@@ -47,7 +47,7 @@ public class AutoSprint extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onDisable() {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) mc.player.setSprinting(false);
 
     }

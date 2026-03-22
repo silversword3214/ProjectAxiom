@@ -1,9 +1,9 @@
 package silversword.axiom.client.gui.screen;
 
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.network.chat.Component;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.hidden.Keybinds;
 import silversword.axiom.client.utils.KeyNames;
@@ -12,11 +12,11 @@ import silversword.axiom.client.gui.core.ThemeManager;
 public class KeybindsScreen extends Screen {
     private final Screen parent;
     private Keybinds keybinds;
-    private ButtonWidget clickGuiKeyButton;
+    private Button clickGuiKeyButton;
     private boolean waitingForKey = false;
 
     protected KeybindsScreen(Screen parent) {
-        super(Text.literal("Keybinds"));
+        super(Component.literal("Keybinds"));
         this.parent = parent;
     }
 
@@ -29,40 +29,40 @@ public class KeybindsScreen extends Screen {
         int y = this.height / 4;
 
         // ClickGUI Key -nappi
-        clickGuiKeyButton = ButtonWidget.builder(
-                        Text.literal("ClickGUI: " + KeyNames.get(keybinds.clickGuiKey.get())),
+        clickGuiKeyButton = Button.builder(
+                        Component.literal("ClickGUI: " + KeyNames.get(keybinds.clickGuiKey.get())),
                         button -> {
                             waitingForKey = true;
-                            button.setMessage(Text.literal("Press any key..."));
+                            button.setMessage(Component.literal("Press any key..."));
                         })
-                .dimensions(centerX - 100, y, 200, 20)
+                .bounds(centerX - 100, y, 200, 20)
                 .build();
-        this.addDrawableChild(clickGuiKeyButton);
+        this.addRenderableWidget(clickGuiKeyButton);
 
         // Back – käyttää accent-väriä
         int accentColor = ThemeManager.getCurrentTheme().accent;
-        this.addDrawableChild(ButtonWidget.builder(
-                Text.literal("Back").styled(style -> style.withColor(accentColor)),
-                button -> this.close()
-        ).dimensions(centerX - 50, this.height - 30, 100, 20).build());
+        this.addRenderableWidget(Button.builder(
+                Component.literal("Back").withStyle(style -> style.withColor(accentColor)),
+                button -> this.onClose()
+        ).bounds(centerX - 50, this.height - 30, 100, 20).build());
     }
 
     @Override
-    public boolean keyPressed(KeyInput input) {
+    public boolean keyPressed(KeyEvent input) {
         if (waitingForKey) {
             System.out.println("Setting key to: " + input.key());
             keybinds.clickGuiKey.set(input.key());
             waitingForKey = false;
-            clickGuiKeyButton.setMessage(Text.literal("ClickGUI Key: " + KeyNames.get(input.key())));
+            clickGuiKeyButton.setMessage(Component.literal("ClickGUI Key: " + KeyNames.get(input.key())));
             return true;
         }
         return super.keyPressed(input);
     }
 
     @Override
-    public void close() {
-        if (this.client != null) {
-            this.client.setScreen(parent);
+    public void onClose() {
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(parent);
         }
     }
 }

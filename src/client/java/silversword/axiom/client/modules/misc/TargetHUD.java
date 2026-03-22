@@ -123,8 +123,8 @@ public final class TargetHUD extends AxiomMod implements ColorConfigurable, Keyb
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("targethud_colors", "TargetHUD Colors", sw, sh, content);
     }

@@ -1,8 +1,8 @@
 package silversword.axiom.client.modules.movement;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -36,18 +36,18 @@ public final class Speed extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onTick() {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.player == null) return;
 
-        PlayerEntity p = mc.player;
+        Player p = mc.player;
 
-        if (p.forwardSpeed == 0 && p.sidewaysSpeed == 0) return;
+        if (p.zza == 0 && p.xxa == 0) return;
 
-        if (groundOnly.get() && !p.isOnGround()) return;
+        if (groundOnly.get() && !p.onGround()) return;
 
         double base = speed.getValue();
 
-        float yaw = p.getYaw();
+        float yaw = p.getYRot();
 
         // Minecraftin liikesuunta on yaw + 90°
         double rad = Math.toRadians(yaw + 90.0);
@@ -55,8 +55,8 @@ public final class Speed extends AxiomMod implements KeybindConfigurable {
         double sin = Math.sin(rad);
         double cos = Math.cos(rad);
 
-        double forward = p.forwardSpeed;
-        double strafe = p.sidewaysSpeed;
+        double forward = p.zza;
+        double strafe = p.xxa;
 
         double motionX = forward * cos + strafe * sin;
         double motionZ = forward * sin - strafe * cos;
@@ -64,7 +64,7 @@ public final class Speed extends AxiomMod implements KeybindConfigurable {
         motionX *= base;
         motionZ *= base;
 
-        Vec3d current = p.getVelocity();
-        p.setVelocity(motionX, current.y, motionZ);
+        Vec3 current = p.getDeltaMovement();
+        p.setDeltaMovement(motionX, current.y, motionZ);
     }
 }

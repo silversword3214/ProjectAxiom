@@ -1,11 +1,11 @@
 package silversword.axiom.mixin.client.gui;
 
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.screen.GenericContainerScreenHandler;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.ShulkerBoxScreenHandler;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ShulkerBoxMenu;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,30 +18,30 @@ import silversword.axiom.client.render.rendersystem.Renderer2D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.utils.render.TextUtils;
 
-@Mixin(HandledScreen.class)
-public abstract class HandledScreenMixin {
+@Mixin(AbstractContainerScreen.class)
+public abstract class AbstractContainerScreenMixin {
 
-    @Shadow protected int x;
-    @Shadow protected int y;
-    @Shadow protected int backgroundWidth;
-    @Shadow public abstract ScreenHandler getScreenHandler();
+    @Shadow protected int leftPos;
+    @Shadow protected int topPos;
+    @Shadow protected int imageWidth;
+    @Shadow public abstract AbstractContainerMenu getMenu();
 
     // Napin mitat
     private static final int BUTTON_WIDTH = 50;
     private static final int BUTTON_HEIGHT = 15;
 
     @Inject(method = "render", at = @At("TAIL"))
-    private void onRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+    private void onRender(GuiGraphics context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         ChestStealer stealer = ChestStealer.INSTANCE;
         if (stealer == null || !stealer.isEnabled()) return;
 
-        ScreenHandler handler = getScreenHandler();
-        boolean isValid = handler instanceof GenericContainerScreenHandler ||
-                handler instanceof ShulkerBoxScreenHandler;
+        AbstractContainerMenu handler = getMenu();
+        boolean isValid = handler instanceof ChestMenu ||
+                handler instanceof ShulkerBoxMenu;
         if (!isValid) return;
 
-        int buttonX = this.x + this.backgroundWidth - 60;
-        int buttonY = this.y - 20;
+        int buttonX = this.leftPos + this.imageWidth - 60;
+        int buttonY = this.topPos - 20;
 
         boolean hovered = mouseX >= buttonX && mouseX <= buttonX + BUTTON_WIDTH &&
                 mouseY >= buttonY && mouseY <= buttonY + BUTTON_HEIGHT;
@@ -69,18 +69,18 @@ public abstract class HandledScreenMixin {
     }
 
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
-    private void onMouseClicked(Click click, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
+    private void onMouseClicked(MouseButtonEvent click, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
         ChestStealer stealer = ChestStealer.INSTANCE;
         if (stealer == null || !stealer.isEnabled() || click.button() != 0) return;
 
-        ScreenHandler handler = getScreenHandler();
+        AbstractContainerMenu handler = getMenu();
         // --- LISÄYS: Hyväksytään myös shulker-handler ---
-        boolean isValid = handler instanceof GenericContainerScreenHandler ||
-                handler instanceof ShulkerBoxScreenHandler;
+        boolean isValid = handler instanceof ChestMenu ||
+                handler instanceof ShulkerBoxMenu;
         if (!isValid) return;
 
-        int buttonX = this.x + this.backgroundWidth - 60;
-        int buttonY = this.y - 20;
+        int buttonX = this.leftPos + this.imageWidth - 60;
+        int buttonY = this.topPos - 20;
 
         if (click.x() >= buttonX && click.x() <= buttonX + BUTTON_WIDTH &&
                 click.y() >= buttonY && click.y() <= buttonY + BUTTON_HEIGHT) {

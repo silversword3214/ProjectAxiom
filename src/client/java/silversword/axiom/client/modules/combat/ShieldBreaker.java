@@ -1,10 +1,10 @@
 package silversword.axiom.client.modules.combat;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.AxeItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Hand;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.InteractionHand;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -13,7 +13,7 @@ import silversword.axiom.client.setting.SettingNumber;
 
 public class ShieldBreaker extends AxiomMod implements KeybindConfigurable {
 
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     public final SettingNumber range = new SettingNumber("Range", 1, 6, 0.5, 4.5);
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0, true);
@@ -38,12 +38,12 @@ public class ShieldBreaker extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onTick() {
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
         // Keybindin painallus käynnistää toiminnon (ei togglaa moduulia)
         int key = triggerKey.get();
         if (key != 0) {
-            long handle = mc.getWindow().getHandle();
+            long handle = mc.getWindow().handle();
             boolean pressed = org.lwjgl.glfw.GLFW.glfwGetKey(handle, key) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
             if (pressed && !wasKeyPressed) {
                 trigger();
@@ -69,10 +69,10 @@ public class ShieldBreaker extends AxiomMod implements KeybindConfigurable {
                     lastActionTime = now;
                     break;
                 case 2: // Lyö
-                    PlayerEntity target = findTarget();
+                    Player target = findTarget();
                     if (target != null) {
-                        mc.interactionManager.attackEntity(mc.player, target);
-                        mc.player.swingHand(Hand.MAIN_HAND);
+                        mc.gameMode.attack(mc.player, target);
+                        mc.player.swing(InteractionHand.MAIN_HAND);
                     }
                     step = 3;
                     lastActionTime = now;
@@ -97,13 +97,13 @@ public class ShieldBreaker extends AxiomMod implements KeybindConfigurable {
         }
     }
 
-    private PlayerEntity findTarget() {
+    private Player findTarget() {
         double maxDist = range.getValue();
-        PlayerEntity closest = null;
+        Player closest = null;
         double closestDist = Double.MAX_VALUE;
 
-        for (PlayerEntity player : mc.world.getPlayers()) {
-            if (player == mc.player || player.isDead()) continue;
+        for (Player player : mc.level.players()) {
+            if (player == mc.player || player.isDeadOrDying()) continue;
             double dist = mc.player.distanceTo(player);
             if (dist < maxDist && dist < closestDist) {
                 closest = player;
@@ -115,7 +115,7 @@ public class ShieldBreaker extends AxiomMod implements KeybindConfigurable {
 
     private int findAxeInHotbar() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (stack.getItem() instanceof AxeItem) {
                 return i;
             }

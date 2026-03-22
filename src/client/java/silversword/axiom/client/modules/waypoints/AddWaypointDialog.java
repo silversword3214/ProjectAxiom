@@ -1,6 +1,6 @@
 package silversword.axiom.client.modules.waypoints;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import silversword.axiom.client.gui.components.*;
 import silversword.axiom.client.gui.core.*;
 import silversword.axiom.client.managers.WaypointManager;
@@ -18,7 +18,7 @@ public class AddWaypointDialog implements UiComponent {
     public AddWaypointDialog(Runnable onClose) {
         this.onClose = onClose;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         double customX = 0, customY = 0, customZ = 0;
         if (mc.player != null) {
             customX = mc.player.getX();

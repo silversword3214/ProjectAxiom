@@ -1,10 +1,10 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -126,7 +126,7 @@ public final class XRay extends AxiomMod implements KeybindConfigurable {
     }
 
     private static void add(String id) {
-        Block b = Registries.BLOCK.get(Identifier.of(id));
+        Block b = BuiltInRegistries.BLOCK.getValue(Identifier.parse(id));
         if (b != null) XRAY_BLOCKS.add(b);
     }
 
@@ -168,9 +168,9 @@ public final class XRay extends AxiomMod implements KeybindConfigurable {
     }
 
     private static void reloadChunks() {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc != null && mc.worldRenderer != null) {
-            mc.worldRenderer.reload();
+        Minecraft mc = Minecraft.getInstance();
+        if (mc != null && mc.levelRenderer != null) {
+            mc.levelRenderer.allChanged();
         }
     }
 
@@ -192,8 +192,8 @@ public final class XRay extends AxiomMod implements KeybindConfigurable {
     }
 
     private static void rebuildChunks() {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc == null || mc.worldRenderer == null) return;
-        mc.worldRenderer.reload();
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.levelRenderer == null) return;
+        mc.levelRenderer.allChanged();
     }
 }

@@ -1,11 +1,11 @@
 package silversword.axiom.client.gui.screen;
 
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.input.CharInput;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.text.Text;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.network.chat.Component;
 import org.joml.Matrix4f;
 import silversword.axiom.client.config.HudConfigManager;
 import silversword.axiom.client.config.SettingsConfigManager;
@@ -50,7 +50,7 @@ public final class ClickGuiScreen extends Screen {
     public static ModeDropdown currentDropdown = null;
 
     public ClickGuiScreen() {
-        super(Text.literal("Axiom"));
+        super(Component.literal("Axiom"));
         this.theme = ThemeManager.getCurrentTheme();
     }
 
@@ -72,8 +72,8 @@ public final class ClickGuiScreen extends Screen {
         windowManager.clear();
         windowManager.closeOverlay();
 
-        int sw = this.client.getWindow().getScaledWidth();
-        int sh = this.client.getWindow().getScaledHeight();
+        int sw = this.minecraft.getWindow().getGuiScaledWidth();
+        int sh = this.minecraft.getWindow().getGuiScaledHeight();
 
         windowFactory = new WindowFactory(windowManager);
         lastFactory = windowFactory;
@@ -84,12 +84,12 @@ public final class ClickGuiScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float deltaTicks) {
         // Älä tee mitään
     }
 
     @Override
-    public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
 
 
         // Tallenna alkuperäinen projektio
@@ -102,7 +102,7 @@ public final class ClickGuiScreen extends Screen {
 
         Renderer2D.COLOR.begin();
 
-        lastUi = new UiContext(this.client, ctx, theme, delta);
+        lastUi = new UiContext(this.minecraft, ctx, theme, delta);
         TextRenderer.get().begin(1.0, false, false);
 
         if (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen()) {
@@ -188,7 +188,7 @@ public final class ClickGuiScreen extends Screen {
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 
@@ -207,14 +207,14 @@ public final class ClickGuiScreen extends Screen {
     }
 
     @Override
-    public void close() {
+    public void onClose() {
         saveUi();
         HudConfigManager.save(HudManager.get());
-        super.close();
+        super.onClose();
     }
 
     @Override
-    public boolean mouseClicked(Click click, boolean doubled) {
+    public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
         int mouseX = (int) click.x();
         int mouseY = (int) click.y();
 
@@ -260,8 +260,8 @@ public final class ClickGuiScreen extends Screen {
 
                 if (mouseX >= hudEditX && mouseX <= hudEditX + BTN_W &&
                         mouseY >= btnY && mouseY <= btnY + BTN_H) {
-                    this.close();
-                    this.client.setScreen(new HudEditScreen());
+                    this.onClose();
+                    this.minecraft.setScreen(new HudEditScreen());
                     return true;
                 }
 
@@ -292,7 +292,7 @@ public final class ClickGuiScreen extends Screen {
     }
 
     @Override
-    public boolean mouseReleased(Click click) {
+    public boolean mouseReleased(MouseButtonEvent click) {
         super.mouseReleased(click);
 
         if (lastUi != null && (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen())) {
@@ -347,7 +347,7 @@ public final class ClickGuiScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(Click click, double offsetX, double offsetY) {
+    public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
         if (lastUi != null && (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen())) {
             windowManager.mouseDragged(lastUi, click.x(), click.y(), click.button(), offsetX, offsetY);
             return true;
@@ -365,19 +365,19 @@ public final class ClickGuiScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(KeyInput input) {
-        if (input.getKeycode() == 256) { // ESC-näppäin
+    public boolean keyPressed(KeyEvent input) {
+        if (input.input() == 256) { // ESC-näppäin
             if (windowManager.isOverlayOpen()) {
                 windowManager.closeOverlay(); // sulkee päällimmäisen overlayn ja palaa edelliseen
                 return true;
             } else {
-                this.close(); // sulkee koko GUI:n
+                this.onClose(); // sulkee koko GUI:n
                 return true;
             }
         }
 
         if (lastUi != null && (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen())) {
-            if (windowManager.keyPressed(lastUi, input.getKeycode(), input.scancode(), input.modifiers())) {
+            if (windowManager.keyPressed(lastUi, input.input(), input.scancode(), input.modifiers())) {
                 return true;
             }
         }
@@ -385,10 +385,10 @@ public final class ClickGuiScreen extends Screen {
     }
 
     @Override
-    public boolean charTyped(CharInput input) {
-        if (lastUi != null && input.isValidChar() &&
+    public boolean charTyped(CharacterEvent input) {
+        if (lastUi != null && input.isAllowedChatCharacter() &&
                 (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen())) {
-            String s = input.asString();
+            String s = input.codepointAsString();
             for (int i = 0; i < s.length(); i++) {
                 windowManager.charTyped(lastUi, s.charAt(i), input.modifiers());
             }

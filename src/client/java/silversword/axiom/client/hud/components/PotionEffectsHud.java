@@ -1,11 +1,11 @@
 package silversword.axiom.client.hud.components;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.EntityHitResult;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.render.rendersystem.Renderer2D;
@@ -65,22 +65,22 @@ public final class PotionEffectsHud extends BaseHudElement {
     public void setOutlineScale(float v) { outlineScale = Math.max(0.5f, Math.min(2.0f, v)); }
 
     @Override public boolean isModuleControlled() { return true; }
-    @Override public int width(MinecraftClient mc) {
+    @Override public int width(Minecraft mc) {
         return (int) ((maxEffects * (BASE_ICON_SIZE + BASE_GAP) - BASE_GAP + BASE_PADDING * 2) * backgroundScale);
     }
-    @Override public int height(MinecraftClient mc) {
+    @Override public int height(Minecraft mc) {
         int base = (int) ((BASE_ICON_SIZE + BASE_PADDING * 2) * backgroundScale);
-        if (showDurations && !compact) base += (int) (mc.textRenderer.fontHeight * textScale) + 2;
+        if (showDurations && !compact) base += (int) (mc.font.lineHeight * textScale) + 2;
         return base;
     }
 
     @Override
-    public void render(HudContext ctx, RenderTickCounter tickCounter) {
+    public void render(HudContext ctx, DeltaTracker tickCounter) {
         if (!enabled) return;
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.player == null || mc.world == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return;
 
-        PlayerEntity target = resolveTarget(mc);
+        Player target = resolveTarget(mc);
         if (target == null) return;
 
         if (maxRange > 0 && mode.equals("TARGET") && mc.player.distanceTo(target) > maxRange) {
@@ -88,7 +88,7 @@ public final class PotionEffectsHud extends BaseHudElement {
             return;
         }
 
-        List<StatusEffectInstance> effects = getEffects(target, maxEffects);
+        List<MobEffectInstance> effects = getEffects(target, maxEffects);
         if (effects.isEmpty()) return;
 
         float alpha = 1.0f;
@@ -105,23 +105,23 @@ public final class PotionEffectsHud extends BaseHudElement {
 
     @Override
     public void renderEdit(HudContext ctx) {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            List<StatusEffectInstance> effects = getEffects(mc.player, maxEffects);
+            List<MobEffectInstance> effects = getEffects(mc.player, maxEffects);
             if (!effects.isEmpty()) renderEffects(ctx, effects, 1.0f);
         }
     }
 
     // ---------- sisäinen logiikka ----------
-    private PlayerEntity resolveTarget(MinecraftClient mc) {
+    private Player resolveTarget(Minecraft mc) {
         if (mode.equals("SELF")) return mc.player;
         long now = System.currentTimeMillis();
-        PlayerEntity aimed = getAimedPlayer(mc);
+        Player aimed = getAimedPlayer(mc);
         if (aimed != null && aimed.isAlive()) {
             lockedId = aimed.getId();
             lastSeenAtMs = now;
         }
-        PlayerEntity locked = getLockedPlayer(mc);
+        Player locked = getLockedPlayer(mc);
         if (locked == null || !locked.isAlive()) {
             lockedId = -1;
             return null;
@@ -134,28 +134,28 @@ public final class PotionEffectsHud extends BaseHudElement {
         return locked;
     }
 
-    private PlayerEntity getAimedPlayer(MinecraftClient mc) {
-        if (mc.crosshairTarget instanceof EntityHitResult ehr && ehr.getEntity() instanceof PlayerEntity p) return p;
+    private Player getAimedPlayer(Minecraft mc) {
+        if (mc.hitResult instanceof EntityHitResult ehr && ehr.getEntity() instanceof Player p) return p;
         return null;
     }
 
-    private PlayerEntity getLockedPlayer(MinecraftClient mc) {
+    private Player getLockedPlayer(Minecraft mc) {
         if (lockedId < 0) return null;
-        Entity e = mc.world.getEntityById(lockedId);
-        return (e instanceof PlayerEntity p) ? p : null;
+        Entity e = mc.level.getEntity(lockedId);
+        return (e instanceof Player p) ? p : null;
     }
 
-    private List<StatusEffectInstance> getEffects(PlayerEntity player, int max) {
-        List<StatusEffectInstance> list = new ArrayList<>();
-        for (StatusEffectInstance inst : player.getStatusEffects()) {
-            if (inst != null && inst.getDuration() > 0 && inst.shouldShowIcon()) list.add(inst);
+    private List<MobEffectInstance> getEffects(Player player, int max) {
+        List<MobEffectInstance> list = new ArrayList<>();
+        for (MobEffectInstance inst : player.getActiveEffects()) {
+            if (inst != null && inst.getDuration() > 0 && inst.showIcon()) list.add(inst);
         }
-        list.sort(Comparator.comparingInt(StatusEffectInstance::getDuration).reversed()
-                .thenComparingInt(StatusEffectInstance::getAmplifier).reversed());
+        list.sort(Comparator.comparingInt(MobEffectInstance::getDuration).reversed()
+                .thenComparingInt(MobEffectInstance::getAmplifier).reversed());
         return list.size() > max ? list.subList(0, max) : list;
     }
 
-    private void renderEffects(HudContext ctx, List<StatusEffectInstance> effects, float alpha) {
+    private void renderEffects(HudContext ctx, List<MobEffectInstance> effects, float alpha) {
         int count = effects.size();
 
         // Skaalatut mitat
@@ -191,7 +191,7 @@ public final class PotionEffectsHud extends BaseHudElement {
         int startY = y0 + padding;
 
         for (int i = 0; i < count; i++) {
-            StatusEffectInstance inst = effects.get(i);
+            MobEffectInstance inst = effects.get(i);
             int ix = startX + i * (iconSize + gap);
             int iy = startY;
             ctx.drawVanillaEffectIcon(inst, ix, iy, iconSize, alpha);

@@ -1,10 +1,10 @@
 package silversword.axiom.client.modules.combat;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -78,36 +78,36 @@ public class Reach extends AxiomMod implements KeybindConfigurable {
     public boolean canReach(Entity target) {
         if (target == null) return false;
 
-        PlayerEntity player = MinecraftClient.getInstance().player;
+        Player player = Minecraft.getInstance().player;
         if (player == null) return false;
 
-        Vec3d targetPos = new Vec3d(
+        Vec3 targetPos = new Vec3(
                 target.getX(),
-                target.getY() + target.getHeight() * 0.5,
+                target.getY() + target.getBbHeight() * 0.5,
                 target.getZ()
         );
 
-        double distance = player.getEyePos().distanceTo(targetPos);
+        double distance = player.getEyePosition().distanceTo(targetPos);
         return distance <= ACTIVE_REACH;
     }
 
     public boolean canReach(HitResult hitResult) {
         if (hitResult == null || hitResult.getType() == HitResult.Type.MISS) return false;
 
-        PlayerEntity player = MinecraftClient.getInstance().player;
+        Player player = Minecraft.getInstance().player;
         if (player == null) return false;
 
-        double distance = player.getEyePos().distanceTo(hitResult.getPos());
+        double distance = player.getEyePosition().distanceTo(hitResult.getLocation());
         return distance <= ACTIVE_REACH;
     }
 
-    public boolean canReachPos(Vec3d pos) {
+    public boolean canReachPos(Vec3 pos) {
         if (pos == null) return false;
 
-        PlayerEntity player = MinecraftClient.getInstance().player;
+        Player player = Minecraft.getInstance().player;
         if (player == null) return false;
 
-        double distance = player.getEyePos().distanceTo(pos);
+        double distance = player.getEyePosition().distanceTo(pos);
         return distance <= ACTIVE_REACH;
     }
 }

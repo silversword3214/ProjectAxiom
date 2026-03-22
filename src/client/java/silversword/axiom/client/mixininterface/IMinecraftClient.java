@@ -1,9 +1,9 @@
 package silversword.axiom.client.mixininterface;
 
-import net.minecraft.client.gl.Framebuffer;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 
 public interface IMinecraftClient {
     void axiom$rightClick();
 
-    void axiom$setFramebuffer(Framebuffer framebuffer);
+    void axiom$setFramebuffer(RenderTarget framebuffer);
 }

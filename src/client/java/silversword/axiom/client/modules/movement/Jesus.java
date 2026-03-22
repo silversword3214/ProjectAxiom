@@ -1,5 +1,6 @@
 package silversword.axiom.client.modules.movement;
 
+import net.minecraft.client.Minecraft;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -28,15 +29,15 @@ public final class Jesus extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onTick() {
-        var mc = net.minecraft.client.MinecraftClient.getInstance();
+        var mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
         if (!includeLava.get()) return;
 
         // Jos seisot laavan pinnalla, poista lava- ja fire-tila
-        if (mc.player.isOnGround() && mc.player.isInLava()) {
-            mc.player.setFireTicks(0);
-            mc.player.extinguish();
+        if (mc.player.onGround() && mc.player.isInLava()) {
+            mc.player.setRemainingFireTicks(0);
+            mc.player.clearFire();
         }
     }
 

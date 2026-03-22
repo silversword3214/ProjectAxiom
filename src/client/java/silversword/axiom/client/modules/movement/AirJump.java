@@ -1,7 +1,7 @@
 package silversword.axiom.client.modules.movement;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -25,19 +25,19 @@ public class AirJump extends AxiomMod implements KeybindConfigurable {
 
     @Override
     public void onTick() {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.player == null || mc.getNetworkHandler() == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.getConnection() == null) return;
 
         // Disabled in Creative mode
-        if (mc.player.getAbilities().creativeMode) {
+        if (mc.player.getAbilities().instabuild) {
             return;
         }
 
         // If falling
-        if (mc.player.getVelocity().y < -0.1 || mc.player.fallDistance > 2.0f) {
+        if (mc.player.getDeltaMovement().y < -0.1 || mc.player.fallDistance > 2.0f) {
             // Lähetä packet
-            mc.getNetworkHandler().sendPacket(
-                    new PlayerMoveC2SPacket.OnGroundOnly(
+            mc.getConnection().send(
+                    new ServerboundMovePlayerPacket.StatusOnly(
                             true,
                             mc.player.horizontalCollision
                     )

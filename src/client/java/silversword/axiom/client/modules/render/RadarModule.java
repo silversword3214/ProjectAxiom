@@ -1,6 +1,6 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.window.WindowFactory;
@@ -25,7 +25,7 @@ public final class RadarModule extends AxiomMod implements ColorConfigurable, Ke
     private static final String HUD_ID = "Radar";
     private RadarHud hud;
 
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     // ------------------- Värit -------------------
     final SettingColor playerColor;
@@ -250,8 +250,8 @@ public final class RadarModule extends AxiomMod implements ColorConfigurable, Ke
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("radarmodule_color", "Radar Color Customizer", sw, sh, content);
     }

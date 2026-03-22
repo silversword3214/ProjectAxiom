@@ -1,16 +1,16 @@
 package silversword.axiom.client.event;
 
-import net.minecraft.client.gui.Click;
+import net.minecraft.client.input.MouseButtonEvent;
 import silversword.axiom.client.eventbus.ICancellable;
 
 public class MouseClickEvent implements ICancellable {
     private static final MouseClickEvent INSTANCE = new MouseClickEvent();
     private boolean cancelled;
 
-    public Click click;
+    public MouseButtonEvent click;
     public KeyboardAction action;
 
-    public static MouseClickEvent get(Click click, KeyboardAction action) {
+    public static MouseClickEvent get(MouseButtonEvent click, KeyboardAction action) {
         INSTANCE.cancelled = false;
         INSTANCE.click = click;
         INSTANCE.action = action;

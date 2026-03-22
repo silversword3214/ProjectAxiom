@@ -1,22 +1,22 @@
 package silversword.axiom.client.modules.world;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerInteractionManager;
-import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.MultiPlayerGameMode;
+import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingSlider;
-import silversword.axiom.mixin.client.accessors.ClientPlayerInteractionManagerAccessor;
+import silversword.axiom.mixin.client.accessors.MultiPlayerGameModeAccessor;
 
 public class FastBreak extends AxiomMod implements KeybindConfigurable {
 
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     // ---- SETTINGS ----
 
@@ -54,20 +54,20 @@ public class FastBreak extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onTick() {
-        if (mc.player == null || mc.world == null) return;
-        if (!(mc.crosshairTarget instanceof BlockHitResult hit)) return;
+        if (mc.player == null || mc.level == null) return;
+        if (!(mc.hitResult instanceof BlockHitResult hit)) return;
 
-        ClientPlayerInteractionManager manager = mc.interactionManager;
+        MultiPlayerGameMode manager = mc.gameMode;
         if (manager == null) return;
 
         // 🟢 Legit mode = vain cooldown pois
-        ((ClientPlayerInteractionManagerAccessor) manager)
-                .setBlockBreakingCooldown(0);
+        ((MultiPlayerGameModeAccessor) manager)
+                .setDestroyDelay(0);
 
         if (legitMode.get()) return;
 
         BlockPos pos = hit.getBlockPos();
-        Direction dir = hit.getSide();
+        Direction dir = hit.getDirection();
 
         int speedLevel = (int) speed.getValue();
 
@@ -80,9 +80,9 @@ public class FastBreak extends AxiomMod implements KeybindConfigurable {
 
         lastBlock = pos;
 
-        mc.getNetworkHandler().sendPacket(
-                new PlayerActionC2SPacket(
-                        PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK,
+        mc.getConnection().send(
+                new ServerboundPlayerActionPacket(
+                        ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK,
                         pos,
                         dir
                 )

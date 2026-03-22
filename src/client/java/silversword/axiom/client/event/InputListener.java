@@ -25,7 +25,7 @@ public class InputListener {
                 clickGuiKey = keybinds.clickGuiKey.get();
             }
 
-            long handle = client.getWindow().getHandle();
+            long handle = client.getWindow().handle();
             if (handle != 0) {
                 // Hiiren klikkaukset
                 boolean leftPressed = GLFW.glfwGetMouseButton(handle, GLFW.GLFW_MOUSE_BUTTON_1) == GLFW.GLFW_PRESS;
@@ -41,9 +41,9 @@ public class InputListener {
                 boolean isPressed = GLFW.glfwGetKey(handle, clickGuiKey) == GLFW.GLFW_PRESS;
 
                 if (isPressed && !wasKeyPressed) {
-                    if (client.currentScreen == null) {
+                    if (client.screen == null) {
                         client.setScreen(new ClickGuiScreen());
-                    } else if (client.currentScreen instanceof ClickGuiScreen) {
+                    } else if (client.screen instanceof ClickGuiScreen) {
                         client.setScreen(null);
                     }
                 }

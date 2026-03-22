@@ -1,6 +1,6 @@
 package silversword.axiom.client.gui.core;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 import java.lang.reflect.Method;
 
@@ -11,7 +11,7 @@ public final class BlurUtil {
 
     private BlurUtil() {}
 
-    public static boolean tryApplyBlur(MinecraftClient client, float delta) {
+    public static boolean tryApplyBlur(Minecraft client, float delta) {
         if (client == null || client.gameRenderer == null) return false;
 
         if (!lookedUp) {

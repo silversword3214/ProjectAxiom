@@ -1,15 +1,15 @@
 package silversword.axiom.client.modules.combat;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.particle.ParticleEffect;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -79,19 +79,19 @@ public class HitEffect extends AxiomMod {
 
     @Override
     protected void onTick() {
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
-        boolean isSwinging = mc.player.handSwinging;
+        boolean isSwinging = mc.player.swinging;
 
         // Jos käsi heilahti juuri tällä tickillä
         if (isSwinging && !wasSwinging) {
             // Tarkistetaan, osuiko pelaaja johonkin
-            HitResult hit = mc.crosshairTarget;
+            HitResult hit = mc.hitResult;
             if (hit instanceof EntityHitResult entityHit) {
                 Entity target = entityHit.getEntity();
 
                 // Jos vain pelaajat ja target ei ole pelaaja, skip
-                if (onlyPlayers.get() && !(target instanceof PlayerEntity)) return;
+                if (onlyPlayers.get() && !(target instanceof Player)) return;
 
                 // Suoritetaan efekti
                 triggerEffect(target);
@@ -111,14 +111,14 @@ public class HitEffect extends AxiomMod {
     }
 
     private void spawnParticles(Entity target) {
-        ParticleEffect particle = getParticleEffect(particleType.getMode());
+        ParticleOptions particle = getParticleEffect(particleType.getMode());
         if (particle == null) return;
 
         int count = (int) particleCount.getValue();
         double speed = particleSpeed.getValue();
         double spread = particleSpread.getValue();
 
-        Vec3d pos = target.getEntityPos().add(0, target.getHeight() / 2, 0); // keskikohta
+        Vec3 pos = target.position().add(0, target.getBbHeight() / 2, 0); // keskikohta
 
         for (int i = 0; i < count; i++) {
             double offsetX = (random.nextDouble() - 0.5) * spread;
@@ -128,7 +128,7 @@ public class HitEffect extends AxiomMod {
             double vy = (random.nextDouble() - 0.5) * speed;
             double vz = (random.nextDouble() - 0.5) * speed;
 
-            mc.world.addParticleClient(particle, pos.x + offsetX, pos.y + offsetY, pos.z + offsetZ, vx, vy, vz);
+            mc.level.addParticle(particle, pos.x + offsetX, pos.y + offsetY, pos.z + offsetZ, vx, vy, vz);
         }
     }
 
@@ -139,18 +139,18 @@ public class HitEffect extends AxiomMod {
         float volume = (float) soundVolume.getValue();
         float pitch = (float) soundPitch.getValue();
 
-        mc.world.playSound(
+        mc.level.playSound(
                 mc.player,
                 target.getX(), target.getY(), target.getZ(),
                 sound,
-                SoundCategory.PLAYERS,
+                SoundSource.PLAYERS,
                 volume,
                 pitch
         );
     }
 
     @Nullable
-    private ParticleEffect getParticleEffect(String name) {
+    private ParticleOptions getParticleEffect(String name) {
         // Yksinkertainen switch-case yleisimmille partikkeleille
         switch (name) {
             case "CRIT": return ParticleTypes.CRIT;
@@ -179,21 +179,21 @@ public class HitEffect extends AxiomMod {
     @Nullable
     private SoundEvent getSoundEvent(String name) {
         switch (name) {
-            case "ENTITY_PLAYER_ATTACK_CRIT": return SoundEvents.ENTITY_PLAYER_ATTACK_CRIT;
-            case "ENTITY_PLAYER_ATTACK_STRONG": return SoundEvents.ENTITY_PLAYER_ATTACK_STRONG;
-            case "ENTITY_PLAYER_ATTACK_SWEEP": return SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP;
-            case "ENTITY_PLAYER_ATTACK_WEAK": return SoundEvents.ENTITY_PLAYER_ATTACK_WEAK;
-            case "ENTITY_PLAYER_ATTACK_KNOCKBACK": return SoundEvents.ENTITY_PLAYER_ATTACK_KNOCKBACK;
-            case "ENTITY_EXPERIENCE_ORB_PICKUP": return SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP;
-            case "ENTITY_ARROW_HIT_PLAYER": return SoundEvents.ENTITY_ARROW_HIT_PLAYER;
-            case "ENTITY_PLAYER_HURT": return SoundEvents.ENTITY_PLAYER_HURT;
-            case "BLOCK_ANVIL_LAND": return SoundEvents.BLOCK_ANVIL_LAND;
-            case "ENTITY_ENDER_DRAGON_HURT": return SoundEvents.ENTITY_ENDER_DRAGON_HURT;
-            case "ENTITY_WITHER_HURT": return SoundEvents.ENTITY_WITHER_HURT;
-            case "ENTITY_ZOMBIE_HURT": return SoundEvents.ENTITY_ZOMBIE_HURT;
-            case "ENTITY_PLAYER_LEVELUP": return SoundEvents.ENTITY_PLAYER_LEVELUP;
+            case "ENTITY_PLAYER_ATTACK_CRIT": return SoundEvents.PLAYER_ATTACK_CRIT;
+            case "ENTITY_PLAYER_ATTACK_STRONG": return SoundEvents.PLAYER_ATTACK_STRONG;
+            case "ENTITY_PLAYER_ATTACK_SWEEP": return SoundEvents.PLAYER_ATTACK_SWEEP;
+            case "ENTITY_PLAYER_ATTACK_WEAK": return SoundEvents.PLAYER_ATTACK_WEAK;
+            case "ENTITY_PLAYER_ATTACK_KNOCKBACK": return SoundEvents.PLAYER_ATTACK_KNOCKBACK;
+            case "ENTITY_EXPERIENCE_ORB_PICKUP": return SoundEvents.EXPERIENCE_ORB_PICKUP;
+            case "ENTITY_ARROW_HIT_PLAYER": return SoundEvents.ARROW_HIT_PLAYER;
+            case "ENTITY_PLAYER_HURT": return SoundEvents.PLAYER_HURT;
+            case "BLOCK_ANVIL_LAND": return SoundEvents.ANVIL_LAND;
+            case "ENTITY_ENDER_DRAGON_HURT": return SoundEvents.ENDER_DRAGON_HURT;
+            case "ENTITY_WITHER_HURT": return SoundEvents.WITHER_HURT;
+            case "ENTITY_ZOMBIE_HURT": return SoundEvents.ZOMBIE_HURT;
+            case "ENTITY_PLAYER_LEVELUP": return SoundEvents.PLAYER_LEVELUP;
             case "OOF": return CustomSounds.OOF;
-            default: return SoundEvents.ENTITY_PLAYER_ATTACK_CRIT;
+            default: return SoundEvents.PLAYER_ATTACK_CRIT;
         }
     }
 }

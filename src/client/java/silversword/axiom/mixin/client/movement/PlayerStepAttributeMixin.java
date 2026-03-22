@@ -1,31 +1,31 @@
 package silversword.axiom.mixin.client.movement;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.attribute.EntityAttributeInstance;
-import net.minecraft.entity.attribute.EntityAttributeModifier;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import silversword.axiom.client.modules.movement.Step;
 
-@Mixin(PlayerEntity.class)
-public abstract class PlayerEntityStepAttributeMixin {
+@Mixin(Player.class)
+public abstract class PlayerStepAttributeMixin {
 
     // Identifier-based modifier id (1.21+)
-    private static final Identifier AXIOM_STEP_MOD = Identifier.of("projectaxiom", "step_height");
+    private static final Identifier AXIOM_STEP_MOD = Identifier.fromNamespaceAndPath("projectaxiom", "step_height");
 
     @Inject(method = "tick", at = @At("TAIL"))
     private void axiom$applyStep(CallbackInfo ci) {
         // vain local player
-        if ((Object) this != MinecraftClient.getInstance().player) return;
+        if ((Object) this != Minecraft.getInstance().player) return;
 
-        PlayerEntity p = (PlayerEntity) (Object) this;
+        Player p = (Player) (Object) this;
 
-        EntityAttributeInstance inst = p.getAttributeInstance(EntityAttributes.STEP_HEIGHT);
+        AttributeInstance inst = p.getAttribute(Attributes.STEP_HEIGHT);
         if (inst == null) return;
 
         // poista vanha aina
@@ -37,10 +37,10 @@ public abstract class PlayerEntityStepAttributeMixin {
         double add = Math.max(0.0, target - 1.0); // vanilla 1.0
 
         if (add > 0.0) {
-            inst.addTemporaryModifier(new EntityAttributeModifier(
+            inst.addTransientModifier(new AttributeModifier(
                     AXIOM_STEP_MOD,
                     add,
-                    EntityAttributeModifier.Operation.ADD_VALUE
+                    AttributeModifier.Operation.ADD_VALUE
             ));
         }
     }

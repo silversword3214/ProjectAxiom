@@ -1,11 +1,11 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.eventbus.AxiomEvent;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
@@ -28,7 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class BlockOutline extends AxiomMod implements ColorConfigurable, KeybindConfigurable {
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     // Väri
     private final SettingColor color;
@@ -65,24 +65,24 @@ public final class BlockOutline extends AxiomMod implements ColorConfigurable, K
 
     @AxiomEvent
     private void onRender(Render3DEvent event) {
-        if (!isEnabled() || mc.player == null || mc.world == null) return;
+        if (!isEnabled() || mc.player == null || mc.level == null) return;
 
         // Katsotaan mihin pelaaja osoittaa
-        HitResult hit = mc.crosshairTarget;
+        HitResult hit = mc.hitResult;
         if (!(hit instanceof BlockHitResult blockHit)) return;
 
         BlockPos pos = blockHit.getBlockPos();
-        double distance = mc.player.getEyePos().distanceTo(pos.toCenterPos());
+        double distance = mc.player.getEyePosition().distanceTo(pos.getCenter());
         if (distance > renderDistance.getValue()) return;
 
-        BlockState state = mc.world.getBlockState(pos);
+        BlockState state = mc.level.getBlockState(pos);
         if (state.isAir()) return;
 
         // Jos onlyInteractable on päällä, tarkista onko blokki interaktiivinen
         if (onlyInteractable.get() && !state.isSolid()) return; // Yksinkertaistus: interaktiiviset blokit eivät aina ole solid, mutta käytetään solidia alustavasti
 
         // Haetaan blokin tarkka muoto (voxelshape) – se antaa tarkat rajat esim. puolilohkoille
-        Box box = state.getOutlineShape(mc.world, pos).getBoundingBox();
+        AABB box = state.getShape(mc.level, pos).bounds();
         // Muunnetaan maailmankoordinaatteihin
         double x1 = pos.getX() + box.minX;
         double y1 = pos.getY() + box.minY;
@@ -112,8 +112,8 @@ public final class BlockOutline extends AxiomMod implements ColorConfigurable, K
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("blockoutline_color", "BlockOutline Color Customizer", sw, sh, content);
     }

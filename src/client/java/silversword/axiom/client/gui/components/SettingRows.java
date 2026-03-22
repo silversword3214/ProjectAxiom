@@ -341,8 +341,8 @@ final class SettingModeRow extends SettingRowBase {
             int dropdownX = bounds.right() + 13;
             int dropdownY = bounds.y;
 
-            int screenWidth = ui.mc.getWindow().getScaledWidth();
-            int screenHeight = ui.mc.getWindow().getScaledHeight();
+            int screenWidth = ui.mc.getWindow().getGuiScaledWidth();
+            int screenHeight = ui.mc.getWindow().getGuiScaledHeight();
 
             if (dropdownX + dropdownW > screenWidth) {
                 dropdownX = bounds.x - dropdownW - 5;

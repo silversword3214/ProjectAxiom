@@ -162,8 +162,8 @@ public final class PlayerINFO extends AxiomMod implements ColorConfigurable, Key
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("playerinfo_colors", "PlayerINFO Colors", sw, sh, content);
     }

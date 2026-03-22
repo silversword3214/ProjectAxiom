@@ -1,7 +1,7 @@
 package silversword.axiom.client.modules.render.blockesp;
 
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
 import silversword.axiom.client.modules.render.SearchBlocks;
 import silversword.axiom.client.render.rendersystem.Renderer3D;
 
@@ -18,7 +18,7 @@ public class Chunk {
         this.pos = pos;
     }
 
-    public Block addBlock(BlockPos pos, net.minecraft.block.Block block) {
+    public Block addBlock(BlockPos pos, net.minecraft.world.level.block.Block block) {
         Block espBlock = new Block(pos, block);
         blocks.put(pos, espBlock);
         return espBlock;

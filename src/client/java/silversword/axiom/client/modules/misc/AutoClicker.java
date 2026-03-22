@@ -1,6 +1,6 @@
 package silversword.axiom.client.modules.misc;
 
-import net.minecraft.util.Hand;
+import net.minecraft.world.InteractionHand;
 import org.lwjgl.glfw.GLFW;
 import silversword.axiom.client.event.KeyboardAction;
 import silversword.axiom.client.event.MouseClickEvent;
@@ -60,7 +60,7 @@ public class AutoClicker extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onTick() {
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
         boolean left = button.getMode().equals("Left") || button.getMode().equals("Both");
         boolean right = button.getMode().equals("Right") || button.getMode().equals("Both");
@@ -71,7 +71,7 @@ public class AutoClicker extends AxiomMod implements KeybindConfigurable {
         long actualDelay = baseDelay + randomAdd;
 
         if (onlyWhileHolding.get()) {
-            long handle = mc.getWindow().getHandle();
+            long handle = mc.getWindow().handle();
             boolean leftHeld = GLFW.glfwGetMouseButton(handle, GLFW.GLFW_MOUSE_BUTTON_1) == GLFW.GLFW_PRESS;
             boolean rightHeld = GLFW.glfwGetMouseButton(handle, GLFW.GLFW_MOUSE_BUTTON_2) == GLFW.GLFW_PRESS;
 
@@ -94,16 +94,16 @@ public class AutoClicker extends AxiomMod implements KeybindConfigurable {
     }
 
     private void clickLeft() {
-        if (mc.player == null || mc.interactionManager == null) return;
-        if (mc.targetedEntity != null) {
-            mc.interactionManager.attackEntity(mc.player, mc.targetedEntity);
+        if (mc.player == null || mc.gameMode == null) return;
+        if (mc.crosshairPickEntity != null) {
+            mc.gameMode.attack(mc.player, mc.crosshairPickEntity);
         }
-        mc.player.swingHand(Hand.MAIN_HAND);
+        mc.player.swing(InteractionHand.MAIN_HAND);
     }
 
     private void clickRight() {
-        if (mc.player == null || mc.interactionManager == null) return;
-        mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
+        if (mc.player == null || mc.gameMode == null) return;
+        mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
     }
 
     @AxiomEvent

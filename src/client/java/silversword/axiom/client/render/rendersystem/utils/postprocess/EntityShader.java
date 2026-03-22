@@ -1,7 +1,7 @@
 package silversword.axiom.client.render.rendersystem.utils.postprocess;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
 import silversword.axiom.client.mixininterface.IWorldRenderer;
 
 import silversword.axiom.client.render.rendersystem.utils.render.CustomOutlineVertexConsumerProvider;
@@ -20,12 +20,12 @@ public abstract class EntityShader extends PostProcessShader {
 
     @Override
     protected void preDraw() {
-        ((IWorldRenderer) mc.worldRenderer).axiom$pushEntityOutlineFramebuffer(getFramebuffer());
+        ((IWorldRenderer) mc.levelRenderer).axiom$pushEntityOutlineFramebuffer(getFramebuffer());
     }
 
     @Override
     protected void postDraw() {
-        ((IWorldRenderer) mc.worldRenderer).axiom$popEntityOutlineFramebuffer();
+        ((IWorldRenderer) mc.levelRenderer).axiom$popEntityOutlineFramebuffer();
     }
 
     public void submitVertices() {

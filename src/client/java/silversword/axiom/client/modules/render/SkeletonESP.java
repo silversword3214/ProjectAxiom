@@ -1,9 +1,9 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Set;
 
 public final class SkeletonESP extends AxiomMod implements ColorConfigurable, KeybindConfigurable {
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     // Colors for each entity group
     final SettingColor playerColor;
@@ -109,25 +109,25 @@ public final class SkeletonESP extends AxiomMod implements ColorConfigurable, Ke
     @AxiomEvent
     private void onRender(Render3DEvent event) {
         if (!isEnabled()) return;
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
         double maxDistSq = renderDistance.getValue() * renderDistance.getValue();
-        Vec3d cameraPos = mc.gameRenderer.getCamera().getCameraPos();
+        Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
 
-        for (Entity entity : mc.world.getEntities()) {
+        for (Entity entity : mc.level.entitiesForRendering()) {
             if (entity == mc.player || !entity.isAlive()) continue;
 
             TargetGroup group = TargetGroup.getGroup(entity);
             if (!HANDLED_GROUPS.contains(group)) continue;          // skip items, XP orbs, etc.
             if (!shouldDrawGroup(group)) continue;
 
-            Vec3d entityPos = entity.getEntityPos();
-            if (entityPos.squaredDistanceTo(cameraPos) > maxDistSq) continue;
+            Vec3 entityPos = entity.position();
+            if (entityPos.distanceToSqr(cameraPos) > maxDistSq) continue;
 
             // Interpolated position for smooth rendering
-            double x = MathHelper.lerp(event.tickDelta, entity.lastRenderX, entity.getX());
-            double y = MathHelper.lerp(event.tickDelta, entity.lastRenderY, entity.getY());
-            double z = MathHelper.lerp(event.tickDelta, entity.lastRenderZ, entity.getZ());
+            double x = Mth.lerp(event.tickDelta, entity.xOld, entity.getX());
+            double y = Mth.lerp(event.tickDelta, entity.yOld, entity.getY());
+            double z = Mth.lerp(event.tickDelta, entity.zOld, entity.getZ());
 
             Color color = getColorForGroup(group).getCurrentColor();
 
@@ -140,8 +140,8 @@ public final class SkeletonESP extends AxiomMod implements ColorConfigurable, Ke
      * All coordinates are computed as doubles and passed directly to the renderer.
      */
     private void drawSkeleton(Render3DEvent event, double x, double y, double z, Entity entity, Color color) {
-        float width = entity.getWidth();
-        float height = entity.getHeight();
+        float width = entity.getBbWidth();
+        float height = entity.getBbHeight();
         float halfWidth = width / 2.0f;
 
         // Head size
@@ -156,36 +156,36 @@ public final class SkeletonESP extends AxiomMod implements ColorConfigurable, Ke
         // Arms: shoulder → elbow (horizontal) → hand (vertical)
         float elbowX = halfWidth * 1.5f;
         float handY = pelvisY * 0.8f;
-        Vec3d leftShoulder = new Vec3d(-halfWidth, shouldersY, 0);
-        Vec3d rightShoulder = new Vec3d( halfWidth, shouldersY, 0);
-        Vec3d leftElbow    = new Vec3d(-elbowX, shouldersY, 0);
-        Vec3d rightElbow   = new Vec3d( elbowX, shouldersY, 0);
-        Vec3d leftHand     = new Vec3d(-elbowX, handY, 0);
-        Vec3d rightHand    = new Vec3d( elbowX, handY, 0);
+        Vec3 leftShoulder = new Vec3(-halfWidth, shouldersY, 0);
+        Vec3 rightShoulder = new Vec3( halfWidth, shouldersY, 0);
+        Vec3 leftElbow    = new Vec3(-elbowX, shouldersY, 0);
+        Vec3 rightElbow   = new Vec3( elbowX, shouldersY, 0);
+        Vec3 leftHand     = new Vec3(-elbowX, handY, 0);
+        Vec3 rightHand    = new Vec3( elbowX, handY, 0);
 
         // Legs
         float feetX = halfWidth * 0.8f;
-        Vec3d leftPelvis  = new Vec3d(-halfWidth * 0.6f, pelvisY, 0);
-        Vec3d rightPelvis = new Vec3d( halfWidth * 0.6f, pelvisY, 0);
-        Vec3d leftFoot    = new Vec3d(-feetX, 0, 0);
-        Vec3d rightFoot   = new Vec3d( feetX, 0, 0);
+        Vec3 leftPelvis  = new Vec3(-halfWidth * 0.6f, pelvisY, 0);
+        Vec3 rightPelvis = new Vec3( halfWidth * 0.6f, pelvisY, 0);
+        Vec3 leftFoot    = new Vec3(-feetX, 0, 0);
+        Vec3 rightFoot   = new Vec3( feetX, 0, 0);
 
         // Head (cross)
         float headRadius = halfWidth * 0.6f;
-        Vec3d headCenter = new Vec3d(0, headTopY - headHeight/2, 0);
-        Vec3d headFront  = new Vec3d(0, headTopY - headHeight/2,  headRadius);
-        Vec3d headBack   = new Vec3d(0, headTopY - headHeight/2, -headRadius);
-        Vec3d headLeft   = new Vec3d(-headRadius, headTopY - headHeight/2, 0);
-        Vec3d headRight  = new Vec3d( headRadius, headTopY - headHeight/2, 0);
-        Vec3d headTop    = new Vec3d(0, headTopY, 0);
-        Vec3d headBottom = new Vec3d(0, headBottomY, 0);
+        Vec3 headCenter = new Vec3(0, headTopY - headHeight/2, 0);
+        Vec3 headFront  = new Vec3(0, headTopY - headHeight/2,  headRadius);
+        Vec3 headBack   = new Vec3(0, headTopY - headHeight/2, -headRadius);
+        Vec3 headLeft   = new Vec3(-headRadius, headTopY - headHeight/2, 0);
+        Vec3 headRight  = new Vec3( headRadius, headTopY - headHeight/2, 0);
+        Vec3 headTop    = new Vec3(0, headTopY, 0);
+        Vec3 headBottom = new Vec3(0, headBottomY, 0);
 
         // Rotation
-        float yawRad = entity.getYaw() * MathHelper.RADIANS_PER_DEGREE;
-        double cosYaw = MathHelper.cos(yawRad);
-        double sinYaw = MathHelper.sin(yawRad);
+        float yawRad = entity.getYRot() * Mth.DEG_TO_RAD;
+        double cosYaw = Mth.cos(yawRad);
+        double sinYaw = Mth.sin(yawRad);
 
-        java.util.function.Function<Vec3d, double[]> toWorld = local -> {
+        java.util.function.Function<Vec3, double[]> toWorld = local -> {
             double worldX = x + local.x * cosYaw - local.z * sinYaw;
             double worldY = y + local.y;
             double worldZ = z + local.x * sinYaw + local.z * cosYaw;
@@ -193,7 +193,7 @@ public final class SkeletonESP extends AxiomMod implements ColorConfigurable, Ke
         };
 
         // Torso line (pelvis → shoulders)
-        drawLine(event, toWorld.apply(new Vec3d(0, pelvisY, 0)), toWorld.apply(new Vec3d(0, shouldersY, 0)), color);
+        drawLine(event, toWorld.apply(new Vec3(0, pelvisY, 0)), toWorld.apply(new Vec3(0, shouldersY, 0)), color);
 
         // Shoulder line (left shoulder ↔ right shoulder)
         drawLine(event, toWorld.apply(leftShoulder), toWorld.apply(rightShoulder), color);
@@ -261,8 +261,8 @@ public final class SkeletonESP extends AxiomMod implements ColorConfigurable, Ke
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("skeletonesp_color", "SkeletonESP Color Customizer", sw, sh, content);
     }

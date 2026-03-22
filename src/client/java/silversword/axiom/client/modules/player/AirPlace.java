@@ -1,12 +1,17 @@
 package silversword.axiom.client.modules.player;
 
-import net.minecraft.item.*;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ArmorStandItem;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.FireworkRocketItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.moduleutils.InteractItemEvent;
 import silversword.axiom.client.event.render.Render3DEvent;
@@ -59,10 +64,10 @@ public class AirPlace extends AxiomMod implements KeybindConfigurable {
     public void onTick() {
         if (!isActive()) return;
         if (!isHoldingPlaceable()) return;
-        if (mc.crosshairTarget == null || mc.crosshairTarget.getType() != HitResult.Type.MISS) return;
+        if (mc.hitResult == null || mc.hitResult.getType() != HitResult.Type.MISS) return;
 
-        double r = customRange.get() ? range.getValue() : mc.player.getBlockInteractionRange();
-        hitResult = mc.getCameraEntity().raycast(r, 0, false);
+        double r = customRange.get() ? range.getValue() : mc.player.blockInteractionRange();
+        hitResult = mc.getCameraEntity().pick(r, 0, false);
     }
 
     @Override
@@ -76,22 +81,22 @@ public class AirPlace extends AxiomMod implements KeybindConfigurable {
         if (!(hitResult instanceof BlockHitResult bhr)) return;
         if (!isHoldingPlaceable()) return;
 
-        Hand hand = event.hand;
-        ItemStack stack = mc.player.getStackInHand(hand);
+        InteractionHand hand = event.hand;
+        ItemStack stack = mc.player.getItemInHand(hand);
         BlockPos pos = bhr.getBlockPos();
 
         // Tarkistetaan, voidaanko paikkaan asettaa lohko
-        if (!mc.world.getBlockState(pos).isReplaceable()) return;
+        if (!mc.level.getBlockState(pos).canBeReplaced()) return;
 
         // Varmistetaan, että item on asetettava
         if (!isPlaceableItem(stack.getItem())) return;
 
         // Suoritetaan asettaminen
-        Vec3d hitPos = Vec3d.ofCenter(pos);
-        BlockHitResult newBhr = new BlockHitResult(hitPos, mc.player.getMovementDirection().getOpposite(), pos, false);
-        ActionResult result = mc.interactionManager.interactBlock(mc.player, hand, newBhr);
-        if (result.isAccepted()) {
-            event.toReturn = ActionResult.SUCCESS;
+        Vec3 hitPos = Vec3.atCenterOf(pos);
+        BlockHitResult newBhr = new BlockHitResult(hitPos, mc.player.getMotionDirection().getOpposite(), pos, false);
+        InteractionResult result = mc.gameMode.useItemOn(mc.player, hand, newBhr);
+        if (result.consumesAction()) {
+            event.toReturn = InteractionResult.SUCCESS;
         }
     }
 
@@ -100,8 +105,8 @@ public class AirPlace extends AxiomMod implements KeybindConfigurable {
         if (!isActive()) return;
         if (!render.get()) return;
         if (!(hitResult instanceof BlockHitResult bhr)) return;
-        if (mc.crosshairTarget != null && mc.crosshairTarget.getType() != HitResult.Type.MISS) return;
-        if (!mc.world.getBlockState(bhr.getBlockPos()).isReplaceable()) return;
+        if (mc.hitResult != null && mc.hitResult.getType() != HitResult.Type.MISS) return;
+        if (!mc.level.getBlockState(bhr.getBlockPos()).canBeReplaced()) return;
         if (!isHoldingPlaceable()) return;
 
         BlockPos pos = bhr.getBlockPos();
@@ -122,7 +127,7 @@ public class AirPlace extends AxiomMod implements KeybindConfigurable {
 
     private boolean isHoldingPlaceable() {
         if (mc.player == null) return false;
-        ItemStack stack = mc.player.getMainHandStack();
+        ItemStack stack = mc.player.getMainHandItem();
         if (stack.isEmpty()) return false;
         return isPlaceableItem(stack.getItem());
     }

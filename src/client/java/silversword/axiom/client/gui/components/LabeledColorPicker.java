@@ -1,6 +1,6 @@
 package silversword.axiom.client.gui.components;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
 import silversword.axiom.client.main.AxiomMod;
@@ -45,9 +45,9 @@ public class LabeledColorPicker implements UiComponent {
         if (swatchBounds.contains(mouseX, mouseY)) {
             var factory = AxiomMod.getWindowFactory();
             if (factory != null) {
-                var mc = MinecraftClient.getInstance();
-                int sw = mc.getWindow().getScaledWidth();
-                int sh = mc.getWindow().getScaledHeight();
+                var mc = Minecraft.getInstance();
+                int sw = mc.getWindow().getGuiScaledWidth();
+                int sh = mc.getWindow().getGuiScaledHeight();
                 var picker = new HsvColorPicker(color, () -> {});
                 factory.openCustomWindow("color_picker", "Pick Color", sw, sh, picker);
             }

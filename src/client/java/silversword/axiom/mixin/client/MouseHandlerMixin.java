@@ -1,7 +1,7 @@
 package silversword.axiom.mixin.client;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.Mouse;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHandler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -10,31 +10,31 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.render.Freecam;
 
-@Mixin(Mouse.class)
-public class MouseMixin {
+@Mixin(MouseHandler.class)
+public class MouseHandlerMixin {
 
-    @Shadow private double cursorDeltaX;
-    @Shadow private double cursorDeltaY;
-    @Shadow private boolean cursorLocked;
+    @Shadow private double accumulatedDX;
+    @Shadow private double accumulatedDY;
+    @Shadow private boolean mouseGrabbed;
 
-    @Inject(method = "updateMouse", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "turnPlayer", at = @At("HEAD"), cancellable = true)
     private void onUpdateMouse(double timeDelta, CallbackInfo ci) {
         Freecam freecam = ModuleManager.getInstance().getModule(Freecam.class);
         if (freecam == null || !freecam.isEnabled()) return;
 
-        if (!cursorLocked) return;
+        if (!mouseGrabbed) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        double sens = mc.options.getMouseSensitivity().getValue() * 0.6 + 0.2;
+        Minecraft mc = Minecraft.getInstance();
+        double sens = mc.options.sensitivity().get() * 0.6 + 0.2;
         double scale = sens * sens * sens * 1.75;
 
-        double dx = cursorDeltaX * scale;
-        double dy = cursorDeltaY * scale;
+        double dx = accumulatedDX * scale;
+        double dy = accumulatedDY * scale;
 
         freecam.changeLookDirection(dx, dy);
 
-        cursorDeltaX = 0.0;
-        cursorDeltaY = 0.0;
+        accumulatedDX = 0.0;
+        accumulatedDY = 0.0;
 
         ci.cancel();
     }

@@ -1,6 +1,6 @@
 package silversword.axiom.client.event;
 
-import net.minecraft.network.packet.Packet;
+import net.minecraft.network.protocol.Packet;
 
 public class PacketEvent {
     public static class Receive {

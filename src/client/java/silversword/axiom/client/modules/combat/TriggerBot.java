@@ -1,10 +1,10 @@
 package silversword.axiom.client.modules.combat;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -77,11 +77,11 @@ public class TriggerBot extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onTick() {
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
-        if (onlyWhenHolding.get() && !mc.options.attackKey.isPressed()) return;
+        if (onlyWhenHolding.get() && !mc.options.keyAttack.isDown()) return;
 
-        HitResult hit = mc.crosshairTarget;
+        HitResult hit = mc.hitResult;
         if (hit == null || hit.getType() != HitResult.Type.ENTITY) return;
 
         Entity target = ((EntityHitResult) hit).getEntity();
@@ -91,7 +91,7 @@ public class TriggerBot extends AxiomMod implements KeybindConfigurable {
         if (mc.player.distanceTo(target) > range.getValue()) return;
 
         // Tarkistetaan kohdetyyppi
-        boolean isPlayer = target instanceof PlayerEntity;
+        boolean isPlayer = target instanceof Player;
         boolean isMob = !isPlayer;
 
         String mode = targetMode.getMode();
@@ -99,25 +99,25 @@ public class TriggerBot extends AxiomMod implements KeybindConfigurable {
         if (mode.equals("Mobs") && !isMob) return;
 
         // Botin tunnistus (vain pelaajille)
-        if (ignoreBots.get() && isPlayer && isBot((PlayerEntity) target)) return;
+        if (ignoreBots.get() && isPlayer && isBot((Player) target)) return;
 
         // Seinätarkistus
         if (checkWalls.get() && !isTargetVisible(living)) return;
 
         // Hyökkäys
         if (attackController.canAttack(mc.player, minCps.getValue(), maxCps.getValue())) {
-            mc.interactionManager.attackEntity(mc.player, target);
-            mc.player.swingHand(mc.player.getActiveHand());
+            mc.gameMode.attack(mc.player, target);
+            mc.player.swing(mc.player.getUsedItemHand());
             attackController.recordAttack();
         }
     }
 
-    private boolean isBot(PlayerEntity player) {
-        return mc.getNetworkHandler().getPlayerList().stream()
-                .noneMatch(entry -> entry.getProfile().id().equals(player.getUuid()));
+    private boolean isBot(Player player) {
+        return mc.getConnection().getOnlinePlayers().stream()
+                .noneMatch(entry -> entry.getProfile().id().equals(player.getUUID()));
     }
 
     private boolean isTargetVisible(LivingEntity target) {
-        return mc.player.canSee(target);
+        return mc.player.hasLineOfSight(target);
     }
 }

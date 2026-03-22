@@ -1,13 +1,13 @@
 package silversword.axiom.client.hud.components;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.render.rendersystem.Renderer2D;
@@ -73,16 +73,16 @@ public final class ArmorHudComponent extends BaseHudElement {
     public void setTextColor(SettingColor c) { textColor = c; }
 
     @Override public boolean isModuleControlled() { return true; }
-    @Override public int width(MinecraftClient mc) { return Math.max(1, lastW); }
-    @Override public int height(MinecraftClient mc) { return Math.max(1, lastH); }
+    @Override public int width(Minecraft mc) { return Math.max(1, lastW); }
+    @Override public int height(Minecraft mc) { return Math.max(1, lastH); }
 
     @Override
-    public void render(HudContext ctx, RenderTickCounter tickCounter) {
+    public void render(HudContext ctx, DeltaTracker tickCounter) {
         if (!enabled) return;
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.player == null || mc.world == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return;
 
-        PlayerEntity target = resolveTarget(mc);
+        Player target = resolveTarget(mc);
         if (target == null) return;
 
         if (maxRange > 0 && mc.player.distanceTo(target) > maxRange) {
@@ -91,10 +91,10 @@ public final class ArmorHudComponent extends BaseHudElement {
         }
 
         List<ItemStack> armor = new ArrayList<>();
-        if (showHelmet) armor.add(target.getEquippedStack(EquipmentSlot.HEAD));
-        if (showChestplate) armor.add(target.getEquippedStack(EquipmentSlot.CHEST));
-        if (showLeggings) armor.add(target.getEquippedStack(EquipmentSlot.LEGS));
-        if (showBoots) armor.add(target.getEquippedStack(EquipmentSlot.FEET));
+        if (showHelmet) armor.add(target.getItemBySlot(EquipmentSlot.HEAD));
+        if (showChestplate) armor.add(target.getItemBySlot(EquipmentSlot.CHEST));
+        if (showLeggings) armor.add(target.getItemBySlot(EquipmentSlot.LEGS));
+        if (showBoots) armor.add(target.getItemBySlot(EquipmentSlot.FEET));
         if (compact) armor.removeIf(ItemStack::isEmpty);
 
         int count = armor.size();
@@ -137,7 +137,7 @@ public final class ArmorHudComponent extends BaseHudElement {
         for (ItemStack stack : armor) {
             ctx.drawItem(stack, ix, iy); // vanilla item – ei skaalaudu
 
-            if (showDurability && showDurabilityNumbers && !stack.isEmpty() && stack.isDamageable()) {
+            if (showDurability && showDurabilityNumbers && !stack.isEmpty() && stack.isDamageableItem()) {
                 int pct = durabilityPct(stack);
                 String text = pct + "";
                 int tw = (int) (ctx.textWidth(text) * textScale);
@@ -153,7 +153,7 @@ public final class ArmorHudComponent extends BaseHudElement {
 
     @Override
     public void renderEdit(HudContext ctx) {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
             int x0 = x, y0 = y;
             int w = (int) (100 * backgroundScale);
@@ -166,10 +166,10 @@ public final class ArmorHudComponent extends BaseHudElement {
 
     // ---------- apumetodit (ennallaan) ----------
     private int durabilityPct(ItemStack stack) {
-        if (stack.isEmpty() || !stack.isDamageable()) return 0;
+        if (stack.isEmpty() || !stack.isDamageableItem()) return 0;
         int max = stack.getMaxDamage();
         if (max <= 0) return 0;
-        int left = max - stack.getDamage();
+        int left = max - stack.getDamageValue();
         return (int) Math.round(left * 100.0 / max);
     }
 
@@ -181,27 +181,27 @@ public final class ArmorHudComponent extends BaseHudElement {
 
     private boolean isTargetMode() { return "TARGET".equalsIgnoreCase(mode); }
 
-    private PlayerEntity currentAimedPlayer(MinecraftClient mc) {
-        HitResult hit = mc.crosshairTarget;
-        if (hit instanceof EntityHitResult ehr && ehr.getEntity() instanceof PlayerEntity p) return p;
+    private Player currentAimedPlayer(Minecraft mc) {
+        HitResult hit = mc.hitResult;
+        if (hit instanceof EntityHitResult ehr && ehr.getEntity() instanceof Player p) return p;
         return null;
     }
 
-    private PlayerEntity getLockedPlayer(MinecraftClient mc) {
+    private Player getLockedPlayer(Minecraft mc) {
         if (lockedId < 0) return null;
-        Entity e = mc.world.getEntityById(lockedId);
-        return (e instanceof PlayerEntity p) ? p : null;
+        Entity e = mc.level.getEntity(lockedId);
+        return (e instanceof Player p) ? p : null;
     }
 
-    private PlayerEntity resolveTarget(MinecraftClient mc) {
+    private Player resolveTarget(Minecraft mc) {
         if (!isTargetMode()) return mc.player;
         long now = System.currentTimeMillis();
-        PlayerEntity aimed = currentAimedPlayer(mc);
+        Player aimed = currentAimedPlayer(mc);
         if (aimed != null && aimed.isAlive()) {
             lockedId = aimed.getId();
             lastSeenAtMs = now;
         }
-        PlayerEntity locked = getLockedPlayer(mc);
+        Player locked = getLockedPlayer(mc);
         if (locked == null || !locked.isAlive()) {
             lockedId = -1;
             return null;

@@ -4,8 +4,8 @@ import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.client.gl.UniformType;
-import net.minecraft.util.Identifier;
+import com.mojang.blaze3d.shaders.UniformType;
+import net.minecraft.resources.Identifier;
 import silversword.axiom.client.mixininterface.IRenderPipeline;
 
 import java.lang.reflect.Constructor;
@@ -43,7 +43,7 @@ public class PipelineBuilder {
             // 3. Haetaan kaikki tarvittavat metodit
             withSnippetMethod = builderClass.getDeclaredMethod("withSnippet", RenderPipeline.Snippet.class);
             withLocationMethod = builderClass.getDeclaredMethod("withLocation", Identifier.class);
-            withVertexFormatMethod = builderClass.getDeclaredMethod("withVertexFormat", VertexFormat.class, VertexFormat.DrawMode.class);
+            withVertexFormatMethod = builderClass.getDeclaredMethod("withVertexFormat", VertexFormat.class, VertexFormat.Mode.class);
             withVertexShaderMethod = builderClass.getDeclaredMethod("withVertexShader", Identifier.class);
             withFragmentShaderMethod = builderClass.getDeclaredMethod("withFragmentShader", Identifier.class);
             withDepthTestFunctionMethod = builderClass.getDeclaredMethod("withDepthTestFunction", DepthTestFunction.class);
@@ -87,7 +87,7 @@ public class PipelineBuilder {
         return this;
     }
 
-    public PipelineBuilder withVertexFormat(VertexFormat format, VertexFormat.DrawMode drawMode) {
+    public PipelineBuilder withVertexFormat(VertexFormat format, VertexFormat.Mode drawMode) {
         try {
             withVertexFormatMethod.invoke(innerBuilder, format, drawMode);
         } catch (IllegalAccessException | InvocationTargetException e) {

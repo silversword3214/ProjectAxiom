@@ -1,7 +1,7 @@
 package silversword.axiom.client.hud;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.DeltaTracker;
 import silversword.axiom.client.hud.core.HudContext;
 
 public interface HudElement {
@@ -11,9 +11,9 @@ public interface HudElement {
     int x();
     int y();
     void setPos(int x, int y);
-    int width(MinecraftClient mc);
-    int height(MinecraftClient mc);
-    void render(HudContext ctx, RenderTickCounter tickCounter);
+    int width(Minecraft mc);
+    int height(Minecraft mc);
+    void render(HudContext ctx, DeltaTracker tickCounter);
     void renderEdit(HudContext ctx);
 
     default boolean isModuleControlled() {

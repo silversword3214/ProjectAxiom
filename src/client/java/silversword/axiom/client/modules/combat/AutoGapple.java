@@ -1,9 +1,9 @@
 package silversword.axiom.client.modules.combat;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -79,21 +79,21 @@ public class AutoGapple extends AxiomMod implements KeybindConfigurable {
     public void onTick() {
         if (!isEnabled()) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.player == null || mc.options == null) return;
 
         tick++;
 
-        if (stopInInventory.get() && mc.currentScreen != null) {
+        if (stopInInventory.get() && mc.screen != null) {
             stopEating(mc, true);
             return;
         }
 
-        PlayerEntity p = mc.player;
+        Player p = mc.player;
 
         if (p.hurtTime > 0) lastDamageTick = tick;
 
-        boolean pearlCooling = p.getItemCooldownManager().isCoolingDown(PEARL_STACK);
+        boolean pearlCooling = p.getCooldowns().isOnCooldown(PEARL_STACK);
         if (!prevPearlCooling && pearlCooling) lastPearlTick = tick;
         prevPearlCooling = pearlCooling;
 
@@ -124,9 +124,9 @@ public class AutoGapple extends AxiomMod implements KeybindConfigurable {
         startEating(mc, p, slot);
     }
 
-    private void startEating(MinecraftClient mc, PlayerEntity p, int slot) {
+    private void startEating(Minecraft mc, Player p, int slot) {
         prevSelectedSlot = p.getInventory().getSelectedSlot();
-        prevUsePressed = mc.options.useKey.isPressed();
+        prevUsePressed = mc.options.keyUse.isDown();
 
         targetSlot = slot;
         p.getInventory().setSelectedSlot(targetSlot);
@@ -134,10 +134,10 @@ public class AutoGapple extends AxiomMod implements KeybindConfigurable {
         eating = true;
         eatTicks = 0;
 
-        mc.options.useKey.setPressed(true);
+        mc.options.keyUse.setDown(true);
     }
 
-    private void continueEating(MinecraftClient mc, PlayerEntity p) {
+    private void continueEating(Minecraft mc, Player p) {
         int currentSlot = p.getInventory().getSelectedSlot();
         if (currentSlot != targetSlot) {
             stopEating(mc, false);
@@ -160,9 +160,9 @@ public class AutoGapple extends AxiomMod implements KeybindConfigurable {
             return;
         }
 
-        mc.options.useKey.setPressed(true);
+        mc.options.keyUse.setDown(true);
 
-        ItemStack stack = p.getInventory().getStack(currentSlot);
+        ItemStack stack = p.getInventory().getItem(currentSlot);
         if (!isGapple(stack)) {
             int newSlot = findGappleInHotbar(p);
             if (newSlot == -1) {
@@ -175,10 +175,10 @@ public class AutoGapple extends AxiomMod implements KeybindConfigurable {
         }
     }
 
-    private void stopEating(MinecraftClient mc, boolean restoreSlot) {
+    private void stopEating(Minecraft mc, boolean restoreSlot) {
         if (mc == null || mc.player == null || mc.options == null) return;
 
-        mc.options.useKey.setPressed(prevUsePressed);
+        mc.options.keyUse.setDown(prevUsePressed);
 
         if (restoreSlot && prevSelectedSlot != -1) {
             mc.player.getInventory().setSelectedSlot(prevSelectedSlot);
@@ -191,9 +191,9 @@ public class AutoGapple extends AxiomMod implements KeybindConfigurable {
         targetSlot = -1;
     }
 
-    private int findGappleInHotbar(PlayerEntity p) {
+    private int findGappleInHotbar(Player p) {
         for (int i = 0; i < 9; i++) {
-            ItemStack s = p.getInventory().getStack(i);
+            ItemStack s = p.getInventory().getItem(i);
             if (isGapple(s)) return i;
         }
         return -1;
@@ -213,7 +213,7 @@ public class AutoGapple extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onDisable() {
-        stopEating(MinecraftClient.getInstance(), true);
+        stopEating(Minecraft.getInstance(), true);
         cooldown = 0;
     }
 }

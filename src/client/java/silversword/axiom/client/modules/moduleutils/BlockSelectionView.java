@@ -1,7 +1,7 @@
 package silversword.axiom.client.modules.moduleutils;
 
-import net.minecraft.block.Block;
-import net.minecraft.registry.Registries;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.core.registries.BuiltInRegistries;
 import silversword.axiom.client.gui.components.ActionButton;
 import silversword.axiom.client.gui.components.ScrollContainer;
 import silversword.axiom.client.gui.components.SearchBar;
@@ -35,7 +35,7 @@ public class BlockSelectionView implements UiComponent {
         });
 
         this.allBlocks = new ArrayList<>();
-        for (Block block : Registries.BLOCK) {
+        for (Block block : BuiltInRegistries.BLOCK) {
             allBlocks.add(block);
         }
         allBlocks.sort((a, b) -> a.getName().getString().compareToIgnoreCase(b.getName().getString()));

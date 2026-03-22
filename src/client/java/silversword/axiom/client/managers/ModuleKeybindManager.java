@@ -14,8 +14,8 @@ public class ModuleKeybindManager {
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null) return;
-            if (client.currentScreen != null) return;
-            long handle = client.getWindow().getHandle();
+            if (client.screen != null) return;
+            long handle = client.getWindow().handle();
             if (handle == 0) return;
 
             for (AxiomMod mod : ModuleManager.getInstance().getModules()) {

@@ -1,6 +1,6 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.world.LightType;
+import net.minecraft.world.level.LightLayer;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -69,15 +69,15 @@ public class Fullbright extends AxiomMod implements KeybindConfigurable {
         if (mode.equals("Both")) {
             FullbrightState.type = null;
         } else if (mode.equals("Sky")) {
-            FullbrightState.type = LightType.SKY;
+            FullbrightState.type = LightLayer.SKY;
         } else {
-            FullbrightState.type = LightType.BLOCK;
+            FullbrightState.type = LightLayer.BLOCK;
         }
     }
 
     private void forceLightmapUpdate() {
-        if (mc.worldRenderer != null) {
-            mc.worldRenderer.reload(); // Pakottaa koko maailman uudelleenlatauksen, mikä päivittää lightmapin
+        if (mc.levelRenderer != null) {
+            mc.levelRenderer.allChanged(); // Pakottaa koko maailman uudelleenlatauksen, mikä päivittää lightmapin
         }
     }
 }

@@ -2,11 +2,11 @@ package silversword.axiom.client.render.font;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import net.minecraft.client.font.TextRenderer.TextLayerType;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.util.BufferAllocator;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.gui.Font.DisplayMode;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 
@@ -15,10 +15,10 @@ import static silversword.axiom.client.main.AxiomInitialize.mc;
 public class VanillaTextRenderer implements TextRenderer {
     public static final VanillaTextRenderer INSTANCE = new VanillaTextRenderer();
 
-    private final BufferAllocator buffer = new BufferAllocator(2048);
-    private final VertexConsumerProvider.Immediate immediate = VertexConsumerProvider.immediate(buffer);
+    private final ByteBufferBuilder buffer = new ByteBufferBuilder(2048);
+    private final MultiBufferSource.BufferSource immediate = MultiBufferSource.immediate(buffer);
 
-    private final MatrixStack matrices = new MatrixStack();
+    private final PoseStack matrices = new PoseStack();
     private final Matrix4f emptyMatrix = new Matrix4f();
 
     public double scale = 2;
@@ -40,18 +40,18 @@ public class VanillaTextRenderer implements TextRenderer {
     public double getWidth(String text, int length, boolean shadow) {
         if (text.isEmpty()) return 0;
         if (length != text.length()) text = text.substring(0, length);
-        return (mc.textRenderer.getWidth(text) + (shadow ? 1 : 0)) * scale;
+        return (mc.font.width(text) + (shadow ? 1 : 0)) * scale;
     }
 
     @Override
     public double getAscent() {
         // Vanilla ei paljasta tarkkaa nousua, käytetään fontHeight
-        return mc.textRenderer.fontHeight * scale;
+        return mc.font.lineHeight * scale;
     }
 
     @Override
     public double getHeight(boolean shadow) {
-        return (mc.textRenderer.fontHeight + (shadow ? 1 : 0)) * scale;
+        return (mc.font.lineHeight + (shadow ? 1 : 0)) * scale;
     }
 
     @Override
@@ -74,15 +74,15 @@ public class VanillaTextRenderer implements TextRenderer {
 
         Matrix4f matrix = emptyMatrix;
         if (scaleIndividually) {
-            matrices.push();
+            matrices.pushPose();
             matrices.scale((float) scale, (float) scale, 1);
-            matrix = matrices.peek().getPositionMatrix();
+            matrix = matrices.last().pose();
         }
 
-        mc.textRenderer.draw(text, (float) (x / scale), (float) (y / scale), color.toRGBA(), shadow, matrix, immediate, TextLayerType.NORMAL, 0, LightmapTextureManager.MAX_LIGHT_COORDINATE);
-        double x2 = (x / scale) + mc.textRenderer.getWidth(text);
+        mc.font.drawInBatch(text, (float) (x / scale), (float) (y / scale), color.toRGBA(), shadow, matrix, immediate, DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
+        double x2 = (x / scale) + mc.font.width(text);
 
-        if (scaleIndividually) matrices.pop();
+        if (scaleIndividually) matrices.popPose();
 
         color.a = preA;
 
@@ -101,7 +101,7 @@ public class VanillaTextRenderer implements TextRenderer {
         Matrix4fStack matrixStack = RenderSystem.getModelViewStack();
         matrixStack.pushMatrix();
         if (!scaleIndividually) matrixStack.scale((float) scale, (float) scale, 1);
-        immediate.draw();
+        immediate.endBatch();
         matrixStack.popMatrix();
 
         this.scale = 2;

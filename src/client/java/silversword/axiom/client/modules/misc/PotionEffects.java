@@ -149,8 +149,8 @@ public final class PotionEffects extends AxiomMod implements ColorConfigurable, 
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("potioneffects_colors", "Potion Effects Colors", sw, sh, content);
     }

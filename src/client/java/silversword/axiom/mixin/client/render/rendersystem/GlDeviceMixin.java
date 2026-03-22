@@ -1,13 +1,13 @@
 package silversword.axiom.mixin.client.render.rendersystem;
 
 import com.mojang.blaze3d.systems.RenderPass;
-import net.minecraft.client.gl.GlBackend;
+import com.mojang.blaze3d.opengl.GlDevice;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import silversword.axiom.client.mixininterface.IGpuDevice;
 
-@Mixin(GlBackend.class)
-public abstract class GlBackendMixin implements IGpuDevice {
+@Mixin(GlDevice.class)
+public abstract class GlDeviceMixin implements IGpuDevice {
     @Unique
     private int x, y, width, height;
 

@@ -1,21 +1,22 @@
 package silversword.axiom.client.modules.misc;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.chunk.LevelChunk;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.window.WindowFactory;
@@ -33,6 +34,7 @@ import silversword.axiom.client.setting.*;
 
 import java.util.*;
 
+import static net.minecraft.world.level.ClipContext.Block.OUTLINE;
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
 public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindConfigurable {
@@ -198,21 +200,21 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
     }
 
     private boolean isWithinReach(BlockPos pos) {
-        Vec3d eyes = mc.player.getEyePos();
-        Vec3d center = Vec3d.ofCenter(pos);
+        Vec3 eyes = mc.player.getEyePosition();
+        Vec3 center = Vec3.atCenterOf(pos);
         return eyes.distanceTo(center) <= 4.8;
     }
 
     private boolean canSee(BlockPos pos) {
-        Vec3d eyes = mc.player.getEyePos();
-        Vec3d target = Vec3d.ofCenter(pos);
+        Vec3 eyes = mc.player.getEyePosition();
+        Vec3 target = Vec3.atCenterOf(pos);
 
-        BlockHitResult result = mc.world.raycast(
-                new net.minecraft.world.RaycastContext(
+        BlockHitResult result = mc.level.clip(
+                new net.minecraft.world.level.ClipContext(
                         eyes,
                         target,
-                        net.minecraft.world.RaycastContext.ShapeType.OUTLINE,
-                        net.minecraft.world.RaycastContext.FluidHandling.NONE,
+                        net.minecraft.world.level.ClipContext.Block.OUTLINE,
+                        net.minecraft.world.level.ClipContext.Fluid.NONE,
                         mc.player
                 )
         );
@@ -222,15 +224,15 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
 
 
     private void findNearestTarget() {
-        if (targetBlocks.isEmpty() || mc.player == null || mc.world == null) {
+        if (targetBlocks.isEmpty() || mc.player == null || mc.level == null) {
             currentTarget = null; blocksToMine.clear(); pathCorners.clear(); allTargets.clear(); return;
         }
         double maxDist = targetRange.getValue();
         double maxDistSq = maxDist * maxDist;
-        Vec3d playerPos = mc.player.getEntityPos();
+        Vec3 playerPos = mc.player.position();
         int radius = (int) Math.ceil(maxDist / 16) + 1;
-        int chunkX = mc.player.getChunkPos().x;
-        int chunkZ = mc.player.getChunkPos().z;
+        int chunkX = mc.player.chunkPosition().x;
+        int chunkZ = mc.player.chunkPosition().z;
 
         allTargets.clear();
         List<BlockPos> candidates = new ArrayList<>();
@@ -238,27 +240,27 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
 
         for (int cx = chunkX - radius; cx <= chunkX + radius; cx++) {
             for (int cz = chunkZ - radius; cz <= chunkZ + radius; cz++) {
-                net.minecraft.world.chunk.Chunk chunk = mc.world.getChunk(cx, cz);
-                if (!(chunk instanceof WorldChunk worldChunk)) continue;
-                int minY = mc.world.getBottomY();
-                int maxY = mc.world.getTopYInclusive();
+                net.minecraft.world.level.chunk.ChunkAccess chunk = mc.level.getChunk(cx, cz);
+                if (!(chunk instanceof LevelChunk worldChunk)) continue;
+                int minY = mc.level.getMinY();
+                int maxY = mc.level.getMaxY();
                 for (int dx = 0; dx < 16; dx++) {
                     for (int dz = 0; dz < 16; dz++) {
                         for (int dy = minY; dy < maxY; dy++) {
                             BlockPos pos = new BlockPos(cx * 16 + dx, dy, cz * 16 + dz);
-                            double distSq = pos.getSquaredDistance(playerPos);
+                            double distSq = pos.distToCenterSqr(playerPos);
                             if (distSq > maxDistSq) continue;
                             BlockState state = worldChunk.getBlockState(pos);
                             if (state.isAir()) continue;
-                            Identifier id = Registries.BLOCK.getId(state.getBlock());
+                            Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
                             if (targetBlocks.contains(id)) {
-                                allTargets.add(pos.toImmutable());
+                                allTargets.add(pos.immutable());
                                 if (distSq < bestDistSq) {
                                     bestDistSq = distSq;
                                     candidates.clear();
-                                    candidates.add(pos.toImmutable());
+                                    candidates.add(pos.immutable());
                                 } else if (distSq == bestDistSq) {
-                                    candidates.add(pos.toImmutable());
+                                    candidates.add(pos.immutable());
                                 }
                             }
                         }
@@ -271,7 +273,7 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
         if (newTarget != null && !newTarget.equals(currentTarget)) {
             currentTarget = newTarget;
             // Tallenna targetin blokki myöhempää käyttöä varten
-            currentTargetBlock = mc.world.getBlockState(currentTarget).getBlock();
+            currentTargetBlock = mc.level.getBlockState(currentTarget).getBlock();
             computeMiningPath();
         } else if (newTarget == null) {
             currentTarget = null;
@@ -287,7 +289,7 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
         pathCorners.clear();
         if (currentTarget == null || mc.player == null) return;
 
-        BlockPos start = mc.player.getBlockPos();
+        BlockPos start = mc.player.blockPosition();
         int startX = start.getX(), startY = start.getY(), startZ = start.getZ();
         int targetX = currentTarget.getX(), targetY = currentTarget.getY(), targetZ = currentTarget.getZ();
 
@@ -331,7 +333,7 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
                 int stepX = Integer.signum(x2 - x1);
                 for (int x = x1 + stepX; x != x2 + stepX; x += stepX) {
                     BlockPos feet = new BlockPos(x, y1, z1);
-                    BlockPos head = feet.up();
+                    BlockPos head = feet.above();
                     if (isSolidAndMineable(feet)) blocksToMine.add(feet);
                     if (isSolidAndMineable(head)) blocksToMine.add(head);
                 }
@@ -339,7 +341,7 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
                 int stepZ = Integer.signum(z2 - z1);
                 for (int z = z1 + stepZ; z != z2 + stepZ; z += stepZ) {
                     BlockPos feet = new BlockPos(x1, y1, z);
-                    BlockPos head = feet.up();
+                    BlockPos head = feet.above();
                     if (isSolidAndMineable(feet)) blocksToMine.add(feet);
                     if (isSolidAndMineable(head)) blocksToMine.add(head);
                 }
@@ -347,7 +349,7 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
                 int stepY = Integer.signum(y2 - y1);
                 for (int y = y1 + stepY; y != y2 + stepY; y += stepY) {
                     BlockPos feet = new BlockPos(x1, y, z1);
-                    BlockPos head = feet.up();
+                    BlockPos head = feet.above();
                     if (isSolidAndMineable(feet)) blocksToMine.add(feet);
                     if (isSolidAndMineable(head)) blocksToMine.add(head);
                 }
@@ -357,13 +359,13 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
         if (!blocksToMine.contains(currentTarget) && isSolidAndMineable(currentTarget))
             blocksToMine.add(currentTarget);
 
-        Vec3d playerPos = mc.player.getEntityPos();
-        blocksToMine.sort(Comparator.comparingDouble(p -> p.getSquaredDistance(playerPos)));
+        Vec3 playerPos = mc.player.position();
+        blocksToMine.sort(Comparator.comparingDouble(p -> p.distToCenterSqr(playerPos)));
         currentBlockIndex = 0;
     }
 
     private void handleTargeting() {
-        if (currentTarget != null && mc.world.getBlockState(currentTarget).isAir()) {
+        if (currentTarget != null && mc.level.getBlockState(currentTarget).isAir()) {
             // Target on rikottu
             minedTargetBlock = currentTargetBlock;   // tallennetaan blokki itemin etsintää varten
             currentTarget = null;
@@ -392,10 +394,10 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
         if (currentTarget != null && isWithinReach(currentTarget) && canSee(currentTarget)) {
             state = State.MINING;
             if (autoWalk.get()) {
-                mc.options.forwardKey.setPressed(false);
-                mc.options.jumpKey.setPressed(false);
+                mc.options.keyUp.setDown(false);
+                mc.options.keyJump.setDown(false);
             }
-            lookAt(Vec3d.ofCenter(currentTarget));
+            lookAt(Vec3.atCenterOf(currentTarget));
             mineBlock(currentTarget);
             return;
         }
@@ -405,7 +407,7 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
         int yDiff = 0;
         if (pathCornerIndex < pathCorners.size()) {
             BlockPos nextCorner = pathCorners.get(pathCornerIndex);
-            yDiff = nextCorner.getY() - mc.player.getBlockPos().getY();
+            yDiff = nextCorner.getY() - mc.player.blockPosition().getY();
             if (yDiff > 0) needClimb = true;
         }
 
@@ -424,16 +426,16 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
 
         if (mined) {
             if (autoWalk.get()) {
-                mc.options.forwardKey.setPressed(false);
-                mc.options.jumpKey.setPressed(false);
+                mc.options.keyUp.setDown(false);
+                mc.options.keyJump.setDown(false);
             }
             return;
         }
 
         // Liikkuminen
         if (currentTarget != null) {
-            Vec3d targetVec = Vec3d.ofCenter(currentTarget);
-            double distance = mc.player.getEntityPos().distanceTo(targetVec);
+            Vec3 targetVec = Vec3.atCenterOf(currentTarget);
+            double distance = mc.player.position().distanceTo(targetVec);
 
             if (distance < 1.25 && canSee(currentTarget)) {
                 mineBlock(currentTarget);
@@ -442,36 +444,36 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
 
             if (pathCornerIndex < pathCorners.size()) {
                 BlockPos nextCorner = pathCorners.get(pathCornerIndex);
-                Vec3d cornerVec = Vec3d.ofCenter(nextCorner);
-                double cornerDist = mc.player.getEntityPos().distanceTo(cornerVec);
+                Vec3 cornerVec = Vec3.atCenterOf(nextCorner);
+                double cornerDist = mc.player.position().distanceTo(cornerVec);
 
                 if (cornerDist < 0.5) {
                     pathCornerIndex++;
                     if (pathCornerIndex < pathCorners.size()) {
                         nextCorner = pathCorners.get(pathCornerIndex);
-                        cornerVec = Vec3d.ofCenter(nextCorner);
+                        cornerVec = Vec3.atCenterOf(nextCorner);
                     } else {
                         nextCorner = currentTarget;
-                        cornerVec = Vec3d.ofCenter(nextCorner);
+                        cornerVec = Vec3.atCenterOf(nextCorner);
                     }
                 }
 
                 state = State.MOVING;
                 if (autoWalk.get()) {
                     lookAt(cornerVec);
-                    Direction facing = mc.player.getHorizontalFacing();
-                    BlockPos playerFeet = mc.player.getBlockPos();
-                    BlockPos nextFeet = playerFeet.offset(facing);
+                    Direction facing = mc.player.getDirection();
+                    BlockPos playerFeet = mc.player.blockPosition();
+                    BlockPos nextFeet = playerFeet.relative(facing);
                     boolean needJump = nextFeet.getY() > playerFeet.getY() && !skipJump;
-                    if (needJump) mc.options.jumpKey.setPressed(true);
-                    else mc.options.jumpKey.setPressed(false);
-                    mc.options.forwardKey.setPressed(true);
+                    if (needJump) mc.options.keyJump.setDown(true);
+                    else mc.options.keyJump.setDown(false);
+                    mc.options.keyUp.setDown(true);
                 }
             } else {
                 state = State.MOVING;
                 if (autoWalk.get()) {
                     lookAt(targetVec);
-                    mc.options.forwardKey.setPressed(true);
+                    mc.options.keyUp.setDown(true);
                 }
             }
         }
@@ -487,8 +489,8 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
         }
 
         double closestDist = Double.MAX_VALUE;
-        for (ItemEntity item : mc.world.getEntitiesByClass(ItemEntity.class, mc.player.getBoundingBox().expand(targetRange.getValue()), e -> true)) {
-            ItemStack stack = item.getStack();
+        for (ItemEntity item : mc.level.getEntitiesOfClass(ItemEntity.class, mc.player.getBoundingBox().inflate(targetRange.getValue()), e -> true)) {
+            ItemStack stack = item.getItem();
             if (stack.isEmpty() || !(stack.getItem() instanceof BlockItem)) continue;
             BlockItem blockItem = (BlockItem) stack.getItem();
             if (blockItem.getBlock() == minedTargetBlock) {
@@ -496,7 +498,7 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
                 if (dist < closestDist) {
                     closestDist = dist;
                     collectItem = item;
-                    collectTarget = item.getBlockPos();
+                    collectTarget = item.blockPosition();
                 }
             }
         }
@@ -516,20 +518,20 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
             collectTarget = null;
             minedTargetBlock = null;
             if (autoWalk.get()) {
-                mc.options.forwardKey.setPressed(false);
-                mc.options.jumpKey.setPressed(false);
+                mc.options.keyUp.setDown(false);
+                mc.options.keyJump.setDown(false);
             }
             return;
         }
 
-        Vec3d itemPos = collectItem.getEntityPos();
-        double distance = mc.player.getEntityPos().distanceTo(itemPos);
+        Vec3 itemPos = collectItem.position();
+        double distance = mc.player.position().distanceTo(itemPos);
 
         if (distance < 1.5) {
             // Lähellä, pysäytetään liike ja odotetaan että item katoaa (kerätään automaattisesti)
             if (autoWalk.get()) {
-                mc.options.forwardKey.setPressed(false);
-                mc.options.jumpKey.setPressed(false);
+                mc.options.keyUp.setDown(false);
+                mc.options.keyJump.setDown(false);
             }
             return;
         }
@@ -537,19 +539,19 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
         // Liiku kohti itemiä
         if (autoWalk.get()) {
             lookAt(itemPos);
-            mc.options.forwardKey.setPressed(true);
+            mc.options.keyUp.setDown(true);
         }
     }
 
     private void handleClimbing() {
         // Pysäytetään vaakaliike
         if (autoWalk.get()) {
-            mc.options.forwardKey.setPressed(false);
+            mc.options.keyUp.setDown(false);
         }
 
-        BlockPos playerFeet = mc.player.getBlockPos();
-        BlockPos aboveHead = playerFeet.up(2);
-        BlockPos below = playerFeet.down();
+        BlockPos playerFeet = mc.player.blockPosition();
+        BlockPos aboveHead = playerFeet.above(2);
+        BlockPos below = playerFeet.below();
 
         // Lasketaan korkeusero seuraavaan kulmapisteeseen
         int targetY = pathCorners.get(pathCornerIndex).getY();
@@ -561,7 +563,7 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
                 // Kaivetaan yläpuolinen lohko, jos se on olemassa ja ulottuvilla
                 if (isSolidAndMineable(aboveHead) && isWithinReach(aboveHead)) {
                     state = State.MINING;
-                    lookAt(Vec3d.ofCenter(aboveHead));
+                    lookAt(Vec3.atCenterOf(aboveHead));
                     mineBlock(aboveHead);
                     return;
                 }
@@ -571,24 +573,24 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
                 break;
 
             case JUMP:
-                if (mc.player.isOnGround()) {
-                    mc.options.jumpKey.setPressed(true);
+                if (mc.player.onGround()) {
+                    mc.options.keyJump.setDown(true);
                     // Alustetaan place-yritykset ja vakauslaskuri
                     placeAttempts = 0;
                     stableTicks = 0;
-                    lastY = mc.player.getBlockPos().getY();
+                    lastY = mc.player.blockPosition().getY();
                     climbState = ClimbState.PLACE;
                 }
                 return;
 
             case PLACE:
-                mc.options.jumpKey.setPressed(false);
+                mc.options.keyJump.setDown(false);
 
                 // Yritä asettaa blokkia alapuolelle
                 placeBlockFromOffhand(below);
 
                 // Tarkista korkeuden muutos
-                int thisY = mc.player.getBlockPos().getY();
+                int thisY = mc.player.blockPosition().getY();
                 if (thisY > lastY) {
                     // Korkeus nousi, nollataan vakauslaskuri
                     stableTicks = 0;
@@ -613,7 +615,7 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
         // Tarkistetaan onko jo saavutettu haluttu korkeus
         if (currentY >= targetY && pathCornerIndex == pathCorners.size() - 1) {
             // Ennen siirtymistä varmistetaan, että alla on kiinteä lohko
-            if (mc.world.getBlockState(below).isAir()) {
+            if (mc.level.getBlockState(below).isAir()) {
                 // Alapuoli on ilmaa – yritä asettaa blokki
                 if (prepareBlockInOffhand() && placeBlockFromOffhand(below)) {
                     // Asetus onnistui, nyt voidaan siirtyä
@@ -629,16 +631,16 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
             state = State.MOVING;
             pathCornerIndex++;
             climbState = ClimbState.MINE;
-            mc.options.jumpKey.setPressed(false);
+            mc.options.keyJump.setDown(false);
         }
     }
 
     private boolean placeBlockFromOffhand(BlockPos pos) {
         // Jos paikalla ei ole ilmaa, ei tarvitse placea
-        if (!mc.world.getBlockState(pos).isAir()) return true;
+        if (!mc.level.getBlockState(pos).isAir()) return true;
 
         // Varmista offhand sisältö (kutsu prepareBlockInOffhand() ennen metodia)
-        ItemStack offhand = mc.player.getOffHandStack();
+        ItemStack offhand = mc.player.getOffhandItem();
         if (offhand.isEmpty() || !(offhand.getItem() instanceof BlockItem)) return false;
 
         // Priorisoi suunnat: ensin DOWN (alla), sitten sivut, lopuksi UP
@@ -649,16 +651,16 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
         };
 
         // Tallenna vanha katselukulma, jos haluat palauttaa sen myöhemmin
-        float oldYaw = mc.player.getYaw();
-        float oldPitch = mc.player.getPitch();
+        float oldYaw = mc.player.getYRot();
+        float oldPitch = mc.player.getXRot();
 
         for (Direction dir : preferred) {
-            BlockPos neighbor = pos.offset(dir);
-            BlockState neighborState = mc.world.getBlockState(neighbor);
+            BlockPos neighbor = pos.relative(dir);
+            BlockState neighborState = mc.level.getBlockState(neighbor);
 
             // Tarvitsemme solidin naapurilohkon, josta voi klikata pos:in pintaa
             // isSideSolidFullSquare varmistaa että pintaa voi käyttää placementiin
-            if (neighborState.isAir() || !neighborState.isSideSolidFullSquare(mc.world, neighbor, dir.getOpposite()))
+            if (neighborState.isAir() || !neighborState.isFaceSturdy(mc.level, neighbor, dir.getOpposite()))
                 continue;
 
             // Hit-face on naapurin puoli joka osoittaa kohti target-paikkaa
@@ -666,11 +668,11 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
 
             // Lasketaan klikattava piste naapurin pinnalle.
             // Esim. jos hitFace == UP, halutaan klikata naapurin yläpintaa (keskellä y + 0.5)
-            Vec3d neighborCenter = Vec3d.ofCenter(neighbor);
-            Vec3d hitPos = neighborCenter.add(
-                    hitFace.getOffsetX() * 0.45,
-                    hitFace.getOffsetY() * 0.45,
-                    hitFace.getOffsetZ() * 0.45
+            Vec3 neighborCenter = Vec3.atCenterOf(neighbor);
+            Vec3 hitPos = neighborCenter.add(
+                    hitFace.getStepX() * 0.45,
+                    hitFace.getStepY() * 0.45,
+                    hitFace.getStepZ() * 0.45
             );
 
             // Käännä nopeasti katseen kohti klikattavaa pistettä (tarpeellinen modeissa joissa server vaatii)
@@ -680,15 +682,15 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
             BlockHitResult bhr = new BlockHitResult(hitPos, hitFace, neighbor, false);
 
             // Yritä sijoittaa offhandilla
-            ActionResult result = mc.interactionManager.interactBlock(mc.player, Hand.OFF_HAND, bhr);
+            InteractionResult result = mc.gameMode.useItemOn(mc.player, InteractionHand.OFF_HAND, bhr);
 
             // Vaihtoehtoisesti joillain versioilla voi tarvita interactItem tai swing ennen/ jälkeen;
             // tässä swingataan jos sijoitus hyväksyttiin.
-            if (result.isAccepted()) {
-                mc.player.swingHand(Hand.OFF_HAND);
+            if (result.consumesAction()) {
+                mc.player.swing(InteractionHand.OFF_HAND);
                 // Palauta kamera vanhaksi (valinnainen)
-                mc.player.setYaw(oldYaw);
-                mc.player.setPitch(oldPitch);
+                mc.player.setYRot(oldYaw);
+                mc.player.setXRot(oldPitch);
                 return true;
             }
             // jos ei hyväksytty, kokeillaan seuraavaa naapuria
@@ -696,14 +698,14 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
 
         // Jos ei löytynyt sopivaa naapuria tai sijoitus epäonnistui
         // Palauta katselukulma
-        mc.player.setYaw(oldYaw);
-        mc.player.setPitch(oldPitch);
+        mc.player.setYRot(oldYaw);
+        mc.player.setXRot(oldPitch);
         return false;
     }
 
     private boolean mineNormalBlocks() {
         if (currentMiningPos != null) {
-            BlockState state = mc.world.getBlockState(currentMiningPos);
+            BlockState state = mc.level.getBlockState(currentMiningPos);
             if (!state.isAir() && state.getBlock() != Blocks.BEDROCK) {
                 mineBlock(currentMiningPos);
                 return true;
@@ -712,8 +714,8 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
             }
         }
 
-        Direction facing = mc.player.getHorizontalFacing();
-        BlockPos playerFeet = mc.player.getBlockPos();
+        Direction facing = mc.player.getDirection();
+        BlockPos playerFeet = mc.player.blockPosition();
 
         // Tarkistetaan, vaatiiko seuraava kulmapiste alaspäin liikettä
         boolean needDescend = false;
@@ -725,7 +727,7 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
         }
 
         if (needDescend) {
-            BlockPos below = playerFeet.down();
+            BlockPos below = playerFeet.below();
             if (isSolidAndMineable(below)) {
                 mineBlock(below);
                 return true;
@@ -741,9 +743,9 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
                 int dx = Integer.signum(nextCorner.getX() - playerFeet.getX());
                 int dz = Integer.signum(nextCorner.getZ() - playerFeet.getZ());
                 if (dx != 0 || dz != 0) {
-                    Direction dir = Direction.fromVector(new BlockPos(dx, 0, dz), null);
+                    Direction dir = Direction.getNearest(new BlockPos(dx, 0, dz), null);
                     if (dir != null && dir == facing) {
-                        BlockPos frontBlock = playerFeet.offset(facing);
+                        BlockPos frontBlock = playerFeet.relative(facing);
                         if (isSolidAndMineable(frontBlock)) {
                             mineBlock(frontBlock);
                             return true;
@@ -754,13 +756,13 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
         }
 
         // Vaakasuuntaiset lohkot (edessä)
-        BlockPos frontFeet = playerFeet.offset(facing);
+        BlockPos frontFeet = playerFeet.relative(facing);
         if (blocksToMine.contains(frontFeet) && isSolidAndMineable(frontFeet)) {
             mineBlock(frontFeet);
             return true;
         }
 
-        BlockPos frontHead = frontFeet.up();
+        BlockPos frontHead = frontFeet.above();
         if (blocksToMine.contains(frontHead) && isSolidAndMineable(frontHead)) {
             mineBlock(frontHead);
             return true;
@@ -770,40 +772,40 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
     }
 
     private boolean isSolidAndMineable(BlockPos pos) {
-        BlockState state = mc.world.getBlockState(pos);
+        BlockState state = mc.level.getBlockState(pos);
         return !state.isAir() && state.getBlock() != Blocks.BEDROCK;
     }
 
     private void mineBlock(BlockPos pos) {
         if (!autoBreak.get()) return;
         if (currentMiningPos == null || !currentMiningPos.equals(pos)) {
-            if (currentMiningPos != null) mc.interactionManager.cancelBlockBreaking();
-            mc.interactionManager.attackBlock(pos, Direction.UP);
+            if (currentMiningPos != null) mc.gameMode.stopDestroyBlock();
+            mc.gameMode.startDestroyBlock(pos, Direction.UP);
             currentMiningPos = pos;
         } else {
-            mc.interactionManager.updateBlockBreakingProgress(pos, Direction.UP);
+            mc.gameMode.continueDestroyBlock(pos, Direction.UP);
         }
     }
 
-    private void lookAt(Vec3d target) {
-        Vec3d playerPos = mc.player.getEyePos();
+    private void lookAt(Vec3 target) {
+        Vec3 playerPos = mc.player.getEyePosition();
         double dx = target.x - playerPos.x;
         double dy = target.y - playerPos.y;
         double dz = target.z - playerPos.z;
         double dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
         double pitch = Math.toDegrees(-Math.asin(dy / dist));
         double yaw = Math.toDegrees(Math.atan2(-dx, dz));
-        mc.player.setYaw((float) yaw);
-        mc.player.setPitch((float) pitch);
+        mc.player.setYRot((float) yaw);
+        mc.player.setXRot((float) pitch);
     }
 
     private BlockPos checkGapsAndFluids() {
-        Direction direction = mc.player.getHorizontalFacing();
-        BlockPos playerPos = mc.player.getBlockPos();
-        BlockPos nextPos = playerPos.offset(direction);
-        BlockPos belowNextPos = nextPos.down();
-        if (alsoPlaceBelow.get() && mc.world.getBlockState(belowNextPos).isAir()) return belowNextPos;
-        BlockState nextState = mc.world.getBlockState(nextPos);
+        Direction direction = mc.player.getDirection();
+        BlockPos playerPos = mc.player.blockPosition();
+        BlockPos nextPos = playerPos.relative(direction);
+        BlockPos belowNextPos = nextPos.below();
+        if (alsoPlaceBelow.get() && mc.level.getBlockState(belowNextPos).isAir()) return belowNextPos;
+        BlockState nextState = mc.level.getBlockState(nextPos);
         boolean isLava = nextState.getBlock() == Blocks.LAVA;
         boolean isWater = nextState.getBlock() == Blocks.WATER;
         if ((replaceLava.get() && isLava) || (replaceWater.get() && isWater)) return nextPos;
@@ -815,15 +817,15 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
         if (targetBlock == null) return false;
         int slot = findBlockInInventory(targetBlock);
         if (slot == -1) return false;
-        int syncId = mc.player.playerScreenHandler.syncId;
-        if (mc.player.getOffHandStack().getItem() instanceof BlockItem &&
-                ((BlockItem) mc.player.getOffHandStack().getItem()).getBlock() == targetBlock) return true;
+        int syncId = mc.player.inventoryMenu.containerId;
+        if (mc.player.getOffhandItem().getItem() instanceof BlockItem &&
+                ((BlockItem) mc.player.getOffhandItem().getItem()).getBlock() == targetBlock) return true;
         int offhandSlotId = 45;
         int fromSlotId = invIndexToPlayerScreenSlotId(slot);
-        mc.interactionManager.clickSlot(syncId, fromSlotId, 0, net.minecraft.screen.slot.SlotActionType.PICKUP, mc.player);
-        mc.interactionManager.clickSlot(syncId, offhandSlotId, 0, net.minecraft.screen.slot.SlotActionType.PICKUP, mc.player);
-        if (!mc.player.currentScreenHandler.getCursorStack().isEmpty())
-            mc.interactionManager.clickSlot(syncId, fromSlotId, 0, net.minecraft.screen.slot.SlotActionType.PICKUP, mc.player);
+        mc.gameMode.handleInventoryMouseClick(syncId, fromSlotId, 0, net.minecraft.world.inventory.ClickType.PICKUP, mc.player);
+        mc.gameMode.handleInventoryMouseClick(syncId, offhandSlotId, 0, net.minecraft.world.inventory.ClickType.PICKUP, mc.player);
+        if (!mc.player.containerMenu.getCarried().isEmpty())
+            mc.gameMode.handleInventoryMouseClick(syncId, fromSlotId, 0, ClickType.PICKUP, mc.player);
         return true;
     }
 
@@ -841,7 +843,7 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
 
     private int findBlockInInventory(Block block) {
         for (int i = 0; i < 36; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (!stack.isEmpty() && stack.getItem() instanceof BlockItem) {
                 BlockItem blockItem = (BlockItem) stack.getItem();
                 if (blockItem.getBlock() == block) return i;
@@ -859,24 +861,24 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
 
     private void calculateTunnel() {
         blocksToMine.clear();
-        if (mc.player == null || mc.world == null) return;
-        Direction direction = mc.player.getHorizontalFacing();
+        if (mc.player == null || mc.level == null) return;
+        Direction direction = mc.player.getDirection();
         int len = (int) length.getValue();
         int h = (int) height.getValue();
         int w = (int) width.getValue();
-        BlockPos start = mc.player.getBlockPos();
+        BlockPos start = mc.player.blockPosition();
         for (int i = 1; i <= len; i++) {
             for (int dy = 0; dy < h; dy++) {
                 for (int dx = - (w / 2); dx <= (w / 2); dx++) {
                     BlockPos pos;
                     switch (direction) {
-                        case NORTH: pos = start.add(dx, dy, -i); break;
-                        case SOUTH: pos = start.add(dx, dy, i); break;
-                        case WEST:  pos = start.add(-i, dy, dx); break;
-                        case EAST:  pos = start.add(i, dy, dx); break;
-                        default:    pos = start.add(0, dy, i);
+                        case NORTH: pos = start.offset(dx, dy, -i); break;
+                        case SOUTH: pos = start.offset(dx, dy, i); break;
+                        case WEST:  pos = start.offset(-i, dy, dx); break;
+                        case EAST:  pos = start.offset(i, dy, dx); break;
+                        default:    pos = start.offset(0, dy, i);
                     }
-                    if (mc.world.isInBuildLimit(pos)) blocksToMine.add(pos);
+                    if (mc.level.isInWorldBounds(pos)) blocksToMine.add(pos);
                 }
             }
         }
@@ -903,35 +905,35 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
         }
         if (currentBlockIndex >= blocksToMine.size()) { reset(); return; }
         BlockPos target = blocksToMine.get(currentBlockIndex);
-        BlockState targetState = mc.world.getBlockState(target);
+        BlockState targetState = mc.level.getBlockState(target);
         if (targetState.isAir()) { currentBlockIndex++; return; }
-        double distance = mc.player.getEntityPos().distanceTo(Vec3d.ofCenter(target));
+        double distance = mc.player.position().distanceTo(Vec3.atCenterOf(target));
         if (distance < 1.0) {
             state = State.MINING;
-            if (autoWalk.get()) { mc.options.forwardKey.setPressed(false); mc.options.jumpKey.setPressed(false); }
+            if (autoWalk.get()) { mc.options.keyUp.setDown(false); mc.options.keyJump.setDown(false); }
             if (autoBreak.get()) {
                 if (currentMiningPos == null || !currentMiningPos.equals(target)) {
-                    if (currentMiningPos != null) mc.interactionManager.cancelBlockBreaking();
-                    mc.interactionManager.attackBlock(target, Direction.UP);
+                    if (currentMiningPos != null) mc.gameMode.stopDestroyBlock();
+                    mc.gameMode.startDestroyBlock(target, Direction.UP);
                     currentMiningPos = target;
                 } else {
-                    mc.interactionManager.updateBlockBreakingProgress(target, Direction.UP);
+                    mc.gameMode.continueDestroyBlock(target, Direction.UP);
                 }
-                if (mc.world.getBlockState(target).isAir()) currentBlockIndex++;
+                if (mc.level.getBlockState(target).isAir()) currentBlockIndex++;
             } else { currentBlockIndex++; }
         } else {
             state = State.MOVING;
             if (autoWalk.get()) {
-                lookAt(Vec3d.ofCenter(target));
-                mc.options.forwardKey.setPressed(true);
+                lookAt(Vec3.atCenterOf(target));
+                mc.options.keyUp.setDown(true);
             }
-            if (currentMiningPos != null) { mc.interactionManager.cancelBlockBreaking(); currentMiningPos = null; }
+            if (currentMiningPos != null) { mc.gameMode.stopDestroyBlock(); currentMiningPos = null; }
         }
     }
 
     private void reset() {
-        if (autoWalk.get()) { mc.options.forwardKey.setPressed(false); mc.options.jumpKey.setPressed(false); }
-        if (currentMiningPos != null) mc.interactionManager.cancelBlockBreaking();
+        if (autoWalk.get()) { mc.options.keyUp.setDown(false); mc.options.keyJump.setDown(false); }
+        if (currentMiningPos != null) mc.gameMode.stopDestroyBlock();
         currentMiningPos = null;
         pendingPlacePos = null;
         collectTarget = null;
@@ -964,7 +966,7 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
             double margin = 0.1;
             double size = 0.8;
             for (BlockPos pos : blocksToMine) {
-                if (mc.world.getBlockState(pos).isAir()) continue;
+                if (mc.level.getBlockState(pos).isAir()) continue;
                 double x1 = pos.getX() + margin;
                 double y1 = pos.getY() + margin;
                 double z1 = pos.getZ() + margin;
@@ -991,7 +993,7 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
             Color whiteBox = new Color(255, 255, 255, 50);
             Color whiteLine = new Color(255, 255, 255, 255);
             for (BlockPos pos : allTargets) {
-                if (mc.world.getBlockState(pos).isAir()) continue; // ohitetaan jo kaivetut
+                if (mc.level.getBlockState(pos).isAir()) continue; // ohitetaan jo kaivetut
                 if (pos.equals(currentTarget)) continue; // piirretään erikseen
                 double x1 = pos.getX() + 0.1;
                 double y1 = pos.getY() + 0.1;
@@ -1015,9 +1017,9 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
 
             // Piirrä polku (kuten aiemmin)
             if (!pathCorners.isEmpty()) {
-                Vec3d prev = Vec3d.ofCenter(pathCorners.get(0));
+                Vec3 prev = Vec3.atCenterOf(pathCorners.get(0));
                 for (int i = 1; i < pathCorners.size(); i++) {
-                    Vec3d next = Vec3d.ofCenter(pathCorners.get(i));
+                    Vec3 next = Vec3.atCenterOf(pathCorners.get(i));
                     event.render.drawLine(prev.x, prev.y, prev.z, next.x, next.y, next.z, greenLine);
                     prev = next;
                 }
@@ -1034,17 +1036,17 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
     public boolean isActive() { return this.isEnabled(); }
 
     // BlockSelectable
-    @Override public boolean isBlockSelected(Block block) { return targetBlocks.contains(Registries.BLOCK.getId(block)); }
+    @Override public boolean isBlockSelected(Block block) { return targetBlocks.contains(BuiltInRegistries.BLOCK.getKey(block)); }
     @Override public void toggleBlock(Block block) {
-        Identifier id = Registries.BLOCK.getId(block);
+        Identifier id = BuiltInRegistries.BLOCK.getKey(block);
         if (targetBlocks.contains(id)) targetBlocks.remove(id);
         else targetBlocks.add(id);
     }
     public void openBlockSelector() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new BlockSelectionView(this);
         factory.openCustomWindow("tunnelminer_blocks", "Select Target Blocks", sw, sh, content);
     }

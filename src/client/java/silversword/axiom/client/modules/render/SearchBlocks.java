@@ -2,14 +2,14 @@ package silversword.axiom.client.modules.render;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
 import net.fabricmc.fabric.api.event.client.player.ClientPlayerBlockBreakEvents;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.chunk.LevelChunk;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.window.WindowFactory;
@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public final class SearchBlocks extends AxiomMod implements BlockColorSelectable, KeybindConfigurable {
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     private final SettingSlider renderDistance;
     private final SettingMode boxMode;
@@ -43,7 +43,7 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
 
     // Per‑block rendering data cache
-    private final Map<net.minecraft.block.Block, BlockData> blockDataMap = new ConcurrentHashMap<>();
+    private final Map<net.minecraft.world.level.block.Block, BlockData> blockDataMap = new ConcurrentHashMap<>();
 
     private final Setting blockListSetting;
     private final Setting blockColorsSetting;
@@ -173,20 +173,20 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
 
     private void registerEvents() {
         ClientChunkEvents.CHUNK_LOAD.register((world, chunk) -> {
-            if (isEnabled() && world == mc.world) {
+            if (isEnabled() && world == mc.level) {
                 chunksToScan.offer(chunk.getPos());
             }
         });
 
         ClientChunkEvents.CHUNK_UNLOAD.register((world, chunk) -> {
-            if (isEnabled() && world == mc.world) {
-                onChunkUnload((WorldChunk) chunk);
+            if (isEnabled() && world == mc.level) {
+                onChunkUnload((LevelChunk) chunk);
             }
         });
 
         // Use client-side block break event for instant removal
         ClientPlayerBlockBreakEvents.AFTER.register((world, player, pos, state) -> {
-            if (isEnabled() && world == mc.world && player == mc.player) {
+            if (isEnabled() && world == mc.level && player == mc.player) {
                 onBlockBreak(pos);
             }
         });
@@ -194,7 +194,7 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
 
     @Override
     protected void onEnable() {
-        for (WorldChunk chunk : getLoadedChunks()) {
+        for (LevelChunk chunk : getLoadedChunks()) {
             chunksToScan.offer(chunk.getPos());
         }
     }
@@ -214,7 +214,7 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
         while (processed < CHUNKS_PER_TICK && !chunksToScan.isEmpty()) {
             ChunkPos pos = chunksToScan.poll();
             if (pos != null) {
-                WorldChunk chunk = mc.world.getChunk(pos.x, pos.z);
+                LevelChunk chunk = mc.level.getChunk(pos.x, pos.z);
                 if (chunk != null && chunk.getPos().equals(pos)) {
                     scanChunk(chunk);
                 }
@@ -230,13 +230,13 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
         blockDataMap.clear();
         chunksToScan.clear();
         if (isEnabled()) {
-            for (WorldChunk chunk : getLoadedChunks()) {
+            for (LevelChunk chunk : getLoadedChunks()) {
                 chunksToScan.offer(chunk.getPos());
             }
         }
     }
 
-    private void onChunkUnload(WorldChunk chunk) {
+    private void onChunkUnload(LevelChunk chunk) {
         long key = chunk.getPos().toLong();
         Chunk espChunk = chunks.remove(key);
         if (espChunk != null) {
@@ -271,7 +271,7 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
             for (int dy = -1; dy <= 1; dy++) {
                 for (int dz = -1; dz <= 1; dz++) {
                     if (dx == 0 && dy == 0 && dz == 0) continue;
-                    BlockPos neighbourPos = center.add(dx, dy, dz);
+                    BlockPos neighbourPos = center.offset(dx, dy, dz);
                     Block neighbour = allBlocks.get(neighbourPos);
                     if (neighbour != null) {
                         long key = new ChunkPos(neighbourPos).toLong();
@@ -285,23 +285,23 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
         }
     }
 
-    private void scanChunk(WorldChunk chunk) {
+    private void scanChunk(LevelChunk chunk) {
         if (targetBlocks.isEmpty()) return;
         long key = chunk.getPos().toLong();
         Chunk espChunk = new Chunk(chunk.getPos());
 
-        int minY = mc.world.getBottomY();
-        int maxY = mc.world.getTopYInclusive();
-        BlockPos.Mutable pos = new BlockPos.Mutable();
+        int minY = mc.level.getMinY();
+        int maxY = mc.level.getMaxY();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
-        for (int x = chunk.getPos().getStartX(); x <= chunk.getPos().getEndX(); x++) {
-            for (int z = chunk.getPos().getStartZ(); z <= chunk.getPos().getEndZ(); z++) {
+        for (int x = chunk.getPos().getMinBlockX(); x <= chunk.getPos().getMaxBlockX(); x++) {
+            for (int z = chunk.getPos().getMinBlockZ(); z <= chunk.getPos().getMaxBlockZ(); z++) {
                 for (int y = minY; y < maxY; y++) {
                     pos.set(x, y, z);
                     BlockState state = chunk.getBlockState(pos);
-                    if (targetBlocks.contains(Registries.BLOCK.getId(state.getBlock()))) {
-                        Block block = espChunk.addBlock(pos.toImmutable(), state.getBlock());
-                        allBlocks.put(pos.toImmutable(), block);
+                    if (targetBlocks.contains(BuiltInRegistries.BLOCK.getKey(state.getBlock()))) {
+                        Block block = espChunk.addBlock(pos.immutable(), state.getBlock());
+                        allBlocks.put(pos.immutable(), block);
                     }
                 }
             }
@@ -313,14 +313,14 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
         }
     }
 
-    private List<WorldChunk> getLoadedChunks() {
-        if (mc.world == null) return Collections.emptyList();
-        List<WorldChunk> list = new ArrayList<>();
-        int viewDist = mc.options.getViewDistance().getValue();
-        ChunkPos playerChunk = mc.player.getChunkPos();
+    private List<LevelChunk> getLoadedChunks() {
+        if (mc.level == null) return Collections.emptyList();
+        List<LevelChunk> list = new ArrayList<>();
+        int viewDist = mc.options.renderDistance().get();
+        ChunkPos playerChunk = mc.player.chunkPosition();
         for (int x = playerChunk.x - viewDist; x <= playerChunk.x + viewDist; x++) {
             for (int z = playerChunk.z - viewDist; z <= playerChunk.z + viewDist; z++) {
-                WorldChunk chunk = mc.world.getChunk(x, z);
+                LevelChunk chunk = mc.level.getChunk(x, z);
                 if (chunk != null && chunk.getPos().x == x && chunk.getPos().z == z) {
                     list.add(chunk);
                 }
@@ -331,13 +331,13 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
 
     @AxiomEvent
     private void onRender(Render3DEvent event) {
-        if (!isEnabled() || mc.player == null || mc.world == null) return;
+        if (!isEnabled() || mc.player == null || mc.level == null) return;
 
         double maxDistSq = renderDistance.getValue() * renderDistance.getValue();
-        Vec3d cameraPos = event.cameraX != 0 ? new Vec3d(event.cameraX, event.cameraY, event.cameraZ) : mc.player.getEntityPos();
+        Vec3 cameraPos = event.cameraX != 0 ? new Vec3(event.cameraX, event.cameraY, event.cameraZ) : mc.player.position();
 
         for (Block block : allBlocks.values()) {
-            if (block.pos.getSquaredDistance(cameraPos) > maxDistSq) continue;
+            if (block.pos.distToCenterSqr(cameraPos) > maxDistSq) continue;
             BlockData data = getBlockData(block.block);
             block.render(event.render, data);
         }
@@ -352,7 +352,7 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
         }
     }
 
-    public BlockData getBlockData(net.minecraft.block.Block block) {
+    public BlockData getBlockData(net.minecraft.world.level.block.Block block) {
         // Return cached data if exists
         BlockData data = blockDataMap.get(block);
         if (data != null) return data;
@@ -362,7 +362,7 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
         SettingColor side = defaultBlockData.sideColor.copy();
         SettingColor tracer = defaultBlockData.tracerColor.copy();
 
-        SettingColor custom = blockColors.get(Registries.BLOCK.getId(block));
+        SettingColor custom = blockColors.get(BuiltInRegistries.BLOCK.getKey(block));
         if (custom != null) {
             line.set(custom.r, custom.g, custom.b, custom.a);
             side.set(custom.r, custom.g, custom.b, custom.a);
@@ -388,13 +388,13 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
 
     // ---- BlockSelectable / BlockColorSelectable ----
     @Override
-    public boolean isBlockSelected(net.minecraft.block.Block block) {
-        return targetBlocks.contains(Registries.BLOCK.getId(block));
+    public boolean isBlockSelected(net.minecraft.world.level.block.Block block) {
+        return targetBlocks.contains(BuiltInRegistries.BLOCK.getKey(block));
     }
 
     @Override
-    public void toggleBlock(net.minecraft.block.Block block) {
-        Identifier id = Registries.BLOCK.getId(block);
+    public void toggleBlock(net.minecraft.world.level.block.Block block) {
+        Identifier id = BuiltInRegistries.BLOCK.getKey(block);
         if (targetBlocks.contains(id)) {
             targetBlocks.remove(id);
             blockColors.remove(id);
@@ -406,14 +406,14 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
     }
 
     @Override
-    public SettingColor getBlockColor(net.minecraft.block.Block block) {
-        Identifier id = Registries.BLOCK.getId(block);
+    public SettingColor getBlockColor(net.minecraft.world.level.block.Block block) {
+        Identifier id = BuiltInRegistries.BLOCK.getKey(block);
         return blockColors.get(id);
     }
 
     @Override
-    public void setBlockColor(net.minecraft.block.Block block, SettingColor color) {
-        Identifier id = Registries.BLOCK.getId(block);
+    public void setBlockColor(net.minecraft.world.level.block.Block block, SettingColor color) {
+        Identifier id = BuiltInRegistries.BLOCK.getKey(block);
         if (targetBlocks.contains(id)) {
             blockColors.put(id, color);
             blockDataMap.remove(block); // force rebuild on next render
@@ -423,8 +423,8 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
     public void openBlockSelector() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new BlockSelectionView(this);
         factory.openCustomWindow("search_blocks", "Select Blocks to Search", sw, sh, content);
     }

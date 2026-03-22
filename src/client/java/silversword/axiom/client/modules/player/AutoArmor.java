@@ -1,20 +1,20 @@
 package silversword.axiom.client.modules.player;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.EquippableComponent;
-import net.minecraft.component.type.ItemEnchantmentsComponent;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.util.math.Box;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.equipment.Equippable;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.phys.AABB;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.KeybindConfigurable;
@@ -28,7 +28,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     // Asetukset
     public final SettingMode priority;          // "Protection", "Armor Value", "Both"
@@ -74,8 +74,8 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onTick() {
-        if (mc.player == null || mc.world == null) return;
-        if (mc.currentScreen != null) return; // älä tee mitään, jos inventory on auki
+        if (mc.player == null || mc.level == null) return;
+        if (mc.screen != null) return; // älä tee mitään, jos inventory on auki
 
         int currentTick = tickCounter.incrementAndGet();
         if (currentTick < delay.getValue()) return;
@@ -83,11 +83,11 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
 
         // 1. Korvaa panssarit inventaariosta
         for (EquipmentSlot slot : ARMOR_SLOTS) {
-            ItemStack current = mc.player.getEquippedStack(slot);
+            ItemStack current = mc.player.getItemBySlot(slot);
             int bestSlot = findBestArmorSlot(slot);
             if (bestSlot == -1) continue;
 
-            ItemStack bestStack = mc.player.getInventory().getStack(bestSlot);
+            ItemStack bestStack = mc.player.getInventory().getItem(bestSlot);
             if (shouldReplace(current, bestStack)) {
                 swapArmor(bestSlot, slot);
                 return; // vain yksi vaihto per tick (delayn mukaan)
@@ -96,7 +96,7 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
 
         // 2. Korvaa elytra, jos se on vähissä
         if (replaceElytra.get()) {
-            ItemStack chest = mc.player.getEquippedStack(EquipmentSlot.CHEST);
+            ItemStack chest = mc.player.getItemBySlot(EquipmentSlot.CHEST);
             if (isElytra(chest) && isElytraDamaged(chest)) {
                 int newElytraSlot = findBestElytraInInventory();
                 if (newElytraSlot != -1) {
@@ -113,15 +113,15 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
     }
 
     private void tryPickFromGround() {
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
         double range = pickRange.getValue();
-        Box box = new Box(mc.player.getBlockPos()).expand(range);
-        List<ItemEntity> items = mc.world.getEntitiesByClass(ItemEntity.class, box, e -> true);
+        AABB box = new AABB(mc.player.blockPosition()).inflate(range);
+        List<ItemEntity> items = mc.level.getEntitiesOfClass(ItemEntity.class, box, e -> true);
 
         // Ryhmitellään maassa olevat esineet slotin mukaan
         for (EquipmentSlot slot : ARMOR_SLOTS) {
-            ItemStack current = mc.player.getEquippedStack(slot);
+            ItemStack current = mc.player.getItemBySlot(slot);
             ItemStack bestGround = findBestGroundItem(slot, items);
             if (bestGround.isEmpty()) continue;
 
@@ -129,7 +129,7 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
                 // Tarkistetaan, onko inventaariossa jo parempi (jotta emme poimi turhaan)
                 int bestInvSlot = findBestArmorSlot(slot);
                 if (bestInvSlot != -1) {
-                    ItemStack bestInv = mc.player.getInventory().getStack(bestInvSlot);
+                    ItemStack bestInv = mc.player.getInventory().getItem(bestInvSlot);
                     if (shouldReplace(bestInv, bestGround)) {
                         // Maassa oleva on parempi kuin inventaariossa oleva paras – poimitaan
                         pickUpAndEquip(bestGround, slot);
@@ -149,7 +149,7 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
         double bestScore = -1;
 
         for (ItemEntity entity : items) {
-            ItemStack stack = entity.getStack();
+            ItemStack stack = entity.getItem();
             if (!isArmorItem(stack, slot)) continue;
 
             double score = getArmorScore(stack);
@@ -162,22 +162,22 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
     }
 
     private void pickUpAndEquip(ItemStack groundStack, EquipmentSlot slot) {
-        if (mc.player == null || mc.interactionManager == null) return;
+        if (mc.player == null || mc.gameMode == null) return;
 
         // Pudota nykyinen panssari (jos on)
-        ItemStack current = mc.player.getEquippedStack(slot);
+        ItemStack current = mc.player.getItemBySlot(slot);
         if (!current.isEmpty()) {
-            mc.player.dropItem(current, false);
-            mc.player.equipStack(slot, ItemStack.EMPTY);
+            mc.player.drop(current, false);
+            mc.player.setItemSlot(slot, ItemStack.EMPTY);
         }
 
         // Tee tilaa inventaarioon (jos täynnä)
-        if (mc.player.getInventory().getEmptySlot() == -1) {
+        if (mc.player.getInventory().getFreeSlot() == -1) {
             int worstSlot = findWorstItemInInventory();
             if (worstSlot != -1) {
-                ItemStack worst = mc.player.getInventory().getStack(worstSlot);
-                mc.player.dropItem(worst, false);
-                mc.player.getInventory().removeStack(worstSlot);
+                ItemStack worst = mc.player.getInventory().getItem(worstSlot);
+                mc.player.drop(worst, false);
+                mc.player.getInventory().removeItemNoUpdate(worstSlot);
             }
         }
     }
@@ -185,9 +185,9 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
     private int findWorstItemInInventory() {
         int worstSlot = -1;
         double worstScore = Double.MAX_VALUE;
-        PlayerInventory inv = mc.player.getInventory();
+        Inventory inv = mc.player.getInventory();
         for (int i = 0; i < 36; i++) {
-            ItemStack stack = inv.getStack(i);
+            ItemStack stack = inv.getItem(i);
             if (stack.isEmpty()) continue;
             // Vältetään panssareita, jotka ovat hyviä? Tässä etsitään yksinkertaisesti pienin score
             double score = getArmorScore(stack);
@@ -200,9 +200,9 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
     }
 
     private int findSlotForStack(ItemStack stack) {
-        PlayerInventory inv = mc.player.getInventory();
+        Inventory inv = mc.player.getInventory();
         for (int i = 0; i < 36; i++) {
-            if (ItemStack.areEqual(inv.getStack(i), stack)) {
+            if (ItemStack.matches(inv.getItem(i), stack)) {
                 return i;
             }
         }
@@ -217,7 +217,7 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
         if (!isElytra(stack)) return false;
         int maxDamage = stack.getMaxDamage();
         if (maxDamage <= 0) return false;
-        int damage = stack.getDamage();
+        int damage = stack.getDamageValue();
         int remaining = maxDamage - damage;
         int percent = (remaining * 100) / maxDamage;
         return percent <= elytraThreshold.getValue();
@@ -227,11 +227,11 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
         int bestSlot = -1;
         int bestDamage = Integer.MAX_VALUE; // etsitään vähiten vahingoittunutta
 
-        PlayerInventory inv = mc.player.getInventory();
+        Inventory inv = mc.player.getInventory();
         for (int i = 0; i < 36; i++) {
-            ItemStack stack = inv.getStack(i);
+            ItemStack stack = inv.getItem(i);
             if (!isElytra(stack)) continue;
-            int damage = stack.getDamage();
+            int damage = stack.getDamageValue();
             if (damage < bestDamage) {
                 bestDamage = damage;
                 bestSlot = i;
@@ -241,7 +241,7 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
     }
 
     private boolean isArmorItem(ItemStack stack, EquipmentSlot slot) {
-        EquippableComponent equippable = stack.get(DataComponentTypes.EQUIPPABLE);
+        Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
         return equippable != null && equippable.slot() == slot;
     }
 
@@ -249,9 +249,9 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
         int bestSlot = -1;
         double bestScore = -1;
 
-        PlayerInventory inv = mc.player.getInventory();
+        Inventory inv = mc.player.getInventory();
         for (int i = 0; i < 36; i++) {
-            ItemStack stack = inv.getStack(i);
+            ItemStack stack = inv.getItem(i);
             if (stack.isEmpty() || !isArmorItem(stack, slot)) continue;
 
             double score = getArmorScore(stack);
@@ -279,12 +279,12 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
     }
 
     private int getProtectionLevel(ItemStack stack) {
-        ItemEnchantmentsComponent ench = stack.get(DataComponentTypes.ENCHANTMENTS);
+        ItemEnchantments ench = stack.get(DataComponents.ENCHANTMENTS);
         if (ench == null) return 0;
 
         int total = 0;
-        for (var entry : ench.getEnchantmentEntries()) {
-            Optional<RegistryKey<Enchantment>> key = entry.getKey().getKey();
+        for (var entry : ench.entrySet()) {
+            Optional<ResourceKey<Enchantment>> key = entry.getKey().unwrapKey();
             if (key.equals(Enchantments.PROTECTION) ||
                     key.equals(Enchantments.FIRE_PROTECTION) ||
                     key.equals(Enchantments.BLAST_PROTECTION) ||
@@ -296,7 +296,7 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
     }
 
     private int getArmorValue(ItemStack stack) {
-        EquippableComponent equippable = stack.get(DataComponentTypes.EQUIPPABLE);
+        Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
         if (equippable == null) return 0;
 
         EquipmentSlot slot = equippable.slot();
@@ -369,7 +369,7 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
     }
 
     private void swapArmor(int invSlot, EquipmentSlot armorSlot) {
-        if (mc.interactionManager == null) return;
+        if (mc.gameMode == null) return;
 
         int fromSlot = invSlot < 9 ? invSlot + 36 : invSlot;
         int toSlot = switch (armorSlot) {
@@ -382,19 +382,19 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
         if (toSlot == -1) return;
 
         // Click invSlot (ota esine)
-        mc.interactionManager.clickSlot(
-                mc.player.playerScreenHandler.syncId,
+        mc.gameMode.handleInventoryMouseClick(
+                mc.player.inventoryMenu.containerId,
                 fromSlot,
                 0,
-                SlotActionType.PICKUP,
+                ClickType.PICKUP,
                 mc.player
         );
         // Click armorSlot (aseta sinne)
-        mc.interactionManager.clickSlot(
-                mc.player.playerScreenHandler.syncId,
+        mc.gameMode.handleInventoryMouseClick(
+                mc.player.inventoryMenu.containerId,
                 toSlot,
                 0,
-                SlotActionType.PICKUP,
+                ClickType.PICKUP,
                 mc.player
         );
         // Jos kädessä on vielä jokin (esim. vanha panssari), klikataan takaisin invSlot

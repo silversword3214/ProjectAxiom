@@ -1,16 +1,16 @@
 package silversword.axiom.client.modules.world;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.setting.SettingKeybind;
-import silversword.axiom.mixin.client.accessors.MinecraftClientAccessor;
+import silversword.axiom.mixin.client.accessors.MinecraftAccessor;
 
 public class FastPlace extends AxiomMod implements KeybindConfigurable {
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
 
@@ -29,17 +29,17 @@ public class FastPlace extends AxiomMod implements KeybindConfigurable {
 
     @Override
     public void onTick() {
-        if (!isEnabled() || mc.player == null || mc.world == null) return;
+        if (!isEnabled() || mc.player == null || mc.level == null) return;
 
         // Yarn 1.21.x: useKey (ei keyUse) [web:151]
-        if (!mc.options.useKey.isPressed()) return;
+        if (!mc.options.keyUse.isDown()) return;
 
-        if (onlyOnGround && !mc.player.isOnGround()) return;
+        if (onlyOnGround && !mc.player.onGround()) return;
 
-        ItemStack stack = mc.player.getMainHandStack();
+        ItemStack stack = mc.player.getMainHandItem();
         if (!(stack.getItem() instanceof BlockItem)) return;
 
         // Poista placing-viive
-        ((MinecraftClientAccessor) mc).axiom$setItemUseCooldown(0);
+        ((MinecraftAccessor) mc).axiom$setRightClickDelay(0);
     }
 }

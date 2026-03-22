@@ -1,7 +1,7 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class ChunkBorders extends AxiomMod implements ColorConfigurable, KeybindConfigurable {
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     // Värit
     final SettingColor gridColor;
@@ -69,15 +69,15 @@ public final class ChunkBorders extends AxiomMod implements ColorConfigurable, K
 
     @AxiomEvent
     private void onRender(Render3DEvent event) {
-        if (!isEnabled() || mc.player == null || mc.world == null) return;
+        if (!isEnabled() || mc.player == null || mc.level == null) return;
 
-        int playerChunkX = mc.player.getChunkPos().x;
-        int playerChunkZ = mc.player.getChunkPos().z;
+        int playerChunkX = mc.player.chunkPosition().x;
+        int playerChunkZ = mc.player.chunkPosition().z;
         int radius = (int) renderDistance.getValue();
 
-        Vec3d camera = mc.gameRenderer.getCamera().getCameraPos();
-        double minY = mc.world.getBottomY();
-        double maxY = mc.world.getTopYInclusive();
+        Vec3 camera = mc.gameRenderer.getMainCamera().position();
+        double minY = mc.level.getMinY();
+        double maxY = mc.level.getMaxY();
         double playerY = mc.player.getY();
 
         for (int cx = playerChunkX - radius; cx <= playerChunkX + radius; cx++) {
@@ -167,8 +167,8 @@ public final class ChunkBorders extends AxiomMod implements ColorConfigurable, K
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("chunkborders_color", "ChunkBorders Color Customizer", sw, sh, content);
     }

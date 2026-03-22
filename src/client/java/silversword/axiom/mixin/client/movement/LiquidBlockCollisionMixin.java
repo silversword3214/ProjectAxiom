@@ -1,17 +1,17 @@
 package silversword.axiom.mixin.client.movement;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.FluidBlock;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.Entity;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
-import net.minecraft.world.BlockView;
-import net.minecraft.block.ShapeContext;
-import net.minecraft.block.EntityShapeContext;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.EntityCollisionContext;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -21,20 +21,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.movement.Jesus;
 
-@Mixin(FluidBlock.class)
-public abstract class FluidBlockCollisionMixin {
+@Mixin(LiquidBlock.class)
+public abstract class LiquidBlockCollisionMixin {
 
     @Inject(method = "getCollisionShape", at = @At("HEAD"), cancellable = true)
-    private void axiom$jesusCollision(BlockState state, BlockView world, BlockPos pos, ShapeContext context,
-                                         CallbackInfoReturnable<VoxelShape> cir) {
+    private void axiom$jesusCollision(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context,
+                                      CallbackInfoReturnable<VoxelShape> cir) {
 
         // Vain entity-kontekstissa (muuten turha)
-        if (!(context instanceof EntityShapeContext esc)) return;
+        if (!(context instanceof EntityCollisionContext esc)) return;
 
         Entity e = esc.getEntity();
         if (e == null) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.player == null) return;
 
         // Vain local player (ettei tee outoa muille client-puolella)
@@ -44,11 +44,11 @@ public abstract class FluidBlockCollisionMixin {
         if (jesus == null || !jesus.isEnabled()) return;
 
         // Sneak = uppoa
-        if (jesus.sneakToSink.get() && mc.player.isSneaking()) return;
+        if (jesus.sneakToSink.get() && mc.player.isShiftKeyDown()) return;
 
         FluidState fs = state.getFluidState();
-        boolean isWater = fs.isOf(Fluids.WATER) || fs.isOf(Fluids.FLOWING_WATER);
-        boolean isLava  = fs.isOf(Fluids.LAVA)  || fs.isOf(Fluids.FLOWING_LAVA);
+        boolean isWater = fs.is(Fluids.WATER) || fs.is(Fluids.FLOWING_WATER);
+        boolean isLava  = fs.is(Fluids.LAVA)  || fs.is(Fluids.FLOWING_LAVA);
 
         if (!(isWater || (jesus.includeLava.get() && isLava))) return;
 
@@ -58,6 +58,6 @@ public abstract class FluidBlockCollisionMixin {
         double surfaceY = pos.getY() + 0.99; // aivan pinnan yläpuolella
         if (minY < surfaceY) return;
 
-        cir.setReturnValue(VoxelShapes.fullCube());
+        cir.setReturnValue(Shapes.block());
     }
 }

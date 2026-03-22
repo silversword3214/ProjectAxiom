@@ -1,15 +1,16 @@
+// TODO(Ravel): Failed to fully resolve file: null cannot be cast to non-null type com.intellij.psi.PsiJavaCodeReferenceElement
 package silversword.axiom.client.modules.movement;
 
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.PlayerInput;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Input;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.main.AxiomInitialize;
@@ -124,7 +125,7 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onTick() {
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
         // Päivitetään asetusnopeus
         placeInterval = (long) (1000.0 / blocksPerSecond.getValue());
@@ -136,10 +137,10 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
         }
 
         // Laske kohdeblokki (jalan alla)
-        BlockPos playerPos = mc.player.getBlockPos();
-        BlockPos belowPos = playerPos.down();
+        BlockPos playerPos = mc.player.blockPosition();
+        BlockPos belowPos = playerPos.below();
 
-        if (mc.world.getBlockState(belowPos).isAir()) {
+        if (mc.level.getBlockState(belowPos).isAir()) {
             targetPos = belowPos;
         } else {
             targetPos = null;
@@ -148,7 +149,7 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
 
         // Eagle-tarkistus (reunalla hiiviskely)
         if (eagle.get()) {
-            Vec3d playerFeet = mc.player.getEntityPos();
+            Vec3 playerFeet = mc.player.position();
             double edgeDistance = getEdgeDistance(playerFeet, targetPos);
             if (edgeDistance > eagleEdgeDistance.getValue() && blockCount >= blocksToEagle.getValue()) {
                 waitingForSneak = true;
@@ -157,9 +158,9 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
         }
 
         // Simuloi pelaajan sijainti seuraavalla tickillä
-        Vec3d predictedPos = mc.player.getEntityPos().add(mc.player.getVelocity());
-        BlockPos predictedBelow = BlockPos.ofFloored(predictedPos.x, predictedPos.y - 0.5, predictedPos.z).down();
-        boolean willBeOnLedge = mc.world.getBlockState(predictedBelow).isAir();
+        Vec3 predictedPos = mc.player.position().add(mc.player.getDeltaMovement());
+        BlockPos predictedBelow = BlockPos.containing(predictedPos.x, predictedPos.y - 0.5, predictedPos.z).below();
+        boolean willBeOnLedge = mc.level.getBlockState(predictedBelow).isAir();
 
         // Reunalta putoamisen esto (GodBridge)
         if (godBridge.get() && willBeOnLedge) {
@@ -177,8 +178,8 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
         }
 
         // Tower mode (automaattinen hyppy)
-        if (towerMode.get() && mc.options.jumpKey.isPressed()) {
-            mc.player.jump();
+        if (towerMode.get() && mc.options.keyJump.isDown()) {
+            mc.player.jumpFromGround();
         }
 
         // Vähennä rotaation säilytystikkien määrää
@@ -196,7 +197,7 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
         return Math.max(0, base);
     }
 
-    private double getEdgeDistance(Vec3d feet, BlockPos target) {
+    private double getEdgeDistance(Vec3 feet, BlockPos target) {
         // Laske etäisyys blokin reunasta (yksinkertainen versio)
         double x = feet.x - target.getX() - 0.5;
         double z = feet.z - target.getZ() - 0.5;
@@ -216,7 +217,7 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
         String action = ledgeAction.getMode();
         switch (action) {
             case "Jump":
-                mc.player.jump();
+                mc.player.jumpFromGround();
                 break;
             case "Sneak":
                 waitingForSneak = true;
@@ -235,7 +236,7 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
     @AxiomEvent
     public void onRender(Render3DEvent event) {
         if (!isEnabled() || !render.get() || targetPos == null) return;
-        if (!mc.world.getBlockState(targetPos).isAir()) return;
+        if (!mc.level.getBlockState(targetPos).isAir()) return;
         if (!isHoldingBlock()) return;
 
         double x1 = targetPos.getX();
@@ -254,13 +255,13 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
 
     private boolean isHoldingBlock() {
         if (mc.player == null) return false;
-        ItemStack stack = mc.player.getMainHandStack();
+        ItemStack stack = mc.player.getMainHandItem();
         return !stack.isEmpty() && stack.getItem() instanceof BlockItem;
     }
 
     private boolean placeBlock(BlockPos pos) {
-        if (mc.player == null || mc.world == null) return false;
-        if (!mc.world.getBlockState(pos).isAir()) {
+        if (mc.player == null || mc.level == null) return false;
+        if (!mc.level.getBlockState(pos).isAir()) {
             return false;
         }
 
@@ -274,10 +275,10 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
             return false;
         }
 
-        Vec3d hitVec = Vec3d.ofCenter(neighbor).add(
-                direction.getOffsetX() * 0.5,
-                direction.getOffsetY() * 0.5,
-                direction.getOffsetZ() * 0.5
+        Vec3 hitVec = Vec3.atCenterOf(neighbor).add(
+                direction.getStepX() * 0.5,
+                direction.getStepY() * 0.5,
+                direction.getStepZ() * 0.5
         );
 
         BlockHitResult hitResult = new BlockHitResult(hitVec, direction, neighbor, false);
@@ -291,22 +292,22 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
         float[] targetRotations = getRotations(pos, hitVec);
 
         // Tallenna vanhat rotaatiot
-        float oldYaw = mc.player.getYaw();
-        float oldPitch = mc.player.getPitch();
+        float oldYaw = mc.player.getYRot();
+        float oldPitch = mc.player.getXRot();
 
         // Aseta väliaikaiset rotaatiot
-        mc.player.setYaw(targetRotations[0]);
-        mc.player.setPitch(targetRotations[1]);
+        mc.player.setYRot(targetRotations[0]);
+        mc.player.setXRot(targetRotations[1]);
 
         // Yritä asettaa blokki
-        ActionResult result = mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, hitResult);
+        InteractionResult result = mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
 
         // Palauta vanhat rotaatiot
-        mc.player.setYaw(oldYaw);
-        mc.player.setPitch(oldPitch);
+        mc.player.setYRot(oldYaw);
+        mc.player.setXRot(oldPitch);
 
-        if (result.isAccepted()) {
-            mc.player.swingHand(Hand.MAIN_HAND);
+        if (result.consumesAction()) {
+            mc.player.swing(InteractionHand.MAIN_HAND);
             return true;
         } else {
             System.out.println("[Scaffold] interactBlock failed: " + result);
@@ -316,13 +317,13 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
 
     private void sendRotation(float yaw, float pitch) {
         // Lähetä serverille paketti, joka ilmoittaa rotaation
-        PlayerMoveC2SPacket.LookAndOnGround packet = new PlayerMoveC2SPacket.LookAndOnGround(
-                yaw, pitch, mc.player.isOnGround(), mc.player.horizontalCollision
+        ServerboundMovePlayerPacket.Rot packet = new ServerboundMovePlayerPacket.Rot(
+                yaw, pitch, mc.player.onGround(), mc.player.horizontalCollision
         );
-        mc.player.networkHandler.sendPacket(packet);
+        mc.player.connection.send(packet);
     }
 
-    private boolean checkMinDist(BlockPos targetPos, Vec3d hitVec, Direction side) {
+    private boolean checkMinDist(BlockPos targetPos, Vec3 hitVec, Direction side) {
         double min = minDist.getValue();
         if (min <= 0) return true; // ei tarkistusta
 

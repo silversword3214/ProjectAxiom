@@ -1,10 +1,10 @@
 package silversword.axiom.client.render.rendersystem.utils;
 
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.renderer.MultiBufferSource;
 
-public class NoopImmediateVertexConsumerProvider extends VertexConsumerProvider.Immediate {
+public class NoopImmediateVertexConsumerProvider extends MultiBufferSource.BufferSource {
     public static final NoopImmediateVertexConsumerProvider INSTANCE = new NoopImmediateVertexConsumerProvider();
 
     private NoopImmediateVertexConsumerProvider() {
@@ -12,13 +12,13 @@ public class NoopImmediateVertexConsumerProvider extends VertexConsumerProvider.
     }
 
     @Override
-    public VertexConsumer getBuffer(RenderLayer layer) {
+    public VertexConsumer getBuffer(RenderType layer) {
         return NoopVertexConsumer.INSTANCE;
     }
 
     @Override
-    public void draw() {}
+    public void endBatch() {}
 
     @Override
-    public void draw(RenderLayer layer) {}
+    public void endBatch(RenderType layer) {}
 }

@@ -1,15 +1,19 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.*;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TridentItem;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.ClipContext;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
@@ -26,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class Trajectories extends AxiomMod implements KeybindConfigurable {
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     private final SettingColor lineColor;
     private final SettingColor impactColor;
@@ -36,8 +40,8 @@ public final class Trajectories extends AxiomMod implements KeybindConfigurable 
 
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
 
-    private final List<Vec3d> points = new ArrayList<>();
-    private Vec3d impactPoint = null;
+    private final List<Vec3> points = new ArrayList<>();
+    private Vec3 impactPoint = null;
     private HitResult.Type lastHitType = HitResult.Type.MISS;
     private Direction hitSide = Direction.UP;
 
@@ -69,10 +73,10 @@ public final class Trajectories extends AxiomMod implements KeybindConfigurable 
     @AxiomEvent
     private void onRender(Render3DEvent event) {
         if (!isEnabled()) return;
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
-        PlayerEntity player = mc.player;
-        ItemStack heldItem = player.getMainHandStack();
+        Player player = mc.player;
+        ItemStack heldItem = player.getMainHandItem();
 
         if (!player.isUsingItem() || !isThrowable(heldItem)) {
             points.clear();
@@ -94,8 +98,8 @@ public final class Trajectories extends AxiomMod implements KeybindConfigurable 
         for (int i = 0; i < points.size() - 1; i++) {
             if (dashed && i % 2 == 1) continue;
 
-            Vec3d p1 = points.get(i);
-            Vec3d p2 = points.get(i + 1);
+            Vec3 p1 = points.get(i);
+            Vec3 p2 = points.get(i + 1);
 
             if (!drawThroughBlocks.get() && !isVisible(p1, p2)) continue;
 
@@ -119,34 +123,34 @@ public final class Trajectories extends AxiomMod implements KeybindConfigurable 
         }
     }
 
-    private void drawOrientedSquare(Render3DEvent event, Vec3d point, Direction side, Color color) {
+    private void drawOrientedSquare(Render3DEvent event, Vec3 point, Direction side, Color color) {
         double size = 0.3;
-        Vec3d right, up;
+        Vec3 right, up;
 
         switch (side) {
             case UP:
             case DOWN:
-                right = new Vec3d(size, 0, 0);
-                up = new Vec3d(0, 0, size);
+                right = new Vec3(size, 0, 0);
+                up = new Vec3(0, 0, size);
                 break;
             case NORTH:
             case SOUTH:
-                right = new Vec3d(size, 0, 0);
-                up = new Vec3d(0, size, 0);
+                right = new Vec3(size, 0, 0);
+                up = new Vec3(0, size, 0);
                 break;
             case EAST:
             case WEST:
-                right = new Vec3d(0, 0, size);
-                up = new Vec3d(0, size, 0);
+                right = new Vec3(0, 0, size);
+                up = new Vec3(0, size, 0);
                 break;
             default:
                 return;
         }
 
-        Vec3d p1 = point.add(right).add(up);
-        Vec3d p2 = point.add(right).subtract(up);
-        Vec3d p3 = point.subtract(right).subtract(up);
-        Vec3d p4 = point.subtract(right).add(up);
+        Vec3 p1 = point.add(right).add(up);
+        Vec3 p2 = point.add(right).subtract(up);
+        Vec3 p3 = point.subtract(right).subtract(up);
+        Vec3 p4 = point.subtract(right).add(up);
 
         event.render.drawLine(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, color);
         event.render.drawLine(p2.x, p2.y, p2.z, p3.x, p3.y, p3.z, color);
@@ -162,27 +166,27 @@ public final class Trajectories extends AxiomMod implements KeybindConfigurable 
                 item instanceof TridentItem;
     }
 
-    private void calculateTrajectory(PlayerEntity player, ItemStack item) {
+    private void calculateTrajectory(Player player, ItemStack item) {
         points.clear();
         impactPoint = null;
         lastHitType = HitResult.Type.MISS;
 
         // Lasketaan lähtöpiste – yritetään ottaa aseen kärki
-        Vec3d start = getLaunchPoint(player, item);
-        Vec3d lookVec = player.getRotationVec(1.0f);
+        Vec3 start = getLaunchPoint(player, item);
+        Vec3 lookVec = player.getViewVector(1.0f);
 
         double velocity = getInitialVelocity(player, item);
         double gravity = 0.05;
         double step = 0.1;
         int maxSteps = 200;
 
-        Vec3d pos = start;
-        Vec3d vel = lookVec.multiply(velocity);
+        Vec3 pos = start;
+        Vec3 vel = lookVec.scale(velocity);
 
         for (int i = 0; i < maxSteps; i++) {
             points.add(pos);
 
-            Vec3d nextPos = pos.add(vel.multiply(step));
+            Vec3 nextPos = pos.add(vel.scale(step));
 
             Entity hitEntity = raycastEntity(pos, nextPos, player);
             if (hitEntity != null) {
@@ -192,16 +196,16 @@ public final class Trajectories extends AxiomMod implements KeybindConfigurable 
                 break;
             }
 
-            BlockHitResult hit = mc.world.raycast(new RaycastContext(
+            BlockHitResult hit = mc.level.clip(new ClipContext(
                     pos, nextPos,
-                    RaycastContext.ShapeType.OUTLINE,
-                    RaycastContext.FluidHandling.NONE,
+                    ClipContext.Block.OUTLINE,
+                    ClipContext.Fluid.NONE,
                     player
             ));
 
             if (hit.getType() != HitResult.Type.MISS) {
-                impactPoint = hit.getPos();
-                hitSide = hit.getSide();
+                impactPoint = hit.getLocation();
+                hitSide = hit.getDirection();
                 lastHitType = HitResult.Type.BLOCK;
                 points.add(impactPoint);
                 break;
@@ -209,15 +213,15 @@ public final class Trajectories extends AxiomMod implements KeybindConfigurable 
 
             vel = vel.add(0, -gravity * step, 0);
 
-            if (nextPos.y < mc.world.getBottomY()) break;
+            if (nextPos.y < mc.level.getMinY()) break;
 
             pos = nextPos;
         }
     }
 
-    private Vec3d getLaunchPoint(PlayerEntity player, ItemStack stack) {
+    private Vec3 getLaunchPoint(Player player, ItemStack stack) {
         // Oletus: silmien korkeus
-        Vec3d eyePos = player.getEyePos();
+        Vec3 eyePos = player.getEyePosition();
         Item item = stack.getItem();
 
         // Pieni offset jouselle ja ristijouselle (nuoli lähtee hieman alempaa)
@@ -228,17 +232,17 @@ public final class Trajectories extends AxiomMod implements KeybindConfigurable 
         return eyePos;
     }
 
-    private Entity raycastEntity(Vec3d from, Vec3d to, PlayerEntity player) {
-        Vec3d delta = to.subtract(from);
+    private Entity raycastEntity(Vec3 from, Vec3 to, Player player) {
+        Vec3 delta = to.subtract(from);
         int steps = 10;
 
         for (int i = 1; i <= steps; i++) {
             double t = i / (double) steps;
-            Vec3d point = from.add(delta.multiply(t));
+            Vec3 point = from.add(delta.scale(t));
 
-            for (Entity entity : mc.world.getEntities()) {
+            for (Entity entity : mc.level.entitiesForRendering()) {
                 if (entity == player || !entity.isAlive()) continue;
-                if (entity.getBoundingBox().expand(0.1).contains(point)) {
+                if (entity.getBoundingBox().inflate(0.1).contains(point)) {
                     return entity;
                 }
             }
@@ -246,14 +250,14 @@ public final class Trajectories extends AxiomMod implements KeybindConfigurable 
         return null;
     }
 
-    private Vec3d getClosestPointOnSegment(Vec3d from, Vec3d to, Box box) {
-        return from.add(to).multiply(0.5);
+    private Vec3 getClosestPointOnSegment(Vec3 from, Vec3 to, AABB box) {
+        return from.add(to).scale(0.5);
     }
 
-    private double getInitialVelocity(PlayerEntity player, ItemStack stack) {
+    private double getInitialVelocity(Player player, ItemStack stack) {
         Item item = stack.getItem();
         if (item instanceof BowItem) {
-            int useTime = player.getItemUseTime();
+            int useTime = player.getTicksUsingItem();
             float pull = Math.min((float) useTime / 20.0f, 1.0f);
             return 3.0 * pull;
         } else if (item instanceof CrossbowItem) {
@@ -264,12 +268,12 @@ public final class Trajectories extends AxiomMod implements KeybindConfigurable 
         return 1.0;
     }
 
-    private boolean isVisible(Vec3d from, Vec3d to) {
+    private boolean isVisible(Vec3 from, Vec3 to) {
         if (drawThroughBlocks.get()) return true;
-        BlockHitResult hit = mc.world.raycast(new RaycastContext(
+        BlockHitResult hit = mc.level.clip(new ClipContext(
                 from, to,
-                RaycastContext.ShapeType.OUTLINE,
-                RaycastContext.FluidHandling.NONE,
+                ClipContext.Block.OUTLINE,
+                ClipContext.Fluid.NONE,
                 mc.player
         ));
         return hit.getType() == HitResult.Type.MISS;

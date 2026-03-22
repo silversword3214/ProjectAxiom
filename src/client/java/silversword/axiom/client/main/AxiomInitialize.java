@@ -4,10 +4,10 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.resource.ResourceType;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.resources.Identifier;
 import silversword.axiom.client.config.HudConfigManager;
 import silversword.axiom.client.config.PauseUiConfigManager;
 import silversword.axiom.client.config.ResourcePackBlockerConfig;
@@ -31,7 +31,7 @@ import java.lang.invoke.MethodHandles;
 
 public final class AxiomInitialize implements ClientModInitializer {
     public static final IEventBus EVENT_BUS = new EventBus();
-    public static final MinecraftClient mc = MinecraftClient.getInstance();
+    public static final Minecraft mc = Minecraft.getInstance();
     public static final WindowManager pauseWindowManager = new WindowManager();
 
 
@@ -39,14 +39,14 @@ public final class AxiomInitialize implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         // Reload listener
-        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
+        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
             @Override
             public Identifier getFabricId() {
-                return Identifier.of("projectaxiom", "shader_loader");
+                return Identifier.fromNamespaceAndPath("projectaxiom", "shader_loader");
             }
 
             @Override
-            public void reload(ResourceManager manager) {
+            public void onResourceManagerReload(ResourceManager manager) {
                 CustomRenderingPipelineProvider.precompile();
                 CustomRenderingPipelineProvider.rebuildAll();
                 silversword.axiom.client.render.font.Fonts.refresh();

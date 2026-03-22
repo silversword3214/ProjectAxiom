@@ -70,8 +70,8 @@ public class WaypointManagerWindow implements UiComponent {
     private void openAddWaypointDialog() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         AddWaypointDialog dialog = new AddWaypointDialog(() -> {
             // Suljetaan ikkuna ja päivitetään lista
             factory.getWindowManager().closeOverlay();

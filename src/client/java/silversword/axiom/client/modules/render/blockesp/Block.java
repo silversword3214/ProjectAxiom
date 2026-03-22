@@ -1,7 +1,7 @@
 package silversword.axiom.client.modules.render.blockesp;
 
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 
 
 import silversword.axiom.client.render.rendersystem.Renderer3D;
@@ -10,12 +10,12 @@ import silversword.axiom.client.render.rendersystem.world.Dir;
 
 public class Block {
     public final BlockPos pos;
-    public final net.minecraft.block.Block block;
+    public final net.minecraft.world.level.block.Block block;
     public int neighbours; // bitmask using Dir constants
 
     public Group group; // optional, for tracers
 
-    public Block(BlockPos pos, net.minecraft.block.Block block) {
+    public Block(BlockPos pos, net.minecraft.world.level.block.Block block) {
         this.pos = pos;
         this.block = block;
         this.neighbours = 0;
@@ -32,7 +32,7 @@ public class Block {
     }
 
     private boolean isNeighbour(Chunk chunk, Direction dir) {
-        BlockPos neighbourPos = pos.offset(dir);
+        BlockPos neighbourPos = pos.relative(dir);
         Block neighbour = chunk.getBlock(neighbourPos);
         return neighbour != null && neighbour.block == this.block;
     }

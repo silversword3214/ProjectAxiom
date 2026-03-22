@@ -4,19 +4,23 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.render.*;
-import net.minecraft.client.render.command.OrderedRenderCommandQueue;
-import net.minecraft.client.render.command.RenderDispatcher;
-import net.minecraft.client.render.entity.EntityRenderManager;
-import net.minecraft.client.render.state.WorldRenderState;
-import net.minecraft.client.util.Handle;
-import net.minecraft.client.util.ObjectAllocator;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.LevelTargetBundle;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.renderer.state.LevelRenderState;
+import com.mojang.blaze3d.resource.ResourceHandle;
+import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Final;
@@ -49,88 +53,88 @@ import java.util.function.Function;
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 import static silversword.axiom.client.render.rendersystem.utils.postprocess.PostProcessShaders.ENTITY_OUTLINE;
 
-@Mixin(WorldRenderer.class)
-public abstract class WorldRendererMixin implements IWorldRenderer {
+@Mixin(LevelRenderer.class)
+public abstract class LevelRendererMixin implements IWorldRenderer {
     // Shader ESP
     @Unique private ShaderESP esp;
     @Shadow
-    private Framebuffer entityOutlineFramebuffer;
+    private RenderTarget entityOutlineTarget;
 
-    @Shadow @Final private DefaultFramebufferSet framebufferSet;
-    @Unique private final Stack<Handle<Framebuffer>> framebufferHandleStack = new ObjectArrayList<>();
+    @Shadow @Final private LevelTargetBundle targets;
+    @Unique private final Stack<ResourceHandle<RenderTarget>> framebufferHandleStack = new ObjectArrayList<>();
     @Unique
     @Final
-    private EntityRenderManager entityRenderManager;
+    private EntityRenderDispatcher entityRenderManager;
 
     @Unique
-    private final ThreadLocal<Deque<Framebuffer>> framebufferStack = ThreadLocal.withInitial(ArrayDeque::new);
+    private final ThreadLocal<Deque<RenderTarget>> framebufferStack = ThreadLocal.withInitial(ArrayDeque::new);
 
     @Unique
     private final OutlineRenderCommandQueue outlineRenderCommandQueue = new OutlineRenderCommandQueue();
 
     @Unique
-    private VertexConsumerProvider provider;
+    private MultiBufferSource provider;
 
     @Unique
-    private RenderDispatcher renderDispatcher;
+    private FeatureRenderDispatcher renderDispatcher;
 
     @Unique
-    private MinecraftClient getMc() {
-        return MinecraftClient.getInstance();
+    private Minecraft getMc() {
+        return Minecraft.getInstance();
     }
 
     @Override
-    public void axiom$pushEntityOutlineFramebuffer(Framebuffer fb) {
-        framebufferStack.get().push(this.entityOutlineFramebuffer);
-        this.entityOutlineFramebuffer = fb;
+    public void axiom$pushEntityOutlineFramebuffer(RenderTarget fb) {
+        framebufferStack.get().push(this.entityOutlineTarget);
+        this.entityOutlineTarget = fb;
 
-        framebufferHandleStack.push(this.framebufferSet.entityOutlineFramebuffer);
-        this.framebufferSet.entityOutlineFramebuffer = () -> fb;
+        framebufferHandleStack.push(this.targets.entityOutline);
+        this.targets.entityOutline = () -> fb;
     }
 
     @Override
     public void axiom$popEntityOutlineFramebuffer() {
-        Deque<Framebuffer> stack = framebufferStack.get();
+        Deque<RenderTarget> stack = framebufferStack.get();
         if (!stack.isEmpty()) {
-            this.entityOutlineFramebuffer = stack.pop();
-            this.framebufferSet.entityOutlineFramebuffer = framebufferHandleStack.pop();
+            this.entityOutlineTarget = stack.pop();
+            this.targets.entityOutline = framebufferHandleStack.pop();
         }
     }
 
 
 
 
-    @Inject(method = "render", at = @At("HEAD"))
-    private void onRenderHead(ObjectAllocator allocator, RenderTickCounter tickCounter, boolean renderBlockOutline, Camera camera, Matrix4f positionMatrix, Matrix4f projectionMatrix, Matrix4f matrix4f2, GpuBufferSlice fog, Vector4f fogColor, boolean shouldRenderSky, CallbackInfo ci) {
-        RenderUtils.currentCameraPos = camera.getCameraPos();
+    @Inject(method = "renderLevel", at = @At("HEAD"))
+    private void onRenderHead(GraphicsResourceAllocator allocator, DeltaTracker tickCounter, boolean renderBlockOutline, Camera camera, Matrix4f positionMatrix, Matrix4f projectionMatrix, Matrix4f matrix4f2, GpuBufferSlice fog, Vector4f fogColor, boolean shouldRenderSky, CallbackInfo ci) {
+        RenderUtils.currentCameraPos = camera.position();
         RenderUtils.updateMatrices(projectionMatrix, positionMatrix);
         RenderUtils.updateScreenCenter(projectionMatrix, positionMatrix);
         PostProcessShaders.beginRender();
     }
 
-    @Inject(method = "setWorld", at = @At("TAIL"))
-    private void onSetWorld(ClientWorld world, CallbackInfo ci) {
+    @Inject(method = "setLevel", at = @At("TAIL"))
+    private void onSetWorld(ClientLevel world, CallbackInfo ci) {
         esp = ModuleManager.getInstance().getModule(ShaderESP.class);
     }
 
-    @ModifyExpressionValue(method = "fillEntityRenderStates", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/WorldRenderer;isRenderingReady(Lnet/minecraft/util/math/BlockPos;)Z"))
+    @ModifyExpressionValue(method = "extractVisibleEntities", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;isSectionCompiledAndVisible(Lnet/minecraft/core/BlockPos;)Z"))
     boolean fillEntityRenderStatesIsRenderingReady(boolean original) {
         if (esp != null && esp.forceRender()) return true;
         return original;
     }
 
-    @Inject(method = "pushEntityRenders", at = @At("TAIL"))
-    private void onPushEntityRenders(MatrixStack matrices, WorldRenderState worldState, OrderedRenderCommandQueue queue, CallbackInfo ci) {
-        MinecraftClient mc = getMc();
+    @Inject(method = "submitEntities", at = @At("TAIL"))
+    private void onPushEntityRenders(PoseStack matrices, LevelRenderState worldState, SubmitNodeCollector queue, CallbackInfo ci) {
+        Minecraft mc = getMc();
         if (renderDispatcher == null) {
-            renderDispatcher = new RenderDispatcher(
+            renderDispatcher = new FeatureRenderDispatcher(
                     outlineRenderCommandQueue,
-                    mc.getBlockRenderManager(),
+                    mc.getBlockRenderer(),
                     new WrapperImmediateVertexConsumerProvider(() -> provider),
                     mc.getAtlasManager(),
                     NoopOutlineVertexConsumerProvider.INSTANCE,
                     NoopImmediateVertexConsumerProvider.INSTANCE,
-                    mc.textRenderer
+                    mc.font
             );
         }
 
@@ -154,13 +158,13 @@ public abstract class WorldRendererMixin implements IWorldRenderer {
     }
 
     @Unique
-    private void draw(WorldRenderState worldState, MatrixStack matrices, EntityShader shader, Function<Entity, Color> colorGetter) {
+    private void draw(LevelRenderState worldState, PoseStack matrices, EntityShader shader, Function<Entity, Color> colorGetter) {
         if (shader == null || !shader.shouldDrawShader()) return;
 
         var camera = worldState.cameraRenderState.pos;
         boolean empty = true;
 
-        EntityRenderManager erm = mc.getEntityRenderDispatcher();
+        EntityRenderDispatcher erm = mc.getEntityRenderDispatcher();
         if (erm == null) return;
 
         for (var state : worldState.entityRenderStates) {
@@ -174,12 +178,12 @@ public abstract class WorldRendererMixin implements IWorldRenderer {
             outlineRenderCommandQueue.setColor(color);
 
             var renderer = erm.getRenderer(state);
-            var offset = renderer.getPositionOffset(state);
+            var offset = renderer.getRenderOffset(state);
 
-            matrices.push();
+            matrices.pushPose();
             matrices.translate(state.x - camera.x + offset.x, state.y - camera.y + offset.y, state.z - camera.z + offset.z);
-            renderer.render(state, matrices, outlineRenderCommandQueue, worldState.cameraRenderState);
-            matrices.pop();
+            renderer.submit(state, matrices, outlineRenderCommandQueue, worldState.cameraRenderState);
+            matrices.popPose();
 
             empty = false;
         }
@@ -188,24 +192,24 @@ public abstract class WorldRendererMixin implements IWorldRenderer {
             axiom$pushEntityOutlineFramebuffer(shader.getFramebuffer());
             provider = shader.vertexConsumerProvider;
             try {
-                renderDispatcher.render();
+                renderDispatcher.renderAllFeatures();
             } finally {
-                outlineRenderCommandQueue.onNextFrame();
+                outlineRenderCommandQueue.endFrame();
             }
             provider = null;
             axiom$popEntityOutlineFramebuffer();
         } else {
-            outlineRenderCommandQueue.onNextFrame();
+            outlineRenderCommandQueue.endFrame();
         }
     }
 
-    @Inject(method = "render", at = @At("RETURN"))
-    private void onRender(ObjectAllocator allocator, RenderTickCounter tickCounter, boolean renderBlockOutline, Camera camera, Matrix4f matrix4f, Matrix4f projectionMatrix, Matrix4f matrix4f2, GpuBufferSlice fog, Vector4f fogColor, boolean shouldRenderSky, CallbackInfo ci) {
+    @Inject(method = "renderLevel", at = @At("RETURN"))
+    private void onRender(GraphicsResourceAllocator allocator, DeltaTracker tickCounter, boolean renderBlockOutline, Camera camera, Matrix4f matrix4f, Matrix4f projectionMatrix, Matrix4f matrix4f2, GpuBufferSlice fog, Vector4f fogColor, boolean shouldRenderSky, CallbackInfo ci) {
         PostProcessShaders.submitEntityVertices();
 
-        MatrixStack stack = new MatrixStack();
-        float delta = tickCounter.getTickProgress(false);
-        Vec3d camPos = camera.getCameraPos();
+        PoseStack stack = new PoseStack();
+        float delta = tickCounter.getGameTimeDeltaPartialTick(false);
+        Vec3 camPos = camera.position();
 
         Render3DEvent event = Render3DEvent.get(
                 stack,

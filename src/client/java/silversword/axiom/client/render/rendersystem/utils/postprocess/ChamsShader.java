@@ -2,7 +2,7 @@ package silversword.axiom.client.render.rendersystem.utils.postprocess;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.render.Chams;
 import silversword.axiom.client.render.rendersystem.BufferRenderer;
@@ -31,8 +31,8 @@ public class ChamsShader extends EntityShader {
     @Override
     protected void setupPass(BufferRenderer renderer) {
         var framebuffer = getFramebuffer();
-        var textureView = framebuffer.getColorAttachmentView();
-        var sampler = RenderSystem.getSamplerCache().get(FilterMode.NEAREST); // NEAREST on nopea post-processille
+        var textureView = framebuffer.getColorTextureView();
+        var sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST); // NEAREST on nopea post-processille
 
         renderer.sampler("u_Texture", textureView, sampler);
         renderer.sampler("u_TextureI", textureView, sampler);

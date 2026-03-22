@@ -1,9 +1,9 @@
 package silversword.axiom.client.modules.render;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.world.World;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -21,7 +21,7 @@ public class NoFog extends AxiomMod implements KeybindConfigurable {
 
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
 
-    private RegistryKey<World> lastWorld;
+    private ResourceKey<Level> lastWorld;
 
     public NoFog() {
         super("NoFog", "Disables various types of fog", ModuleCategory.RENDER);
@@ -35,9 +35,9 @@ public class NoFog extends AxiomMod implements KeybindConfigurable {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (!isEnabled()) return;
-            if (client.world == null) return;
+            if (client.level == null) return;
 
-            RegistryKey<World> current = client.world.getRegistryKey();
+            ResourceKey<Level> current = client.level.dimension();
 
             if (lastWorld != current) {
                 lastWorld = current;
@@ -59,7 +59,7 @@ public class NoFog extends AxiomMod implements KeybindConfigurable {
     @Override
     protected void onDisable() {
         if (mc.player != null)
-            mc.worldRenderer.reload();
+            mc.levelRenderer.allChanged();
     }
 
     @Override
@@ -68,9 +68,9 @@ public class NoFog extends AxiomMod implements KeybindConfigurable {
     }
 
     private void refreshRenderer() {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.worldRenderer != null) {
-            mc.worldRenderer.reload();
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.levelRenderer != null) {
+            mc.levelRenderer.allChanged();
         }
     }
 }

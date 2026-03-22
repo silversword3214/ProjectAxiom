@@ -67,8 +67,8 @@ public final class TooltipStack {
         // Sijoitetaan hiiren lähelle, pidetään ruudun sisällä
         double x = mouseX + 12;
         double y = mouseY - 12;
-        int screenWidth = ui.mc.getWindow().getScaledWidth();
-        int screenHeight = ui.mc.getWindow().getScaledHeight();
+        int screenWidth = ui.mc.getWindow().getGuiScaledWidth();
+        int screenHeight = ui.mc.getWindow().getGuiScaledHeight();
 
         if (x + boxWidth > screenWidth) {
             x = mouseX - boxWidth - 8;

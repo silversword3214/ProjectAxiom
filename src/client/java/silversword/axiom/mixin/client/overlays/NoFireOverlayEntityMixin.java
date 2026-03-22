@@ -1,7 +1,7 @@
 package silversword.axiom.mixin.client.overlays;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.Entity;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -17,7 +17,7 @@ public abstract class NoFireOverlayEntityMixin {
         NoFireOverlay mod = ModuleManager.getInstance().getModule(NoFireOverlay.class);
         if (mod == null || !mod.isEnabled()) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
         // VAIN oma pelaaja -> ei sotketa muiden entityjen fire-renderiä

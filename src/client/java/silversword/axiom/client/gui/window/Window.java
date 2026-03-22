@@ -1,6 +1,6 @@
 package silversword.axiom.client.gui.window;
 
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
@@ -57,7 +57,7 @@ public final class Window {
     private static final long MINIMIZE_ANIM_DURATION = 500;
     private boolean ignoreScale = false;
 
-    private static final Identifier KEYBIND_TEXTURE = Identifier.of("projectaxiom", "textures/icons/keybind.png");
+    private static final Identifier KEYBIND_TEXTURE = Identifier.fromNamespaceAndPath("projectaxiom", "textures/icons/keybind.png");
 
     public void setIgnoreScale(boolean ignore) {
         this.ignoreScale = ignore;
@@ -197,7 +197,7 @@ public final class Window {
         if (animProgress == 0 && animState == AnimState.NONE) return;
 
         float progress = getAnimProgress();
-        int screenHeight = ui.mc.getWindow().getScaledHeight();
+        int screenHeight = ui.mc.getWindow().getGuiScaledHeight();
 
         int renderY;
         if (animState == AnimState.OPENING) {

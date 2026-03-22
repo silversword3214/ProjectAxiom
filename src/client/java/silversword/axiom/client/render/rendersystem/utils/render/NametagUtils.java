@@ -1,16 +1,16 @@
 package silversword.axiom.client.render.rendersystem.utils.render;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.util.Mth;
 import org.joml.*;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.render.Zoom;
 
 public class NametagUtils {
-    private static final MinecraftClient mc = MinecraftClient.getInstance();
+    private static final Minecraft mc = Minecraft.getInstance();
 
     public static double scale;
 
@@ -27,11 +27,11 @@ public class NametagUtils {
         model.set(modelView);
         NametagUtils.projection.set(RenderUtils.projection);
 
-        RenderUtils.set(camera, mc.gameRenderer.getCamera().getCameraPos());
+        RenderUtils.set(camera, mc.gameRenderer.getMainCamera().position());
         cameraNegated.set(camera);
         cameraNegated.negate();
 
-        windowScale = mc.getWindow().calculateScaleFactor(1, false);
+        windowScale = mc.getWindow().calculateScale(1, false);
     }
 
     public static boolean worldToScreen(Vector3d pos, double scale) {
@@ -59,17 +59,17 @@ public class NametagUtils {
         if (behind && !allowBehind) return false;
 
         toScreen(pmMat4);
-        double x = pmMat4.x * mc.getWindow().getFramebufferWidth();
-        double y = pmMat4.y * mc.getWindow().getFramebufferHeight();
+        double x = pmMat4.x * mc.getWindow().getWidth();
+        double y = pmMat4.y * mc.getWindow().getHeight();
 
         if (behind) {
-            x = mc.getWindow().getFramebufferWidth() - x;
-            y = mc.getWindow().getFramebufferHeight() - y;
+            x = mc.getWindow().getWidth() - x;
+            y = mc.getWindow().getHeight() - y;
         }
 
         if (Double.isInfinite(x) || Double.isInfinite(y)) return false;
 
-        pos.set(x / windowScale, mc.getWindow().getFramebufferHeight() - y / windowScale, allowBehind ? pmMat4.w : pmMat4.z);
+        pos.set(x / windowScale, mc.getWindow().getHeight() - y / windowScale, allowBehind ? pmMat4.w : pmMat4.z);
         return true;
     }
 
@@ -78,12 +78,12 @@ public class NametagUtils {
         begin(matrices, pos);
     }
 
-    public static void begin(Vector3d pos, DrawContext drawContext) {
+    public static void begin(Vector3d pos, GuiGraphics drawContext) {
         begin(pos);
 
-        Matrix3x2fStack matrices = drawContext.getMatrices();
+        Matrix3x2fStack matrices = drawContext.pose();
         matrices.pushMatrix();
-        matrices.scale(1.0f / mc.getWindow().getScaleFactor());
+        matrices.scale(1.0f / mc.getWindow().getGuiScale());
         matrices.translate((float) pos.x, (float) pos.y);
         matrices.scale((float) scale, (float) scale);
     }
@@ -98,14 +98,14 @@ public class NametagUtils {
         RenderSystem.getModelViewStack().popMatrix();
     }
 
-    public static void end(DrawContext drawContext) {
+    public static void end(GuiGraphics drawContext) {
         end();
-        drawContext.getMatrices().popMatrix();
+        drawContext.pose().popMatrix();
     }
 
     private static double getScale(Vector3d pos) {
         double dist = camera.distance(pos);
-        return MathHelper.clamp(1 - dist * 0.01, 0.5, Integer.MAX_VALUE);
+        return Mth.clamp(1 - dist * 0.01, 0.5, Integer.MAX_VALUE);
     }
 
     private static void toScreen(Vector4f vec) {
@@ -118,9 +118,9 @@ public class NametagUtils {
     }
 
     public static Vector3d set(Vector3d vec, Entity entity, double tickDelta) {
-        vec.x = MathHelper.lerp(tickDelta, entity.lastRenderX, entity.getX());
-        vec.y = MathHelper.lerp(tickDelta, entity.lastRenderY, entity.getY());
-        vec.z = MathHelper.lerp(tickDelta, entity.lastRenderZ, entity.getZ());
+        vec.x = Mth.lerp(tickDelta, entity.xOld, entity.getX());
+        vec.y = Mth.lerp(tickDelta, entity.yOld, entity.getY());
+        vec.z = Mth.lerp(tickDelta, entity.zOld, entity.getZ());
 
         return vec;
     }

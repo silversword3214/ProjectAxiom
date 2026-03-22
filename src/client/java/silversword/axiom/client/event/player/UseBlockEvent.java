@@ -1,6 +1,6 @@
 package silversword.axiom.client.event.player;
 
-import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.world.phys.BlockHitResult;
 import silversword.axiom.client.eventbus.ICancellable;
 
 /**

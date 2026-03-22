@@ -1,6 +1,6 @@
 package silversword.axiom.client.utils.render;
 
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 import silversword.axiom.client.render.rendersystem.Renderer2D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.texture.Texture;

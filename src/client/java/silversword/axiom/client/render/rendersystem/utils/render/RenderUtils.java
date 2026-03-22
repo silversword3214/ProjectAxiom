@@ -1,9 +1,9 @@
 package silversword.axiom.client.render.rendersystem.utils.render;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.joml.Vector4f;
@@ -21,11 +21,11 @@ import silversword.axiom.client.render.rendersystem.utils.misc.Pool;
 import java.util.List;
 
 public class RenderUtils {
-    private static final MinecraftClient mc = MinecraftClient.getInstance();
+    private static final Minecraft mc = Minecraft.getInstance();
 
     public static boolean rendering3D = true;
 
-    public static Vec3d center = new Vec3d(0, 0, 0);
+    public static Vec3 center = new Vec3(0, 0, 0);
 
     public static final Matrix4f projection = new Matrix4f();
     public static final Matrix4f modelView = new Matrix4f();
@@ -36,7 +36,7 @@ public class RenderUtils {
     public static final Renderer3D renderer3D = new Renderer3D(CustomRenderingPipelineProvider.WORLD_COLORED_LINES, CustomRenderingPipelineProvider.WORLD_COLORED);
 
 
-    public static Vec3d currentCameraPos = Vec3d.ZERO;
+    public static Vec3 currentCameraPos = Vec3.ZERO;
 
     public static void init() {
         AxiomInitialize.EVENT_BUS.subscribe(RenderUtils.class);
@@ -63,13 +63,13 @@ public class RenderUtils {
         Vector4f center4 = new Vector4f(0, 0, 0, 1).mul(invProjection).mul(invView);
         center4.div(center4.w);
 
-        Vec3d camera = mc.gameRenderer.getCamera().getCameraPos();
-        center = new Vec3d(camera.x + center4.x, camera.y + center4.y, camera.z + center4.z);
+        Vec3 camera = mc.gameRenderer.getMainCamera().position();
+        center = new Vec3(camera.x + center4.x, camera.y + center4.y, camera.z + center4.z);
     }
 
     public static void unscaledProjection() {
-        float width = mc.getWindow().getFramebufferWidth();
-        float height = mc.getWindow().getFramebufferHeight();
+        float width = mc.getWindow().getWidth();
+        float height = mc.getWindow().getHeight();
 
         // near = -1000, far = 1000 (z=0 on välissä)
         projection.setOrtho(0, width, height, 0, 0, 1000);
@@ -77,11 +77,11 @@ public class RenderUtils {
     }
 
     public static void scaledProjection() {
-        float width = (float) (mc.getWindow().getFramebufferWidth() / mc.getWindow().getScaleFactor());
-        float height = (float) (mc.getWindow().getFramebufferHeight() / mc.getWindow().getScaleFactor());
+        float width = (float) (mc.getWindow().getWidth() / mc.getWindow().getGuiScale());
+        float height = (float) (mc.getWindow().getHeight() / mc.getWindow().getGuiScale());
 
-        float tickDelta = mc.getRenderTickCounter().getDynamicDeltaTicks();
-        projection.set(mc.gameRenderer.getBasicProjectionMatrix(tickDelta));
+        float tickDelta = mc.getDeltaTracker().getGameTimeDeltaTicks();
+        projection.set(mc.gameRenderer.getProjectionMatrix(tickDelta));
         rendering3D = true;
     }
 
@@ -117,7 +117,7 @@ public class RenderUtils {
     }
 
     public static class RenderBlock {
-        public final BlockPos.Mutable pos = new BlockPos.Mutable();
+        public final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         public final Color sideColor = new Color();
         public final Color lineColor = new Color();
         public ShapeMode shapeMode;
@@ -165,7 +165,7 @@ public class RenderUtils {
 
     }
 
-    public static Vector3d set(Vector3d vec, Vec3d v) {
+    public static Vector3d set(Vector3d vec, Vec3 v) {
         vec.x = v.x;
         vec.y = v.y;
         vec.z = v.z;
