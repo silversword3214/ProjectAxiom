@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.14.+'
+    id 'fabric-loom' version '1.15.5'
     id 'maven-publish'
 }
 
@@ -64,6 +64,9 @@ dependencies {
     implementation 'org.ow2.asm:asm:9.6'
     implementation 'org.ow2.asm:asm-commons:9.6'
     implementation 'org.ow2.asm:asm-tree:9.6'
+
+    // AxiomRenderAPI
+    modApi "com.github.silversword3214:AxiomRenderAPI:v0.0.8"
 
 }
 

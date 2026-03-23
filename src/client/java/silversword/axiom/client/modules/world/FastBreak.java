@@ -60,7 +60,7 @@ public class FastBreak extends AxiomMod implements KeybindConfigurable {
         MultiPlayerGameMode manager = mc.gameMode;
         if (manager == null) return;
 
-        // 🟢 Legit mode = vain cooldown pois
+
         ((MultiPlayerGameModeAccessor) manager)
                 .setDestroyDelay(0);
 

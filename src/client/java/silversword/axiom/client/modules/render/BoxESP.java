@@ -124,7 +124,7 @@ public final class BoxESP extends AxiomMod implements ColorConfigurable, Keybind
             double halfWidth = entity.getBbWidth() / 2.0;
             double height = entity.getBbHeight();
 
-            Color baseColor = getColorForGroup(group).getCurrentColor(); // <-- suoraan getCurrentColor()
+            Color baseColor = getColorForGroup(group).getCurrentColor();
 
             Color sideColor = new Color(baseColor.r, baseColor.g, baseColor.b, 30);
             Color lineColor = baseColor;

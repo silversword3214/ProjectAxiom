@@ -61,9 +61,10 @@ public abstract class EntityRendererMixin<T extends Entity, S extends EntityRend
         }
     }
 
-    // TODO(Ravel): target method updateShadow is ambiguous
-    @Inject(method = "updateShadow", at = @At("HEAD"), cancellable = true)
-    private void updateShadow(Entity entity, EntityRenderState renderState, CallbackInfo ci) {
-        // NoRender poistettu
+    @Unique
+    private boolean shouldDisableShadow(S renderState) {
+        // Get the entity from your IEntityRenderState extension (if you stored it)
+        Entity entity = ((IEntityRenderState) renderState).axiom$getEntity();
+        return shaderESP != null && shaderESP.shouldSkip(entity);
     }
 }

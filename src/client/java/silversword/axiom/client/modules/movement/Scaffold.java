@@ -1,4 +1,3 @@
-// TODO(Ravel): Failed to fully resolve file: null cannot be cast to non-null type com.intellij.psi.PsiJavaCodeReferenceElement
 package silversword.axiom.client.modules.movement;
 
 import net.minecraft.world.item.BlockItem;
@@ -349,8 +348,8 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
 
     private BlockPos findNeighbor(BlockPos pos) {
         for (Direction dir : Direction.values()) {
-            BlockPos neighbor = pos.offset(dir);
-            if (!mc.world.getBlockState(neighbor).isAir()) {
+            BlockPos neighbor = pos.relative(dir);  // Korjattu: offset -> relative
+            if (!mc.level.getBlockState(neighbor).isAir()) {
                 return neighbor;
             }
         }
@@ -367,12 +366,13 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
         return null;
     }
 
-    private float[] getRotations(BlockPos targetPos, Vec3d hitVec) {
+    private float[] getRotations(BlockPos targetPos, Vec3 hitVec) {
         float yaw = 0, pitch = 0;
 
         if (!godBridge.get()) {
             // Käytetään tavallisia rotaatioita (katso kohti blokkia)
-            Vec3d playerPos = mc.player.getEyePos();
+            assert mc.player != null;
+            Vec3 playerPos = mc.player.position();
             double dx = hitVec.x - playerPos.x;
             double dy = hitVec.y - playerPos.y;
             double dz = hitVec.z - playerPos.z;
@@ -381,21 +381,16 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
             yaw = (float) Math.toDegrees(Math.atan2(dz, dx)) - 90;
             pitch = (float) -Math.toDegrees(Math.atan2(dy, distance));
         } else {
-            // GodBridge-tila: käytetään liikesuuntaa ja zitteriä
-            PlayerInput playerInput = mc.player.input.playerInput;
-            float forward = 0;
-            float sideways = 0;
-
-            if (playerInput.forward()) forward += 1;
-            if (playerInput.backward()) forward -= 1;
-            if (playerInput.left()) sideways += 1;
-            if (playerInput.right()) sideways -= 1;
+            // GodBridge-tila: käytetään liikesuuntaa (xxa/zza) ja zitteriä
+            // xxa = sivuttaisliike, zza = eteen-/taaksepäin liike
+            float forward = mc.player.zza;   // liike eteen/taakse (1 = eteen, -1 = taakse)
+            float sideways = mc.player.xxa;  // liike sivulle (1 = oikealle, -1 = vasemmalle)
 
             if (forward == 0 && sideways == 0) {
                 yaw = getYawForPosition(targetPos);
             } else {
                 double movementYaw = Math.toDegrees(Math.atan2(-sideways, forward));
-                yaw = (float) movementYaw + mc.player.getYaw();
+                yaw = (float) movementYaw + mc.player.getYRot();
 
                 float rounded = Math.round(yaw / 45) * 45;
                 if (rounded % 90 == 0) {
@@ -419,6 +414,8 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
                     yaw = lastYaw;
                     pitch = lastPitch;
                 }
+                // Asetetaan uusi säilytysaika
+                rotationTicksLeft = (int) keepRotationTicks.getValue();
                 break;
             case "Close":
                 // Pieni offset
@@ -451,7 +448,7 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
     }
 
     private float getYawForPosition(BlockPos pos) {
-        Vec3d playerPos = mc.player.getEyePos();
+        Vec3 playerPos = mc.player.getEyePosition();
         double dx = pos.getX() + 0.5 - playerPos.x;
         double dz = pos.getZ() + 0.5 - playerPos.z;
         return (float) Math.toDegrees(Math.atan2(dz, dx)) - 90;
