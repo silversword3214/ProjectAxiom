@@ -7,8 +7,6 @@ import silversword.axiom.ProjectAxiom;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.modules.NamedColor;
-import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.render.rendersystem.utils.texture.Texture;
@@ -21,9 +19,9 @@ public final class WatermarkHud extends BaseHudElement {
 
     private final SettingNumber logoScale;
     private final SettingNumber textScale;
-    private final SettingNumber backgroundPadding; // väli logon ja tekstin välillä
-    private final SettingNumber backgroundRadius;  // pyöristyssäde
-    private final SettingNumber outlineThickness;  // reunuksen paksuus
+    private final SettingNumber backgroundPadding;
+    private final SettingNumber backgroundRadius;
+    private final SettingNumber outlineThickness;
     private final SettingColor textColor;
     private final SettingColor backgroundColor;
     private final SettingColor outlineColor;
@@ -58,7 +56,7 @@ public final class WatermarkHud extends BaseHudElement {
         int logoW = (int) (tex.getWidth() * lScale);
 
         float tScale = (float) textScale.getValue();
-        int textW = (int) (TextRenderer.get().getWidth(VERSION_TEXT) * tScale);
+        int textW = (int) (mc.font.width(VERSION_TEXT) * tScale);
 
         int padding = (int) backgroundPadding.getValue();
 
@@ -74,7 +72,7 @@ public final class WatermarkHud extends BaseHudElement {
         int logoH = (int) (tex.getHeight() * lScale);
 
         float tScale = (float) textScale.getValue();
-        int textH = (int) (TextRenderer.get().getHeight() * tScale);
+        int textH = (int) (mc.font.lineHeight * tScale);
 
         return Math.max(logoH, textH);
     }
@@ -82,12 +80,8 @@ public final class WatermarkHud extends BaseHudElement {
     @Override
     public void render(HudContext ctx, DeltaTracker tickCounter) {
         Texture tex = TextureManager.getTexture(LOGO_ID);
-        if (tex == null) {
-            System.out.println("Texture is null");
-            return;
-        }
+        if (tex == null) return;
 
-        // Haetaan nykyiset värit (huomioi rainbow)
         Color textCol = textColor.getCurrentColor();
         Color bgCol = backgroundColor.getCurrentColor();
         Color outlineCol = outlineColor.getCurrentColor();
@@ -96,16 +90,13 @@ public final class WatermarkHud extends BaseHudElement {
         int logoW = (int) (tex.getWidth() * lScale);
         int logoH = (int) (tex.getHeight() * lScale);
 
-        // Piirrä logo
-        Renderer2D.TEXTURE.begin();
-        Renderer2D.TEXTURE.texQuad(x, y, logoW, logoH, new Color(0xFFFFFFFF));
-        Renderer2D.TEXTURE.render(tex.textureView(), tex.sampler());
+        // Piirrä logo Renderer2D:llä
+        ctx.renderer.drawTexture(LOGO_ID, x, y, logoW, logoH);
 
-        // Tekstin mitat
         float tScale = (float) textScale.getValue();
         String text = VERSION_TEXT;
-        int textW = (int) (TextRenderer.get().getWidth(text) * tScale);
-        int textH = (int) (TextRenderer.get().getHeight() * tScale);
+        int textW = (int) (ctx.textWidth(text) * tScale);
+        int textH = (int) (ctx.fontHeight() * tScale);
 
         int padding = (int) backgroundPadding.getValue();
         int radius = (int) backgroundRadius.getValue();
@@ -119,20 +110,20 @@ public final class WatermarkHud extends BaseHudElement {
         int bgX = textX - padding;
         int bgY = textY - padding;
 
-        // Piirrä reunus (jos väri ei ole läpinäkyvä)
+        // Reunus (jos näkyvä)
         if (outlineCol.getAlpha() != 0 && thickness > 0) {
-            Renderer2D.COLOR.drawRoundedRectOutline(bgX, bgY, bgW, bgH, radius, outlineCol, thickness);
+            ctx.drawRoundedOutline(bgX, bgY, bgW, bgH, radius, outlineCol.getARGB(), thickness);
         }
 
-        // Piirrä tausta
+        // Tausta
         if (radius > 0) {
-            Renderer2D.COLOR.drawRoundedRect(bgX, bgY, bgW, bgH, radius, bgCol);
+            ctx.fillRounded(bgX, bgY, bgW, bgH, radius, bgCol.getARGB());
         } else {
-            Renderer2D.COLOR.quad(bgX, bgY, bgW, bgH, bgCol);
+            ctx.fill(bgX, bgY, bgW, bgH, bgCol.getARGB());
         }
 
-        // Piirrä teksti
-        ctx.drawScaledText(text, textX, textY, textCol.getPacked(), true, tScale);
+        // Teksti
+        ctx.drawScaledText(text, textX, textY, textCol.getARGB(), true, tScale);
     }
 
     @Override

@@ -113,9 +113,9 @@ public final class PotionEffects extends AxiomMod implements ColorConfigurable, 
         h.setOutlineScale((float) outlineScale.getValue());
 
         // Värit (getCurrentColor!)
-        h.setBackgroundColor(backgroundColor.getCurrentColor().getPacked());
-        h.setBorderColor(borderColor.getCurrentColor().getPacked());
-        h.setTextColor(textColor.getCurrentColor().getPacked());
+        h.setBackgroundColor(backgroundColor.getCurrentColor().getARGB());
+        h.setBorderColor(borderColor.getCurrentColor().getARGB());
+        h.setTextColor(textColor.getCurrentColor().getARGB());
     }
 
     private void ensureHudRegistered() {

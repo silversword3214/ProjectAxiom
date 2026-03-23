@@ -8,8 +8,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.EntityHitResult;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -171,21 +169,17 @@ public final class PotionEffectsHud extends BaseHudElement {
         int x0 = x;
         int y0 = y;
 
-
-        // Haetaan nykyiset värit (moduulista tulleet int-arvot) ja sovelletaan alpha-kerroin
+        // Värit alpha-kerroin huomioiden
         int bgArgb = applyAlpha(backgroundColor, alpha);
         int borderArgb = applyAlpha(borderColor, alpha);
         int txtArgb = applyAlpha(textColor, alpha);
 
-        Color bgCol = new Color(bgArgb);
-        Color borderCol = new Color(borderArgb);
-
         // Tausta pyöristettynä
-        Renderer2D.COLOR.drawRoundedRect(x0, y0, boxW, boxH, CORNER_RADIUS, bgCol);
+        ctx.fillRounded(x0, y0, boxW, boxH, CORNER_RADIUS, bgArgb);
 
         // Reunus (paksuus skaalautuu, vähintään 1px)
         double thickness = Math.max(1.0, outlineScale);
-        Renderer2D.COLOR.drawRoundedRectOutline(x0, y0, boxW, boxH, CORNER_RADIUS, borderCol, thickness);
+        ctx.drawRoundedOutline(x0, y0, boxW, boxH, CORNER_RADIUS, borderArgb, thickness);
 
         int startX = x0 + padding;
         int startY = y0 + padding;

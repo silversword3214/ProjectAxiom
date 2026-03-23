@@ -31,8 +31,22 @@ public final class Fonts {
 
         FONT_FAMILIES.sort(Comparator.comparing(FontFamily::getName));
 
-        DEFAULT_FONT_FAMILY = FontUtils.getBuiltinFontInfo(BUILTIN_FONTS[0]).family();
-        DEFAULT_FONT = getFamily(DEFAULT_FONT_FAMILY).get(FontInfo.Type.Regular);
+        // Get the builtin font info – handle null
+        FontInfo info = FontUtils.getBuiltinFontInfo(BUILTIN_FONTS[0]);
+        if (info != null) {
+            DEFAULT_FONT_FAMILY = info.family();
+            DEFAULT_FONT = getFamily(DEFAULT_FONT_FAMILY).get(FontInfo.Type.Regular);
+        } else {
+            // Fallback to first available font family
+            if (!FONT_FAMILIES.isEmpty()) {
+                DEFAULT_FONT_FAMILY = FONT_FAMILIES.get(0).getName();
+                DEFAULT_FONT = getFamily(DEFAULT_FONT_FAMILY).get(FontInfo.Type.Regular);
+            } else {
+                // No fonts at all – fallback to vanilla
+                renderer = VanillaTextRenderer.INSTANCE;
+                return;
+            }
+        }
 
         // attempt to load our custom renderer; if it fails, fall back to vanilla
         try {

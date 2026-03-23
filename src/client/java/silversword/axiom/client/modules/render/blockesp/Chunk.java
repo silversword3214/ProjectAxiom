@@ -3,7 +3,7 @@ package silversword.axiom.client.modules.render.blockesp;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
 import silversword.axiom.client.modules.render.SearchBlocks;
-import silversword.axiom.client.render.rendersystem.Renderer3D;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
 
 
 import java.util.Collection;

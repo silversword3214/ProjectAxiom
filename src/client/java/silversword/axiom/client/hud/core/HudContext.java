@@ -12,8 +12,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import silversword.axiom.client.gui.core.Theme;
 import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,39 +22,43 @@ public final class HudContext {
     public final GuiGraphics draw;
     public final Theme theme;
     public final float delta;
+    public final Renderer2D renderer;
 
-
-    // Lista teksteistä, jotka piirretään fillien jälkeen
     private final List<TextEntry> textEntries = new ArrayList<>();
 
-    public HudContext(Minecraft mc, GuiGraphics draw, Theme theme, float delta) {
+    public HudContext(Minecraft mc, GuiGraphics draw, Theme theme, float delta, Renderer2D renderer) {
         this.mc = mc;
         this.draw = draw;
         this.theme = theme;
         this.delta = delta;
-
+        this.renderer = renderer;
     }
 
     public void fill(int x, int y, int w, int h, int argb) {
-        Renderer2D.COLOR.quad(x, y, w, h, new Color(argb));
+        renderer.drawRect(x, y, w, h, argb);
     }
 
     public void fillRounded(int x, int y, int w, int h, int radius, int argb) {
-        Renderer2D.COLOR.drawRoundedRect(x, y, w, h, radius, new Color(argb));
+        renderer.drawRoundedRect(x, y, w, h, radius, argb);
     }
 
     public void fillRoundedCustom(int x, int y, int w, int h, int radius, int argb,
                                   boolean topLeft, boolean topRight, boolean bottomRight, boolean bottomLeft) {
-        Renderer2D.COLOR.drawRoundedRectCustom(x, y, w, h, radius, new Color(argb),
+        renderer.drawRoundedRectCustom(x, y, w, h, radius, argb,
                 topLeft, topRight, bottomRight, bottomLeft);
     }
 
+    public void drawRoundedOutline(int x, int y, int w, int h, int radius, int argb, double thickness) {
+        renderer.drawRoundedRectOutline(x, y, w, h, radius, argb, thickness);
+    }
+
     public void fillTriangle(int x1, int y1, int x2, int y2, int x3, int y3, int argb) {
-        Renderer2D.COLOR.triangle(x1, y1, x2, y2, x3, y3, new Color(argb));
+        // Kolmiota ei toteutettu uudessa Renderer2D:ssä. Jos tarvitaan, lisää metodi.
+        // Toistaiseksi ei tee mitään.
     }
 
     public void drawCircle(int cx, int cy, int radius, int argb) {
-        Renderer2D.COLOR.drawCircle(cx, cy, radius, new Color(argb));
+        renderer.drawCircle(cx, cy, radius, argb);
     }
 
     public void drawVanillaEffectIcon(MobEffectInstance effect, int x, int y, int size, float alpha) {
@@ -106,18 +109,13 @@ public final class HudContext {
     // Piirretään kaikki kerätyt tekstit (kutsutaan fillien jälkeen)
     public void renderTexts() {
         for (TextEntry e : textEntries) {
-            // Tallenna nykyinen tila (jos jokin muu on kesken – ei pitäisi olla)
             boolean wasBuilding = TextRenderer.get().isBuilding();
             if (wasBuilding) {
                 TextRenderer.get().end();
             }
-            // Aloita uusi batch halutulla skaalalla
             TextRenderer.get().begin(e.scale, false, false);
-            // Piirrä teksti
-            TextRenderer.get().render(e.text, e.x, e.y, new Color(e.color), e.shadow);
-            // Lopeta tämä batch
+            TextRenderer.get().render(e.text, e.x, e.y, new silversword.axiom.client.render.rendersystem.utils.color.Color(e.color), e.shadow);
             TextRenderer.get().end();
-            // Palauta alkuperäinen tila (jos oli)
             if (wasBuilding) {
                 TextRenderer.get().begin(1.0, false, false);
             }
@@ -171,7 +169,6 @@ public final class HudContext {
         return v < 0f ? 0f : (v > 1f ? 1f : v);
     }
 
-    // Apuluokka tekstin tallentamiseen
     private static class TextEntry {
         String text;
         int x, y;

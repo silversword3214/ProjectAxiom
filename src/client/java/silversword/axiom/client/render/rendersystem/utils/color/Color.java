@@ -1,412 +1,219 @@
 package silversword.axiom.client.render.rendersystem.utils.color;
 
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextColor;
-import net.minecraft.ChatFormatting;
-import net.minecraft.world.phys.Vec3;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
-import silversword.axiom.client.render.rendersystem.utils.misc.ICopyable;
-import silversword.axiom.client.render.rendersystem.utils.misc.ISerializable;
 
-public class Color implements ICopyable<Color>, ISerializable<Color> {
-    public static final Color CLEAR = new Color(0, 0, 0, 0);
-    public static final Color WHITE = new Color(java.awt.Color.WHITE);
-    public static final Color LIGHT_GRAY = new Color(java.awt.Color.LIGHT_GRAY);
-    public static final Color GRAY = new Color(java.awt.Color.GRAY);
-    public static final Color DARK_GRAY = new Color(java.awt.Color.DARK_GRAY);
-    public static final Color BLACK = new Color(java.awt.Color.BLACK);
-    public static final Color RED = new Color(java.awt.Color.RED);
-    public static final Color PINK = new Color(java.awt.Color.PINK);
-    public static final Color ORANGE = new Color(java.awt.Color.ORANGE);
-    public static final Color YELLOW = new Color(java.awt.Color.YELLOW);
-    public static final Color GREEN = new Color(java.awt.Color.GREEN);
-    public static final Color MAGENTA = new Color(java.awt.Color.MAGENTA);
-    public static final Color CYAN = new Color(java.awt.Color.CYAN);
-    public static final Color BLUE = new Color(java.awt.Color.BLUE);
+/**
+ * Represents a color with red, green, blue, and alpha components (0-255).
+ */
+public class Color {
+
+    public static final Color WHITE = new Color(255, 255, 255, 255);
+    public static final Color BLACK = new Color(0, 0, 0, 255);
+    public static final Color RED = new Color(255, 0, 0, 255);
+    public static final Color GREEN = new Color(0, 255, 0, 255);
+    public static final Color BLUE = new Color(0, 0, 255, 255);
+    public static final Color YELLOW = new Color(255, 255, 0, 255);
+    public static final Color CYAN = new Color(0, 255, 255, 255);
+    public static final Color MAGENTA = new Color(255, 0, 255, 255);
+    public static final Color ORANGE = new Color(255, 165, 0, 255);
+    public static final Color GRAY = new Color(128, 128, 128, 255);
+    public static final Color DARK_GRAY = new Color(64, 64, 64, 255);
+    public static final Color LIGHT_GRAY = new Color(192, 192, 192, 255);
+    public static final Color TRANSPARENT = new Color(0, 0, 0, 0);
 
     public int r, g, b, a;
 
-    public Color() {
-        this(255, 255, 255, 255);
+    public Color(int r, int g, int b, int a) {
+        this.r = clamp(r);
+        this.g = clamp(g);
+        this.b = clamp(b);
+        this.a = clamp(a);
     }
 
     public Color(int r, int g, int b) {
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = 255;
-
-        validate();
+        this(r, g, b, 255);
     }
 
-    public Color(int r, int g, int b, int a) {
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = a;
-
-        validate();
+    public Color(int argb) {
+        this.a = (argb >> 24) & 0xFF;
+        this.r = (argb >> 16) & 0xFF;
+        this.g = (argb >> 8) & 0xFF;
+        this.b = argb & 0xFF;
     }
 
     public Color(float r, float g, float b, float a) {
-        this.r = (int)(r*255);
-        this.g = (int)(g*255);
-        this.b = (int)(b*255);
-        this.a = (int)(a*255);
-
-        validate();
+        this((int)(r * 255), (int)(g * 255), (int)(b * 255), (int)(a * 255));
     }
 
-    public Color(int packed) {
-        this.r = toRGBAR(packed);
-        this.g = toRGBAG(packed);
-        this.b = toRGBAB(packed);
-        this.a = toRGBAA(packed);
+    public Color(float r, float g, float b) {
+        this(r, g, b, 1.0f);
     }
 
-    public Color(Color color) {
-        this.r = color.r;
-        this.g = color.g;
-        this.b = color.b;
-        this.a = color.a;
+    public Color(Color other) {
+        this(other.r, other.g, other.b, other.a);
     }
 
-    public Color(java.awt.Color color) {
-        this.r = color.getRed();
-        this.g = color.getGreen();
-        this.b = color.getBlue();
-        this.a = color.getAlpha();
+    private static int clamp(int value) {
+        return Math.max(0, Math.min(255, value));
     }
 
-    public Color(ChatFormatting formatting) {
-        if (formatting.isColor()) {
-            this.r = toRGBAR(formatting.getColor());
-            this.g = toRGBAG(formatting.getColor());
-            this.b = toRGBAB(formatting.getColor());
-            this.a = toRGBAA(formatting.getColor());
-        } else {
-            this.r = 255;
-            this.g = 255;
-            this.b = 255;
-            this.a = 255;
-        }
-    }
-
-    public Color(TextColor textColor) {
-        this.r = toRGBAR(textColor.getValue());
-        this.g = toRGBAG(textColor.getValue());
-        this.b = toRGBAB(textColor.getValue());
-        this.a = toRGBAA(textColor.getValue());
-    }
-
-    public Color(Style style) {
-        TextColor textColor = style.getColor();
-        if (textColor == null) {
-            this.r = 255;
-            this.g = 255;
-            this.b = 255;
-            this.a = 255;
-        } else {
-            this.r = toRGBAR(textColor.getValue());
-            this.g = toRGBAG(textColor.getValue());
-            this.b = toRGBAB(textColor.getValue());
-            this.a = toRGBAA(textColor.getValue());
-        }
-    }
-
-    public float getHue() {
-        return toHsv()[0];
-    }
-
-    public float getSaturation() {
-        return toHsv()[1];
-    }
-
-    public float getValue() {
-        return toHsv()[2];
-    }
-
-    public float[] toHsv() {
-        float rf = r / 255f;
-        float gf = g / 255f;
-        float bf = b / 255f;
-
-        float max = Math.max(rf, Math.max(gf, bf));
-        float min = Math.min(rf, Math.min(gf, bf));
-        float delta = max - min;
-
-        float h, s, v = max;
-
-        if (delta == 0) {
-            h = 0;
-        } else if (max == rf) {
-            h = ((gf - bf) / delta) % 6f;
-        } else if (max == gf) {
-            h = ((bf - rf) / delta) + 2f;
-        } else {
-            h = ((rf - gf) / delta) + 4f;
-        }
-
-        h *= 60f;
-        if (h < 0) h += 360f;
-
-        s = max == 0 ? 0 : delta / max;
-
-        return new float[]{h, s, v};
-    }
-
-    public static int fromRGBA(int r, int g, int b, int a) {
-        return (r << 16) + (g << 8) + (b) + (a << 24);
-    }
-
-    public int toRGBA() {
-        return fromRGBA(r, g, b, a);
-    }
-
-    public static int toRGBAR(int color) {
-        return (color >> 16) & 0x000000FF;
-    }
-
-    public static int toRGBAG(int color) {
-        return (color >> 8) & 0x000000FF;
-    }
-
-    public static int toRGBAB(int color) {
-        return (color) & 0x000000FF;
-    }
-
-    public static int toRGBAA(int color) {
-        return (color >> 24) & 0x000000FF;
-    }
-
-    public static Color fromHsv(double h, double s, double v) {
-        double hh, p, q, t, ff;
-        int i;
-        double r, g, b;
-
-        if (s <= 0.0) {       // < is bogus, just shuts up warnings
-            r = v;
-            g = v;
-            b = v;
-            return new Color((int) (r * 255), (int) (g * 255), (int) (b * 255), 255);
-        }
-        hh = h;
-        if (hh >= 360.0) hh = 0.0;
-        hh /= 60.0;
-        i = (int) hh;
-        ff = hh - i;
-        p = v * (1.0 - s);
-        q = v * (1.0 - (s * ff));
-        t = v * (1.0 - (s * (1.0 - ff)));
-
-        switch (i) {
-            case 0:
-                r = v;
-                g = t;
-                b = p;
-                break;
-            case 1:
-                r = q;
-                g = v;
-                b = p;
-                break;
-            case 2:
-                r = p;
-                g = v;
-                b = t;
-                break;
-
-            case 3:
-                r = p;
-                g = q;
-                b = v;
-                break;
-            case 4:
-                r = t;
-                g = p;
-                b = v;
-                break;
-            case 5:
-            default:
-                r = v;
-                g = p;
-                b = q;
-                break;
-        }
-        return new Color((int) (r * 255), (int) (g * 255), (int) (b * 255), 255);
-    }
-
+    /**
+     * Sets all components and returns this (for chaining).
+     */
     public Color set(int r, int g, int b, int a) {
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = a;
-
-        validate();
-
+        this.r = clamp(r);
+        this.g = clamp(g);
+        this.b = clamp(b);
+        this.a = clamp(a);
         return this;
     }
 
-    public Color r(int r) {
-        this.r = r;
-        validate();
-        return this;
-    }
-
-    public Color g(int g) {
-        this.g = g;
-        validate();
-        return this;
-    }
-
-    public Color b(int b) {
-        this.b = b;
-        validate();
-        return this;
-    }
-
-    public Color a(int a) {
-        this.a = a;
-        validate();
-        return this;
-    }
-
-    @Override
-    public Color set(Color value) {
-        r = value.r;
-        g = value.g;
-        b = value.b;
-        a = value.a;
-
-        validate();
-
-        return this;
-    }
-
-    public boolean parse(String text) {
-        String[] split = text.split(",");
-        if (split.length != 3 && split.length != 4) return false;
-
-        try {
-            // Not assigned directly because of exception handling
-            int r = Integer.parseInt(split[0]);
-            int g = Integer.parseInt(split[1]);
-            int b = Integer.parseInt(split[2]);
-            int a = split.length == 4 ? Integer.parseInt(split[3]) : this.a;
-
-            this.r = r;
-            this.g = g;
-            this.b = b;
-            this.a = a;
-
-            return true;
-        } catch (NumberFormatException ignored) {
-            return false;
-        }
-    }
-
-    @Override
+    /**
+     * Creates a copy of this color.
+     */
     public Color copy() {
-        return new Color(r, g, b, a);
+        return new Color(this);
     }
 
-    public silversword.axiom.client.render.rendersystem.utils.color.SettingColor toSetting(String name) {
-        return new SettingColor(name, this);
-    }
-
-    public TextColor toTextColor() {
-        return TextColor.fromRgb(getPacked());
-    }
-
-    public Style toStyle() {
-        return Style.EMPTY.withColor(toTextColor());
-    }
-
-    public Style styleWith(Style style) {
-        return style.withColor(toTextColor());
-    }
-
-    public void validate() {
-        if (r < 0) r = 0;
-        else if (r > 255) r = 255;
-
-        if (g < 0) g = 0;
-        else if (g > 255) g = 255;
-
-        if (b < 0) b = 0;
-        else if (b > 255) b = 255;
-
-        if (a < 0) a = 0;
-        else if (a > 255) a = 255;
-    }
-
-    public Vec3 getVec3d() {
-        return new Vec3(r / 255.0, g / 255.0, b / 255.0);
-    }
-
-    public Vector3f getVec3f() {
-        return new Vector3f(r / 255.0f, g / 255.0f, b / 255.0f);
-    }
-
-    public Vector4f getVec4f() {
-        return new Vector4f(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
-    }
-
-    public int getPacked() {
-        return fromRGBA(r, g, b, a);
-    }
-
-    @Override
+    /**
+     * Saves this color to an NBT compound tag.
+     */
     public CompoundTag toTag() {
         CompoundTag tag = new CompoundTag();
-
         tag.putInt("r", r);
         tag.putInt("g", g);
         tag.putInt("b", b);
         tag.putInt("a", a);
-
         return tag;
     }
 
-    @Override
+    /**
+     * Loads this color from an NBT compound tag and returns this.
+     */
     public Color fromTag(CompoundTag tag) {
-        r = tag.getIntOr("r", 0);
-        g = tag.getIntOr("g", 0);
-        b = tag.getIntOr("b", 0);
-        a = tag.getIntOr("a", 0);
-
-        validate();
+        this.r = tag.getInt("r").orElse(0);
+        this.g = tag.getInt("g").orElse(0);
+        this.b = tag.getInt("b").orElse(0);
+        this.a = tag.getInt("a").orElse(255);
         return this;
     }
 
-    @Override
-    public String toString() {
-        return r + " " + g + " " + b + " " + a;
+    /**
+     * Converts this color to HSV components.
+     * @return float array: [hue (0-360), saturation (0-1), value (0-1)]
+     */
+    public float[] toHsv() {
+        float rNorm = r / 255f;
+        float gNorm = g / 255f;
+        float bNorm = b / 255f;
+        float cmax = Math.max(rNorm, Math.max(gNorm, bNorm));
+        float cmin = Math.min(rNorm, Math.min(gNorm, bNorm));
+        float delta = cmax - cmin;
+        float hue = 0;
+        if (delta != 0) {
+            if (cmax == rNorm) {
+                hue = 60 * ((gNorm - bNorm) / delta % 6);
+            } else if (cmax == gNorm) {
+                hue = 60 * ((bNorm - rNorm) / delta + 2);
+            } else {
+                hue = 60 * ((rNorm - gNorm) / delta + 4);
+            }
+        }
+        if (hue < 0) hue += 360;
+        float saturation = cmax == 0 ? 0 : delta / cmax;
+        float value = cmax;
+        return new float[]{hue, saturation, value};
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Color color = (Color) o;
-
-        return r == color.r && g == color.g && b == color.b && a == color.a;
+    public int getARGB() {
+        return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
-    @Override
-    public int hashCode() {
-        int result = r;
-        result = 31 * result + g;
-        result = 31 * result + b;
-        result = 31 * result + a;
-        return result;
+    public int getRGB() {
+        return (r << 16) | (g << 8) | b;
     }
 
 
     public int getAlpha() {
         return a;
+    }
+
+    public Color setARGB(int argb) {
+        this.a = (argb >> 24) & 0xFF;
+        this.r = (argb >> 16) & 0xFF;
+        this.g = (argb >> 8) & 0xFF;
+        this.b = argb & 0xFF;
+        return this;
+    }
+
+    public Color setRGB(int rgb) {
+        this.r = (rgb >> 16) & 0xFF;
+        this.g = (rgb >> 8) & 0xFF;
+        this.b = rgb & 0xFF;
+        return this;
+    }
+
+    public Color withAlpha(int alpha) {
+        return new Color(r, g, b, alpha);
+    }
+
+    public Color withRed(int red) {
+        return new Color(red, g, b, a);
+    }
+
+    public Color withGreen(int green) {
+        return new Color(r, green, b, a);
+    }
+
+    public Color withBlue(int blue) {
+        return new Color(r, g, blue, a);
+    }
+
+    public Color multiply(float factor) {
+        return new Color((int)(r * factor), (int)(g * factor), (int)(b * factor), a);
+    }
+
+    public Color multiply(float factor, boolean multiplyAlpha) {
+        int newAlpha = multiplyAlpha ? (int)(a * factor) : a;
+        return new Color((int)(r * factor), (int)(g * factor), (int)(b * factor), newAlpha);
+    }
+
+    public Color lerp(Color other, float t) {
+        return new Color(
+                (int)(r + (other.r - r) * t),
+                (int)(g + (other.g - g) * t),
+                (int)(b + (other.b - b) * t),
+                (int)(a + (other.a - a) * t)
+        );
+    }
+
+    /**
+     * Converts HSV to RGB color.
+     * @param hue       0..360
+     * @param saturation 0..1
+     * @param value      0..1
+     * @return new Color (alpha = 255)
+     */
+    public static Color fromHsv(float hue, float saturation, float value) {
+        int rgb = java.awt.Color.HSBtoRGB(hue / 360f, saturation, value);
+        return new Color(rgb);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Color(r=%d, g=%d, b=%d, a=%d)", r, g, b, a);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Color)) return false;
+        Color other = (Color) obj;
+        return r == other.r && g == other.g && b == other.b && a == other.a;
+    }
+
+    @Override
+    public int hashCode() {
+        return getARGB();
     }
 }

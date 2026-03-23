@@ -126,9 +126,9 @@ public final class PlayerINFO extends AxiomMod implements ColorConfigurable, Key
         hud.setCompact(compact.get());
 
         // Värit (getCurrentColor!)
-        hud.setBackgroundColor(backgroundColor.getCurrentColor().getPacked());
-        hud.setBorderColor(borderColor.getCurrentColor().getPacked());
-        hud.setTextColor(textColor.getCurrentColor().getPacked());
+        hud.setBackgroundColor(backgroundColor.getCurrentColor().getARGB());
+        hud.setBorderColor(borderColor.getCurrentColor().getARGB());
+        hud.setTextColor(textColor.getCurrentColor().getARGB());
     }
 
     private void ensureHudRegistered() {

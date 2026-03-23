@@ -10,7 +10,6 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 
@@ -24,7 +23,7 @@ public final class ArmorHudComponent extends BaseHudElement {
     private long fadeMs = 250;
     private double maxRange = 64.0;
     private float textScale = 1.0f;
-    private float backgroundScale = 1.0f; // UUSI
+    private float backgroundScale = 1.0f;
 
     private boolean showHelmet = true;
     private boolean showChestplate = true;
@@ -109,7 +108,7 @@ public final class ArmorHudComponent extends BaseHudElement {
         int contentH = slotSize;
 
         int numberH = (showDurability && showDurabilityNumbers) ? (int) (ctx.fontHeight() * textScale) : 0;
-        if (numberH > 0) contentH += numberH + (int) (2 * backgroundScale); // väli skaalautuu taustan mukaan
+        if (numberH > 0) contentH += numberH + (int) (2 * backgroundScale);
 
         int boxW = contentW + padding * 2;
         int boxH = contentH + padding * 2;
@@ -122,14 +121,10 @@ public final class ArmorHudComponent extends BaseHudElement {
         // Haetaan nykyiset värit (rainbow-tuki)
         Color bgCol = backgroundColor.getCurrentColor();
         Color borderCol = borderColor.getCurrentColor();
-        Color txtCol = textColor.getCurrentColor();
 
-        float alpha = 1.0f; // fade-out voidaan lisätä myöhemmin
-
-        // Tausta pyöristettynä
-        Renderer2D.COLOR.drawRoundedRect(x0, y0, boxW, boxH, CORNER_RADIUS, bgCol);
-        // Reunus
-        Renderer2D.COLOR.drawRoundedRectOutline(x0, y0, boxW, boxH, CORNER_RADIUS, borderCol, 1.0);
+        // Käytetään ctx-funktioita
+        ctx.fillRounded(x0, y0, boxW, boxH, CORNER_RADIUS, bgCol.getARGB());
+        ctx.drawRoundedOutline(x0, y0, boxW, boxH, CORNER_RADIUS, borderCol.getARGB(), 1.0);
 
         int ix = x0 + padding;
         int iy = y0 + padding;
@@ -139,12 +134,11 @@ public final class ArmorHudComponent extends BaseHudElement {
 
             if (showDurability && showDurabilityNumbers && !stack.isEmpty() && stack.isDamageableItem()) {
                 int pct = durabilityPct(stack);
-                String text = pct + "";
+                String text = Integer.toString(pct);
                 int tw = (int) (ctx.textWidth(text) * textScale);
                 int tx = ix + (slotSize - tw) / 2;
-                int ty = iy + slotSize + (int) (2 * backgroundScale); // väli skaalautuu taustan mukaan
+                int ty = iy + slotSize + (int) (2 * backgroundScale);
                 int color = getDurabilityColor(pct);
-                // Käytetään textCol-väriä, jos halutaan sama kuin tekstiväri, muuten pidetään durability-väri
                 ctx.drawScaledText(text, tx, ty, color, true, textScale);
             }
             ix += slotSize + gap;
@@ -153,15 +147,15 @@ public final class ArmorHudComponent extends BaseHudElement {
 
     @Override
     public void renderEdit(HudContext ctx) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null) {
-            int x0 = x, y0 = y;
-            int w = (int) (100 * backgroundScale);
-            int h = (int) (30 * backgroundScale);
-            Color bgCol = backgroundColor.getCurrentColor();
-            Color borderCol = borderColor.getCurrentColor();
-            ctx.drawScaledText("Armor", x0 + 4, y0 + 4, textColor.getCurrentColor().getPacked(), true, textScale);
-        }
+        // Edit-näkymässä näytetään vain placeholder
+        int x0 = x, y0 = y;
+        int w = (int) (100 * backgroundScale);
+        int h = (int) (30 * backgroundScale);
+        Color bgCol = backgroundColor.getCurrentColor();
+        Color borderCol = borderColor.getCurrentColor();
+        ctx.fillRounded(x0, y0, w, h, CORNER_RADIUS, bgCol.getARGB());
+        ctx.drawRoundedOutline(x0, y0, w, h, CORNER_RADIUS, borderCol.getARGB(), 1.0);
+        ctx.drawScaledText("Armor", x0 + 4, y0 + 4, textColor.getCurrentColor().getARGB(), true, textScale);
     }
 
     // ---------- apumetodit (ennallaan) ----------

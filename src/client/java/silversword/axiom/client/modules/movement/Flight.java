@@ -60,7 +60,7 @@ public class Flight extends AxiomMod implements KeybindConfigurable {
         addHiddenSetting(toggleKey);
 
         // Rekisteröidään event-kuuntelija
-        AxiomInitialize.EVENT_BUS.subscribe(this);
+        AxiomInitialize.EVENT_BUS.register(this);
     }
 
     @Override

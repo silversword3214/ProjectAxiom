@@ -1,4 +1,4 @@
-package silversword.axiom.client.utils.player;
+package silversword.axiom.client.modules.moduleutils.SmartKillAura;
 
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import silversword.axiom.client.utils.misc.Pool;

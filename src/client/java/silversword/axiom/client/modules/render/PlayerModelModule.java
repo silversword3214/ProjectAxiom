@@ -44,7 +44,7 @@ public final class PlayerModelModule extends AxiomMod implements ColorConfigurab
     public final SettingKeybind toggleKey;
 
     public PlayerModelModule() {
-        super("Player Model", "Shows your player model in a HUD element with framebuffer (very experimental)", ModuleCategory.RENDER);
+        super("Player Model", "Shows your player model in a HUD element with framebuffer (not working with the new render API)", ModuleCategory.RENDER);
 
         width           = new SettingNumber("Width", 32, 400, 1, 80);
         height          = new SettingNumber("Height", 32, 400, 1, 160);
@@ -114,7 +114,7 @@ public final class PlayerModelModule extends AxiomMod implements ColorConfigurab
         hud.setCameraSide((float) cameraSide.getValue());
         hud.setRenderDistance((float) renderDistance.getValue());
         hud.setShowBorder(showBorder.get());
-        hud.setBorderColor(borderColor.getCurrentColor().getPacked());
+        hud.setBorderColor(borderColor.getCurrentColor().getARGB());
 
         hud.setCameraMode(cameraMode.getMode());
         hud.setLookAtMode(lookAtMode.getMode());

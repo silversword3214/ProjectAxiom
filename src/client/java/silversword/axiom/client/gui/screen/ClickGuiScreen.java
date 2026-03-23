@@ -20,8 +20,9 @@ import silversword.axiom.client.gui.window.WindowManager;
 import silversword.axiom.client.hud.HudManager;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
+
+import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
 import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
 import silversword.axiom.client.utils.render.DrawTexture;
 
@@ -90,19 +91,15 @@ public final class ClickGuiScreen extends Screen {
 
     @Override
     public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
-
-
-        // Tallenna alkuperäinen projektio
-        Matrix4f savedProj = new Matrix4f(RenderUtils.projection);
-
-        RenderUtils.rendering3D = false;
-        RenderUtils.setup2DProjection(this.width, this.height);
-
         windowManager.updateAnimations();
 
-        Renderer2D.COLOR.begin();
+        int width = ctx.guiWidth();   // GuiGraphics: GUI-skaalattu leveys
+        int height = ctx.guiHeight(); // GuiGraphics: GUI-skaalattu korkeus
+        Matrix4f proj = new Matrix4f().setOrtho(0, width, height, 0, -1000, 1000);
+        Renderer2D renderer = new Renderer2D(ctx, RenderAPI.getInstance().getCore(), proj);
+        lastUi = new UiContext(this.minecraft, ctx, theme, delta, renderer);
 
-        lastUi = new UiContext(this.minecraft, ctx, theme, delta);
+        // Aloita tekstirenderöinti (vanha API)
         TextRenderer.get().begin(1.0, false, false);
 
         if (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen()) {
@@ -111,29 +108,24 @@ public final class ClickGuiScreen extends Screen {
 
         drawTopBar(lastUi, mouseX, mouseY);
 
-        Renderer2D.COLOR.render();
+        // Lopeta tekstirenderöinti
+        TextRenderer.get().end();
 
-
+        // Lähetä kaikki piirto-objektit GPU:lle
+        RenderAPI.getInstance().getCore().flush();
 
         super.render(ctx, mouseX, mouseY, delta);
 
         DrawTexture.renderAll();
 
-
-        TextRenderer.get().end();
-
         TooltipStack.renderAll(lastUi);
-
-        RenderUtils.projection.set(savedProj);
-
-        RenderUtils.rendering3D = true;
     }
 
     private void drawRoundedButton(UiContext ui, int x, int y, int w, int h, int bgColor, int borderColor, int radius) {
-        // Reunus (piirretään ensin)
-        Renderer2D.COLOR.drawRoundedRect(x, y, w, h, radius, new Color(borderColor));
-        // Täyttö (hieman pienempi, jotta reunus jää näkyviin)
-        Renderer2D.COLOR.drawRoundedRect(x + 1, y + 1, w - 2, h - 2, Math.max(0, radius - 1), new Color(bgColor));
+        // Reunus
+        ui.fillRounded(x, y, w, h, borderColor, radius);
+        // Täyttö (hieman pienempi)
+        ui.fillRounded(x + 1, y + 1, w - 2, h - 2, bgColor, Math.max(0, radius - 1));
     }
 
     private void drawTopBar(UiContext ui, int mouseX, int mouseY) {

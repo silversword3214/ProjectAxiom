@@ -8,13 +8,14 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
-import silversword.axiom.client.eventbus.AxiomEvent;
-import silversword.axiom.client.render.rendersystem.ShapeMode;
+
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.render.rendersystem.utils.misc.ShapeModeEnum;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingMode;
 import silversword.axiom.client.setting.SettingSlider;
@@ -57,7 +58,7 @@ public final class LavaESP extends AxiomMod implements KeybindConfigurable {
     @Override
     protected void onTick() {}
 
-    @AxiomEvent
+    @Subscribe
     private void onRender(Render3DEvent event) {
         if (!isEnabled()) return;
         if (mc.player == null || mc.level == null) return;
@@ -160,14 +161,14 @@ public final class LavaESP extends AxiomMod implements KeybindConfigurable {
         Color sideColor = new Color(color.r, color.g, color.b, 30);
         Color lineColor = color;
 
-        ShapeMode mode = switch (boxMode.getMode()) {
-            case "Sides" -> ShapeMode.Sides;
-            case "Both" -> ShapeMode.Both;
-            default -> ShapeMode.Lines;
+        ShapeModeEnum mode = switch (boxMode.getMode()) {
+            case "Sides" -> ShapeModeEnum.SIDES;
+            case "Both" -> ShapeModeEnum.BOTH;
+            default -> ShapeModeEnum.LINES;
         };
 
         double expand = 0.1;
-        event.render.drawBox(
+        event.getRenderer().drawBox(
                 minX - expand, minY - expand, minZ - expand,
                 maxX + 1 + expand, maxY + 1 + expand, maxZ + 1 + expand,
                 sideColor, lineColor, mode, 0

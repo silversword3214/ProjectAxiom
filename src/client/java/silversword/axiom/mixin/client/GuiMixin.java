@@ -9,51 +9,17 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import silversword.axiom.client.event.render.Render2DEvent;
 import silversword.axiom.client.gui.screen.ClickGuiScreen;
-import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.misc.PotionEffects;
 import silversword.axiom.client.modules.render.NoVignette;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
 @Mixin(Gui.class)
 public class GuiMixin {
-
-    @Inject(method = "render", at = @At("TAIL"))
-    private void onRender(GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
-        if (mc.options.hideGui) return;
-
-        AxiomInitialize.EVENT_BUS.post(new Render2DEvent());
-
-        // 1. Setting up 2D-projection
-        RenderUtils.unscaledProjection();
-
-        // 2. Begin meshes
-        Renderer2D.COLOR.begin();
-        Renderer2D.TEXTURE.begin();
-
-        // 3. Post event
-        AxiomInitialize.EVENT_BUS.post(Render2DEvent.get(
-                context,
-                context.guiWidth(),
-                context.guiHeight(),
-                tickCounter.getGameTimeDeltaPartialTick(true)
-        ));
-
-        // 4. End meshes
-        Renderer2D.COLOR.end();
-        Renderer2D.TEXTURE.end();
-
-        // 5. Rendering COLOR
-        Renderer2D.COLOR.render();
-
-        // 6. Returning 3D-projection for Renderer3D
-        RenderUtils.scaledProjection();
-    }
 
     @Inject(method = "renderVignette", at = @At("HEAD"), cancellable = true)
     private void onRenderVignetteOverlay(GuiGraphics context, Entity entity, CallbackInfo ci) {
@@ -76,7 +42,6 @@ public class GuiMixin {
     @Inject(method = "renderHotbarAndDecorations", at = @At("HEAD"), cancellable = true)
     private void onRenderMainHud(GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
         if (Minecraft.getInstance().screen instanceof ClickGuiScreen) ci.cancel();
-
     }
 
     @Inject(method = "renderEffects", at = @At("HEAD"), cancellable = true)
@@ -99,7 +64,6 @@ public class GuiMixin {
         if (Minecraft.getInstance().screen instanceof ClickGuiScreen) ci.cancel();
     }
 
-    // TODO(Ravel): target method renderScoreboardSidebar is ambiguous
     @Inject(method = "renderScoreboardSidebar", at = @At("HEAD"), cancellable = true)
     private void onRenderScoreboardSidebar(GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
         if (Minecraft.getInstance().screen instanceof ClickGuiScreen) ci.cancel();
@@ -140,4 +104,6 @@ public class GuiMixin {
         if (Minecraft.getInstance().screen instanceof ClickGuiScreen) ci.cancel();
     }
 
+    // Note: The chest steal button drawing has been removed from this mixin.
+    // It is now handled by the ChestStealer module via RenderHUDEvent.
 }

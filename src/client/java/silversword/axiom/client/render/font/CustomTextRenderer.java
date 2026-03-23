@@ -1,9 +1,8 @@
 package silversword.axiom.client.render.font;
 
 
-import silversword.axiom.client.render.rendersystem.BufferRenderer;
-import silversword.axiom.client.render.rendersystem.CustomRenderingPipelineProvider;
-import silversword.axiom.client.render.rendersystem.VertexBufferBuilder;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,7 +15,6 @@ import java.nio.ByteBuffer;
 public class CustomTextRenderer implements TextRenderer {
     public static final Color SHADOW_COLOR = new Color(60, 60, 60, 180);
 
-    private final VertexBufferBuilder mesh = new VertexBufferBuilder(CustomRenderingPipelineProvider.UI_TEXT);
     public final FontFace fontFace;
 
     private final Font[] fonts;
@@ -26,6 +24,8 @@ public class CustomTextRenderer implements TextRenderer {
     private boolean scaleOnly;
     private double fontScale = 1;
     private double scale = 1;
+
+    private RenderCore core;
 
     public CustomTextRenderer(FontFace fontFace) {
         this.fontFace = fontFace;
@@ -49,7 +49,7 @@ public class CustomTextRenderer implements TextRenderer {
 
     @Override
     public void setAlpha(double a) {
-        mesh.alpha = a;
+
     }
 
     @Override
@@ -63,7 +63,11 @@ public class CustomTextRenderer implements TextRenderer {
     public void begin(double scale, boolean scaleOnly, boolean big) {
         if (building) throw new RuntimeException("CustomTextRenderer.begin() called twice");
 
-        if (!scaleOnly) mesh.begin();
+        this.core = RenderAPI.getInstance().getCore(); // <-- haetaan core
+
+        if (!scaleOnly) {
+            // Core hoitaa bätsäyksen, ei tarvita omaa mesh‑alustusta
+        }
 
         if (big) {
             this.font = fonts[fonts.length - 1];
@@ -107,11 +111,11 @@ public class CustomTextRenderer implements TextRenderer {
         if (shadow) {
             int preShadowA = SHADOW_COLOR.a;
             SHADOW_COLOR.a = (int) (color.a / 255.0 * preShadowA);
-            width = font.render(mesh, text, x + fontScale * scale / 1.5, y + fontScale * scale / 1.5, SHADOW_COLOR, scale / 1.5);
-            font.render(mesh, text, x, y, color, scale / 1.5);
+            width = font.render(core, text, x + fontScale * scale / 1.5, y + fontScale * scale / 1.5, SHADOW_COLOR, scale / 1.5);
+            font.render(core, text, x, y, color, scale / 1.5);
             SHADOW_COLOR.a = preShadowA;
         } else {
-            width = font.render(mesh, text, x, y, color, scale / 2.3);
+            width = font.render(core, text, x, y, color, scale / 2.3);
         }
 
         if (!wasBuilding) end();
@@ -125,16 +129,11 @@ public class CustomTextRenderer implements TextRenderer {
 
     @Override
     public void end() {
-        if (!building) throw new RuntimeException("CustomTextRenderer.end() called without calling begin()");
-        if (!scaleOnly) {
-            BufferRenderer.begin()
-                    .mesh(mesh)
-                    .pipeline(CustomRenderingPipelineProvider.UI_TEXT)
-                    .sampler("u_Texture", font.texture.textureView(), font.texture.sampler())
-                    .end();
-        }
+        if (!building) throw new RuntimeException("CustomTextRenderer.end() called without begin()");
+        // Coren flush() kutsutaan ulkopuolella, ei tarvita omaa lopetusta
         building = false;
         scale = 1;
+        core = null;
     }
 
     public void destroy() {

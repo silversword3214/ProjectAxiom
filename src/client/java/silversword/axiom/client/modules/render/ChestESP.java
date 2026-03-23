@@ -12,6 +12,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.chunk.LevelChunk;
 import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.window.WindowFactory;
@@ -21,10 +22,10 @@ import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.NamedColor;
 import silversword.axiom.client.modules.moduleutils.StorageType;
-import silversword.axiom.client.eventbus.AxiomEvent;
-import silversword.axiom.client.render.rendersystem.ShapeMode;
+
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.render.rendersystem.utils.misc.ShapeModeEnum;
 import silversword.axiom.client.setting.*;
 
 import java.util.Arrays;
@@ -105,7 +106,7 @@ public final class ChestESP extends AxiomMod implements ColorConfigurable, Keybi
     @Override
     protected void onTick() {}
 
-    @AxiomEvent
+    @Subscribe
     private void onRender(Render3DEvent event) {
         if (!isEnabled()) return;
         if (mc.player == null || mc.level == null) return;
@@ -133,17 +134,17 @@ public final class ChestESP extends AxiomMod implements ColorConfigurable, Keybi
                     if (!shouldDrawType(type)) continue;
 
                     Color baseColor = getColorForType(type).getCurrentColor();
-                    Color sideColor = new Color(baseColor.r, baseColor.g, baseColor.b, 30);
-                    Color lineColor = baseColor;
+                    int sideColor = new Color(baseColor.r, baseColor.g, baseColor.b, 30).getARGB();
+                    int lineColor = baseColor.getARGB();
 
-                    ShapeMode mode = switch (boxMode.getMode()) {
-                        case "Filled" -> ShapeMode.Sides;
-                        case "Both"   -> ShapeMode.Both;
-                        default       -> ShapeMode.Lines;
+                    ShapeModeEnum mode = switch (boxMode.getMode()) {
+                        case "Filled" -> ShapeModeEnum.SIDES;
+                        case "Both"   -> ShapeModeEnum.BOTH;
+                        default       -> ShapeModeEnum.LINES;
                     };
 
                     double half = 0.5;
-                    event.render.drawBox(
+                    event.getRenderer().drawBox(
                             pos.getX() + 0.5 - half, pos.getY(), pos.getZ() + 0.5 - half,
                             pos.getX() + 0.5 + half, pos.getY() + 1.0, pos.getZ() + 0.5 + half,
                             sideColor, lineColor, mode, 0

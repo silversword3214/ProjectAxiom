@@ -81,7 +81,6 @@ public final class ModuleManager {
         safeAdd(new AutoGapple());
         safeAdd(new HitEffect());
         safeAdd(new ReachDisplay());
-        safeAdd(new ReachCheck());
 
         // Movement
         safeAdd(new Flight());
@@ -118,7 +117,6 @@ public final class ModuleManager {
         safeAdd(new Tracers());
         safeAdd(new Trajectories());
         safeAdd(new XRay());
-        safeAdd(new PlayerModelModule());
         safeAdd(new BlockOutline());
         safeAdd(new BlockNametag());
         safeAdd(new RadarModule());
@@ -189,7 +187,7 @@ public final class ModuleManager {
 
     public void updateAllModules() {
         for (AxiomMod m : modules) {
-            if (!m.isEnabled()) continue; // <-- TÄMÄ
+            if (!m.isEnabled()) continue;
             try {
                 m.update();
             } catch (Throwable t) {

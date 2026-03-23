@@ -79,7 +79,7 @@ public class VanillaTextRenderer implements TextRenderer {
             matrix = matrices.last().pose();
         }
 
-        mc.font.drawInBatch(text, (float) (x / scale), (float) (y / scale), color.toRGBA(), shadow, matrix, immediate, DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
+        mc.font.drawInBatch(text, (float) (x / scale), (float) (y / scale), color.getARGB(), shadow, matrix, immediate, DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
         double x2 = (x / scale) + mc.font.width(text);
 
         if (scaleIndividually) matrices.popPose();

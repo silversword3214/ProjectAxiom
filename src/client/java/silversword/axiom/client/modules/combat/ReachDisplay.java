@@ -92,9 +92,9 @@ public class ReachDisplay extends AxiomMod implements ColorConfigurable, Keybind
         if (mc.player == null || mc.level == null) return;
 
         // Päivitetään värit elementille
-        element.setBackgroundColor(backgroundColor.getCurrentColor().getPacked());
-        element.setBorderColor(borderColor.getCurrentColor().getPacked());
-        element.setTextColor(textColor.getCurrentColor().getPacked());
+        element.setBackgroundColor(backgroundColor.getCurrentColor().getARGB());
+        element.setBorderColor(borderColor.getCurrentColor().getARGB());
+        element.setTextColor(textColor.getCurrentColor().getARGB());
 
         LivingEntity target = findClosestTarget();
         if (target == null) {

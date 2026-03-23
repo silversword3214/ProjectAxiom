@@ -1,7 +1,6 @@
 accessWidener	v2	named
 
-accessible   class   net/minecraft/client/resources/SkinManager$TextureCache
-accessible   class   net/minecraft/client/particle/FireworkParticles$SparkParticle
+
 accessible   class   net/minecraft/network/protocol/game/ServerboundInteractPacket$ActionType
 accessible   class   net/minecraft/network/protocol/game/ServerboundInteractPacket$InteractionAtLocationAction
 accessible   class   net/minecraft/network/protocol/game/ServerboundInteractPacket$Action
@@ -11,9 +10,6 @@ accessible field net/minecraft/client/player/ClientInput moveVector Lnet/minecra
 accessible   class   net/minecraft/client/resources/MapTextureManager$MapInstance
 accessible   field   net/minecraft/client/resources/MapTextureManager$MapInstance texture Lnet/minecraft/client/renderer/texture/DynamicTexture;
 
-accessible   class   net/minecraft/client/gui/screens/inventory/BeaconScreen$BeaconPowerButton
-accessible   class   net/minecraft/client/gui/screens/inventory/BeaconScreen$BeaconConfirmButton
-accessible   class   net/minecraft/client/gui/screens/inventory/BeaconScreen$BeaconCancelButton
 
 accessible   class   net/minecraft/client/ResourceLoadStateTracker$ReloadState
 
@@ -29,3 +25,5 @@ accessible method net/minecraft/client/renderer/LevelRenderer cullTerrain (Lnet/
 
 accessible field net/minecraft/client/renderer/GameRenderer levelProjectionMatrixBuffer Lnet/minecraft/client/renderer/PerspectiveProjectionMatrixBuffer;
 accessible method net/minecraft/client/Camera getMaxZoom (F)F
+
+accessible method net/minecraft/client/renderer/GameRenderer getFov (Lnet/minecraft/client/Camera;FZ)F

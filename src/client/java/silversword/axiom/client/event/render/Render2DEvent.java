@@ -1,22 +1,35 @@
 package silversword.axiom.client.event.render;
 
 import net.minecraft.client.gui.GuiGraphics;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
 
-public class Render2DEvent {
-    private static final Render2DEvent INSTANCE = new Render2DEvent();
+public class Render2DEvent extends RenderEvent {
+    private final Renderer2D renderer;
+    private final GuiGraphics guiGraphics;
+    private final int screenWidth;
+    private final int screenHeight;
 
-    public GuiGraphics drawContext;
-    public int screenWidth, screenHeight;
-    public float tickDelta;
+    public Render2DEvent(Renderer2D renderer, float tickDelta, GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
+        super(tickDelta);
+        this.renderer = renderer;
+        this.guiGraphics = guiGraphics;
+        this.screenWidth = screenWidth;
+        this.screenHeight = screenHeight;
+    }
 
+    public Renderer2D getRenderer() {
+        return renderer;
+    }
 
-    public static Render2DEvent get(GuiGraphics drawContext, int screenWidth, int screenHeight, float tickDelta) {
-        INSTANCE.drawContext = drawContext;
-        INSTANCE.screenWidth = screenWidth;
-        INSTANCE.screenHeight = screenHeight;
-        INSTANCE.tickDelta = tickDelta;
-        return INSTANCE;
+    public GuiGraphics getGuiGraphics() {
+        return guiGraphics;
+    }
 
+    public int getScreenWidth() {
+        return screenWidth;
+    }
 
+    public int getScreenHeight() {
+        return screenHeight;
     }
 }

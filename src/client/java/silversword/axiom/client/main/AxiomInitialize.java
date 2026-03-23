@@ -5,69 +5,62 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.client.Minecraft;
-import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.server.packs.PackType;
+import net.minecraft.client.gui.font.FontManager;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.resources.ResourceManager;
+import org.joml.Matrix4f;
 import silversword.axiom.client.config.HudConfigManager;
 import silversword.axiom.client.config.PauseUiConfigManager;
 import silversword.axiom.client.config.ResourcePackBlockerConfig;
 import silversword.axiom.client.config.SettingsConfigManager;
 import silversword.axiom.client.event.InputListener;
+import silversword.axiom.client.eventbus.EventBus;
 import silversword.axiom.client.gui.window.WindowManager;
-import silversword.axiom.client.hud.HudManager;
 import silversword.axiom.client.hud.AxiomHudBootstrap;
+import silversword.axiom.client.hud.HudManager;
 import silversword.axiom.client.managers.ModuleKeybindManager;
 import silversword.axiom.client.managers.ModuleManager;
-import silversword.axiom.client.eventbus.EventBus;
-import silversword.axiom.client.eventbus.IEventBus;
 import silversword.axiom.client.modules.waypoints.WaypointCommands;
-import silversword.axiom.client.render.rendersystem.CustomRenderingPipelineProvider;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
-
+import silversword.axiom.client.render.font.Fonts;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderPipelines;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.FabricHudHook;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.FabricWorldHook;
 import silversword.axiom.client.sound.CustomSounds;
 
-
-import java.lang.invoke.MethodHandles;
-
 public final class AxiomInitialize implements ClientModInitializer {
-    public static final IEventBus EVENT_BUS = new EventBus();
+    public static final EventBus EVENT_BUS = new EventBus();
     public static final Minecraft mc = Minecraft.getInstance();
     public static final WindowManager pauseWindowManager = new WindowManager();
 
-
-
     @Override
     public void onInitializeClient() {
-        // Reload listener
         ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
             @Override
             public Identifier getFabricId() {
-                return Identifier.fromNamespaceAndPath("projectaxiom", "shader_loader");
+                return Identifier.fromNamespaceAndPath("projectaxiom", "pipeline_rebuilder");
             }
 
             @Override
             public void onResourceManagerReload(ResourceManager manager) {
-                CustomRenderingPipelineProvider.precompile();
-                CustomRenderingPipelineProvider.rebuildAll();
-                silversword.axiom.client.render.font.Fonts.refresh();
+                RenderPipelines.rebuildAll();
             }
         });
 
-        // Graphics
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
-
-            Renderer2D.init();
-            silversword.axiom.client.render.font.Fonts.refresh();
+            Fonts.refresh();
         });
 
-        EVENT_BUS.registerLambdaFactory("silversword.axiom", (lookupInMethod, axiomClass) ->
-                (MethodHandles.Lookup) lookupInMethod.invoke(null, axiomClass, MethodHandles.lookup()));
+        // Rekisteröidään hookit
+        FabricHudHook.register();
+        FabricWorldHook.register();
 
-        EVENT_BUS.subscribe(this);
+        // Rekisteröidään eventbus ja moduulit
+        EVENT_BUS.register(this);
         ModuleManager.getInstance().init();
-
         for (var module : ModuleManager.getInstance().getModules()) {
-            EVENT_BUS.subscribe(module);
+            EVENT_BUS.register(module);
         }
         ResourcePackBlockerConfig.load();
         SettingsConfigManager.loadAll();

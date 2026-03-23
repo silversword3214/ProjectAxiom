@@ -1,7 +1,7 @@
 package silversword.axiom.client.modules.render.blockesp;
 
 import net.minecraft.core.BlockPos;
-import silversword.axiom.client.render.rendersystem.Renderer3D;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
 

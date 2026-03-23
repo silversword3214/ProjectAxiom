@@ -4,10 +4,10 @@ import net.minecraft.world.InteractionHand;
 import org.lwjgl.glfw.GLFW;
 import silversword.axiom.client.event.KeyboardAction;
 import silversword.axiom.client.event.MouseClickEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
-import silversword.axiom.client.eventbus.AxiomEvent;
 import silversword.axiom.client.setting.*;
 
 import static silversword.axiom.client.main.AxiomInitialize.mc;
@@ -106,7 +106,7 @@ public class AutoClicker extends AxiomMod implements KeybindConfigurable {
         mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
     }
 
-    @AxiomEvent
+    @Subscribe
     public void onMouseClick(MouseClickEvent event) {
         if (!isEnabled()) return;
 

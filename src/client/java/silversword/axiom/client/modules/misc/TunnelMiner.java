@@ -18,6 +18,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.chunk.LevelChunk;
 import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.window.WindowFactory;
 import silversword.axiom.client.main.AxiomMod;
@@ -26,10 +27,11 @@ import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.moduleutils.BlockSelectable;
 import silversword.axiom.client.modules.moduleutils.BlockSelectionView;
-import silversword.axiom.client.eventbus.AxiomEvent;
-import silversword.axiom.client.render.rendersystem.ShapeMode;
+
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.render.rendersystem.utils.misc.ShapeModeEnum;
 import silversword.axiom.client.setting.*;
 
 import java.util.*;
@@ -161,7 +163,7 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
 
         addHiddenSetting(toggleKey);
 
-        AxiomInitialize.EVENT_BUS.subscribe(this);
+        AxiomInitialize.EVENT_BUS.register(this);
     }
 
     @Override
@@ -955,14 +957,16 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
         isClimbing = false;
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onRender(Render3DEvent event) {
         if (!isEnabled() || !enabled.get()) return;
 
+        Renderer3D renderer = event.getRenderer();
+
         if (!blocksToMine.isEmpty()) {
-            ShapeMode mode = ShapeMode.valueOf(shapeMode.getMode());
-            Color side = sideColor.getCurrentColor();
-            Color line = lineColor.getCurrentColor();
+            ShapeModeEnum mode = ShapeModeEnum.valueOf(shapeMode.getMode().toUpperCase());
+            int side = sideColor.getCurrentColor().getARGB();
+            int line = lineColor.getCurrentColor().getARGB();
             double margin = 0.1;
             double size = 0.8;
             for (BlockPos pos : blocksToMine) {
@@ -973,7 +977,7 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
                 double x2 = x1 + size;
                 double y2 = y1 + size;
                 double z2 = z1 + size;
-                event.render.drawBox(x1, y1, z1, x2, y2, z2, side, line, mode, 0);
+                renderer.drawBox(x1, y1, z1, x2, y2, z2, side, line, mode, 0);
             }
         }
 
@@ -984,43 +988,44 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
             double x2 = x1 + 0.8;
             double y2 = y1 + 0.8;
             double z2 = z1 + 0.8;
-            event.render.drawBox(x1, y1, z1, x2, y2, z2,
-                    new Color(0, 0, 255, 50), new Color(0, 0, 255, 255), ShapeMode.Both, 0);
+            int sideColor = new Color(0, 0, 255, 50).getARGB();
+            int lineColor = new Color(0, 0, 255, 255).getARGB();
+            renderer.drawBox(x1, y1, z1, x2, y2, z2, sideColor, lineColor, ShapeModeEnum.BOTH, 0);
         }
 
         if (currentTarget != null) {
             // Piirrä kaikki targetit valkoisella (paitsi nykyinen)
-            Color whiteBox = new Color(255, 255, 255, 50);
-            Color whiteLine = new Color(255, 255, 255, 255);
+            int whiteBox = new Color(255, 255, 255, 50).getARGB();
+            int whiteLine = new Color(255, 255, 255, 255).getARGB();
             for (BlockPos pos : allTargets) {
-                if (mc.level.getBlockState(pos).isAir()) continue; // ohitetaan jo kaivetut
-                if (pos.equals(currentTarget)) continue; // piirretään erikseen
+                if (mc.level.getBlockState(pos).isAir()) continue;
+                if (pos.equals(currentTarget)) continue;
                 double x1 = pos.getX() + 0.1;
                 double y1 = pos.getY() + 0.1;
                 double z1 = pos.getZ() + 0.1;
                 double x2 = x1 + 0.8;
                 double y2 = y1 + 0.8;
                 double z2 = z1 + 0.8;
-                event.render.drawBox(x1, y1, z1, x2, y2, z2, whiteBox, whiteLine, ShapeMode.Both, 0);
+                renderer.drawBox(x1, y1, z1, x2, y2, z2, whiteBox, whiteLine, ShapeModeEnum.BOTH, 0);
             }
 
             // Piirrä nykyinen target vihreällä
-            Color greenBox = new Color(0, 255, 0, 50);
-            Color greenLine = new Color(0, 255, 0, 255);
+            int greenBox = new Color(0, 255, 0, 50).getARGB();
+            int greenLine = new Color(0, 255, 0, 255).getARGB();
             double x1 = currentTarget.getX() + 0.1;
             double y1 = currentTarget.getY() + 0.1;
             double z1 = currentTarget.getZ() + 0.1;
             double x2 = x1 + 0.8;
             double y2 = y1 + 0.8;
             double z2 = z1 + 0.8;
-            event.render.drawBox(x1, y1, z1, x2, y2, z2, greenBox, greenLine, ShapeMode.Both, 0);
+            renderer.drawBox(x1, y1, z1, x2, y2, z2, greenBox, greenLine, ShapeModeEnum.BOTH, 0);
 
-            // Piirrä polku (kuten aiemmin)
+            // Piirrä polku
             if (!pathCorners.isEmpty()) {
                 Vec3 prev = Vec3.atCenterOf(pathCorners.get(0));
                 for (int i = 1; i < pathCorners.size(); i++) {
                     Vec3 next = Vec3.atCenterOf(pathCorners.get(i));
-                    event.render.drawLine(prev.x, prev.y, prev.z, next.x, next.y, next.z, greenLine);
+                    renderer.drawLine(prev.x, prev.y, prev.z, next.x, next.y, next.z, greenLine);
                     prev = next;
                 }
             }

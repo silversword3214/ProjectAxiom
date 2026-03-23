@@ -11,14 +11,15 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
-import silversword.axiom.client.eventbus.AxiomEvent;
-import silversword.axiom.client.render.rendersystem.ShapeMode;
+
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.render.rendersystem.utils.misc.ShapeModeEnum;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingMode;
@@ -102,7 +103,7 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
         addSetting(zitterAmount);
         addSetting(keepRotationTicks);
 
-        AxiomInitialize.EVENT_BUS.subscribe(this);
+        AxiomInitialize.EVENT_BUS.register(this);
     }
 
     @Override
@@ -232,7 +233,7 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
         ledgeActive = true;
     }
 
-    @AxiomEvent
+    @Subscribe
     public void onRender(Render3DEvent event) {
         if (!isEnabled() || !render.get() || targetPos == null) return;
         if (!mc.level.getBlockState(targetPos).isAir()) return;
@@ -245,11 +246,11 @@ public class Scaffold extends AxiomMod implements KeybindConfigurable {
         double y2 = y1 + 1;
         double z2 = z1 + 1;
 
-        ShapeMode mode = ShapeMode.valueOf(shapeMode.getMode());
-        Color side = sideColor.getCurrentColor();
-        Color line = lineColor.getCurrentColor();
+        ShapeModeEnum mode = ShapeModeEnum.valueOf(shapeMode.getMode().toUpperCase());
+        int side = sideColor.getCurrentColor().getARGB();
+        int line = lineColor.getCurrentColor().getARGB();
 
-        event.render.drawBox(x1, y1, z1, x2, y2, z2, side, line, mode, 0);
+        event.getRenderer().drawBox(x1, y1, z1, x2, y2, z2, side, line, mode, 0);
     }
 
     private boolean isHoldingBlock() {

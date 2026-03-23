@@ -4,17 +4,18 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.DeltaTracker;
 import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
+import oshi.hardware.GraphicsCard;
 import oshi.hardware.HardwareAbstractionLayer;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.modules.NamedColor;
 import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingNumber;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +24,8 @@ public final class HardwareHud extends BaseHudElement {
     private final SettingBoolean showCpuUsage;
     private final SettingBoolean showRamUsage;
     private final SettingBoolean ramFormat; // true = %, false = MB/GB
+    private final SettingBoolean showGpuInfo;
+    private final SettingBoolean showDiskUsage;
 
     // Ulkoasu
     private final SettingNumber textScale;
@@ -39,6 +42,7 @@ public final class HardwareHud extends BaseHudElement {
     private static HardwareAbstractionLayer hal;
     private static CentralProcessor cpu;
     private static long[] oldTicks;
+    private static String gpuName; // välimuisti
 
     // Välimuisti CPU-kuormalle (500 ms)
     private long lastCpuUpdate = 0;
@@ -52,11 +56,20 @@ public final class HardwareHud extends BaseHudElement {
             hal = systemInfo.getHardware();
             cpu = hal.getProcessor();
             oldTicks = cpu.getSystemCpuLoadTicks();
+            // Haetaan GPU-nimi kerran
+            List<GraphicsCard> cards = hal.getGraphicsCards();
+            if (!cards.isEmpty()) {
+                gpuName = cards.get(0).getName();
+            } else {
+                gpuName = null;
+            }
         }
 
         showCpuUsage = new SettingBoolean("CPU Usage", true);
         showRamUsage = new SettingBoolean("RAM Usage", true);
-        ramFormat = new SettingBoolean("RAM as %", true); // true = %, false = MB/GB
+        ramFormat = new SettingBoolean("RAM as %", true);
+        showGpuInfo = new SettingBoolean("Show GPU", true);
+        showDiskUsage = new SettingBoolean("Show Disk", true);
 
         textScale = new SettingNumber("Text Scale", 0.5, 3.0, 0.1, 1.0);
         backgroundPadding = new SettingNumber("Background Padding", 0, 20, 1, 4);
@@ -70,6 +83,8 @@ public final class HardwareHud extends BaseHudElement {
         settings.addSetting(showCpuUsage);
         settings.addSetting(showRamUsage);
         settings.addSetting(ramFormat);
+        settings.addSetting(showGpuInfo);
+        settings.addSetting(showDiskUsage);
         settings.addSetting(textScale);
         settings.addSetting(backgroundPadding);
         settings.addSetting(backgroundRadius);
@@ -122,14 +137,16 @@ public final class HardwareHud extends BaseHudElement {
         int bgX = x;
         int bgY = y;
 
+        // Tausta
         if (radius > 0) {
-            Renderer2D.COLOR.drawRoundedRect(bgX, bgY, bgW, bgH, radius, bgCol);
+            ctx.fillRounded(bgX, bgY, bgW, bgH, radius, bgCol.getARGB());
         } else {
-            Renderer2D.COLOR.quad(bgX, bgY, bgW, bgH, bgCol);
+            ctx.fill(bgX, bgY, bgW, bgH, bgCol.getARGB());
         }
 
+        // Reunus
         if (borderCol.getAlpha() != 0 && thickness > 0) {
-            Renderer2D.COLOR.drawRoundedRectOutline(bgX, bgY, bgW, bgH, radius, borderCol, thickness);
+            ctx.drawRoundedOutline(bgX, bgY, bgW, bgH, radius, borderCol.getARGB(), thickness);
         }
 
         int yOffset = bgY + padding;
@@ -139,10 +156,11 @@ public final class HardwareHud extends BaseHudElement {
                 String textPart = line.substring(0, colonIdx + 1);
                 String valuePart = line.substring(colonIdx + 1).trim();
                 int textPartWidth = (int) (TextRenderer.get().getWidth(textPart) * scale);
-                ctx.drawScaledText(textPart, bgX + padding, yOffset, txtCol.getPacked(), true, scale);
-                ctx.drawScaledText(valuePart, bgX + padding + textPartWidth + (int)(2 * scale), yOffset, valCol.getPacked(), true, scale);
+                ctx.drawScaledText(textPart, bgX + padding, yOffset, txtCol.getARGB(), true, scale);
+                ctx.drawScaledText(valuePart, bgX + padding + textPartWidth + (int)(2 * scale), yOffset,
+                        valCol.getARGB(), true, scale);
             } else {
-                ctx.drawScaledText(line, bgX + padding, yOffset, txtCol.getPacked(), true, scale);
+                ctx.drawScaledText(line, bgX + padding, yOffset, txtCol.getARGB(), true, scale);
             }
             yOffset += lineH;
         }
@@ -151,7 +169,7 @@ public final class HardwareHud extends BaseHudElement {
     private List<String> getDisplayLines() {
         List<String> lines = new ArrayList<>();
 
-        // CPU Usage (OSHIn kautta)
+        // CPU Usage
         if (showCpuUsage.get()) {
             long now = System.currentTimeMillis();
             if (now - lastCpuUpdate > 500) {
@@ -162,18 +180,16 @@ public final class HardwareHud extends BaseHudElement {
             lines.add("CPU: " + String.format("%.1f%%", cachedCpuUsage));
         }
 
-        // Minecraftin allokoitu muisti
+        // RAM Usage
         if (showRamUsage.get()) {
             Runtime runtime = Runtime.getRuntime();
             long used = runtime.totalMemory() - runtime.freeMemory();
             long max = runtime.maxMemory();
 
             if (ramFormat.get()) {
-                // Prosentteina maksimista
                 double percent = used * 100.0 / max;
                 lines.add("RAM: " + String.format("%.1f%% / %d MB", percent, max / 1_048_576));
             } else {
-                // Megatavuina / gigatavuina
                 double usedMB = used / 1_048_576.0;
                 double maxMB = max / 1_048_576.0;
                 if (maxMB > 1024) {
@@ -182,6 +198,28 @@ public final class HardwareHud extends BaseHudElement {
                     lines.add(String.format("RAM: %.0f/%.0f MB", usedMB, maxMB));
                 }
             }
+        }
+
+        // GPU Info
+        if (showGpuInfo.get() && gpuName != null && !gpuName.isEmpty()) {
+            lines.add("GPU: " + gpuName);
+        }
+
+        // Disk Usage (käytetään päälevyä)
+        if (showDiskUsage.get()) {
+            File root;
+            if (System.getProperty("os.name").toLowerCase().startsWith("win")) {
+                root = new File("C:");
+            } else {
+                root = new File("/");
+            }
+            long total = root.getTotalSpace();
+            long free = root.getFreeSpace();
+            long used = total - free;
+            double percentUsed = (used * 100.0) / total;
+            String diskInfo = String.format("Disk: %.1f%% used (%.1f/%.1f GB)",
+                    percentUsed, used / 1e9, total / 1e9);
+            lines.add(diskInfo);
         }
 
         return lines;

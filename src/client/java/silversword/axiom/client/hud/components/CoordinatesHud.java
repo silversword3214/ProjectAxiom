@@ -6,8 +6,6 @@ import net.minecraft.core.Direction;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.modules.NamedColor;
-import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.setting.SettingBoolean;
@@ -50,14 +48,14 @@ public final class CoordinatesHud extends BaseHudElement {
         if (mc.player == null) return 0;
         float scale = (float) textScale.getValue();
         String text = getDisplayText(mc);
-        return (int) (TextRenderer.get().getWidth(text) * scale) + (int) (backgroundPadding.getValue() * 2);
+        return (int) (textWidth(text) * scale) + (int) (backgroundPadding.getValue() * 2);
     }
 
     @Override
     public int height(Minecraft mc) {
         if (mc.player == null) return 0;
         float scale = (float) textScale.getValue();
-        int textH = (int) (TextRenderer.get().getHeight() * scale);
+        int textH = (int) (fontHeight() * scale);
         return textH + (int) (backgroundPadding.getValue() * 2);
     }
 
@@ -66,7 +64,6 @@ public final class CoordinatesHud extends BaseHudElement {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
-        // Haetaan nykyiset värit (rainbow-tuki)
         Color bgCol = backgroundColor.getCurrentColor();
         Color borderCol = borderColor.getCurrentColor();
         Color txtCol = textColor.getCurrentColor();
@@ -77,30 +74,30 @@ public final class CoordinatesHud extends BaseHudElement {
         double thickness = outlineThickness.getValue();
 
         String text = getDisplayText(mc);
-        int textW = (int) (TextRenderer.get().getWidth(text) * scale);
-        int textH = (int) (TextRenderer.get().getHeight() * scale);
+        int textW = (int) (textWidth(text) * scale);
+        int textH = (int) (fontHeight() * scale);
 
         int bgW = textW + padding * 2;
         int bgH = textH + padding * 2;
         int bgX = x;
         int bgY = y;
         int textX = x + padding;
-        int textY = y + padding + (textH - (int) (TextRenderer.get().getHeight() * scale)) / 2;
+        int textY = y + padding + (textH - (int) (fontHeight() * scale)) / 2;
 
         // Tausta
         if (radius > 0) {
-            Renderer2D.COLOR.drawRoundedRect(bgX, bgY, bgW, bgH, radius, bgCol);
+            ctx.fillRounded(bgX, bgY, bgW, bgH, radius, bgCol.getARGB());
         } else {
-            Renderer2D.COLOR.quad(bgX, bgY, bgW, bgH, bgCol);
+            ctx.fill(bgX, bgY, bgW, bgH, bgCol.getARGB());
         }
 
         // Reunus
         if (borderCol.getAlpha() != 0 && thickness > 0) {
-            Renderer2D.COLOR.drawRoundedRectOutline(bgX, bgY, bgW, bgH, radius, borderCol, thickness);
+            ctx.drawRoundedOutline(bgX, bgY, bgW, bgH, radius, borderCol.getARGB(), thickness);
         }
 
         // Teksti
-        ctx.drawScaledText(text, textX, textY, txtCol.getPacked(), true, scale);
+        ctx.drawScaledText(text, textX, textY, txtCol.getARGB(), true, scale);
     }
 
     private String getDisplayText(Minecraft mc) {
@@ -113,6 +110,15 @@ public final class CoordinatesHud extends BaseHudElement {
             facing = " " + dir.name().substring(0, 1).toUpperCase(); // N, S, W, E
         }
         return String.format("X: %d Y: %d Z: %d%s", x, y, z, facing);
+    }
+
+    // Apumetodit tekstin mittaukselle (käytetään HudContextin metodeja, jotka on helppo tallentaa muuttujiin)
+    private int textWidth(String text) {
+        return (int) silversword.axiom.client.render.font.TextRenderer.get().getWidth(text);
+    }
+
+    private int fontHeight() {
+        return (int) silversword.axiom.client.render.font.TextRenderer.get().getHeight();
     }
 
     @Override

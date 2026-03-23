@@ -16,27 +16,27 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.level.ClipContext;
-import org.joml.Vector3d;
+import org.joml.Matrix4f;
+import org.joml.Vector4f;
 import silversword.axiom.client.event.player.UseBlockEvent;
 import silversword.axiom.client.event.render.Render2DEvent;
 import silversword.axiom.client.event.render.Render3DEvent;
-import silversword.axiom.client.eventbus.AxiomEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
-import silversword.axiom.client.render.rendersystem.ShapeMode;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
-import silversword.axiom.client.render.rendersystem.utils.render.NametagUtils;
-import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
+import silversword.axiom.client.render.rendersystem.utils.misc.ShapeModeEnum;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingMode;
 import silversword.axiom.client.setting.SettingNumber;
 import silversword.axiom.client.utils.render.TextUtils;
-
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +45,7 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
     public static GhostHand INSTANCE;
 
     private final Minecraft mc = Minecraft.getInstance();
+    private final RenderCore core = RenderAPI.getInstance().getCore();
 
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
     private final SettingNumber range;
@@ -53,7 +54,7 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
     private final SettingMode renderMode;
     private final SettingNumber maxBlocks;
 
-    // Nametag-asetukset (kopioitu NameTagsista)
+    // Nametag-asetukset
     private final SettingBoolean nametagEnabled;
     private final SettingNumber nametagScale;
     private final SettingNumber nametagOffset;
@@ -64,8 +65,6 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
 
     private final List<BlockPos> interactiveBlocks = new ArrayList<>();
     private BlockPos currentTarget = null;
-
-    private final Vector3d nametagPos = new Vector3d();
 
     public GhostHand() {
         super("Ghost Hand", "Allows you to interact with blocks through walls", ModuleCategory.PLAYER);
@@ -138,6 +137,15 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
                 state.getBlock() == Blocks.HOPPER ||
                 state.getBlock() == Blocks.DROPPER ||
                 state.getBlock() == Blocks.DISPENSER ||
+                state.getBlock() == Blocks.COPPER_CHEST ||
+                state.getBlock() == Blocks.TRAPPED_CHEST ||
+                state.getBlock() == Blocks.WAXED_COPPER_CHEST ||
+                state.getBlock() == Blocks.EXPOSED_COPPER_CHEST ||
+                state.getBlock() == Blocks.WAXED_OXIDIZED_COPPER_CHEST ||
+                state.getBlock() == Blocks.OXIDIZED_COPPER_CHEST ||
+                state.getBlock() == Blocks.WAXED_EXPOSED_COPPER_CHEST ||
+                state.getBlock() == Blocks.WAXED_WEATHERED_COPPER_CHEST ||
+                state.getBlock() == Blocks.WEATHERED_COPPER_CHEST ||
                 state.getBlock() == Blocks.JUKEBOX;
     }
 
@@ -197,7 +205,7 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
         return null;
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onUseBlock(UseBlockEvent event) {
         if (!isEnabled() || mc.player == null || mc.level == null) return;
 
@@ -233,13 +241,7 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
         mc.getConnection().send(packet);
     }
 
-    @AxiomEvent
-    private void onRender3D(Render3DEvent event) {
-        // Tarvitaan NametagUtilsia varten
-        NametagUtils.onRender(RenderUtils.view);
-    }
-
-    @AxiomEvent
+    @Subscribe
     private void onRender(Render3DEvent event) {
         if (!isEnabled() || !renderBlocks.get() || mc.player == null || mc.level == null) return;
 
@@ -247,6 +249,8 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
 
         BlockHitResult hit = raycastForInteractiveBlockHit(range.getValue());
         currentTarget = hit != null ? hit.getBlockPos() : null;
+
+        Renderer3D renderer = event.getRenderer();
 
         for (BlockPos pos : interactiveBlocks) {
             BlockState state = mc.level.getBlockState(pos);
@@ -258,31 +262,32 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
             double y2 = pos.getY() + box.maxY;
             double z2 = pos.getZ() + box.maxZ;
 
-            Color lineColor;
-            Color sideColor;
+            int lineColor;
+            int sideColor;
 
             if (pos.equals(currentTarget)) {
-                lineColor = new Color(255, 255, 0, 255);
-                sideColor = new Color(255, 255, 0, 50);
+                lineColor = 0xFFFFFF00; // 255,255,0
+                sideColor = 0x32FFFF00; // 50,255,255,0
             } else {
-                lineColor = new Color(255, 255, 255, 255);
-                sideColor = new Color(255, 255, 255, 30);
+                lineColor = 0xFFFFFFFF;
+                sideColor = 0x1EFFFFFF; // 30,255,255,255
             }
 
-            ShapeMode mode = switch (renderMode.getMode()) {
-                case "Filled" -> ShapeMode.Sides;
-                case "Both"   -> ShapeMode.Both;
-                default       -> ShapeMode.Lines;
-            };
+            ShapeModeEnum mode;
+            switch (renderMode.getMode()) {
+                case "Filled" -> mode = ShapeModeEnum.SIDES;
+                case "Both"   -> mode = ShapeModeEnum.BOTH;
+                default       -> mode = ShapeModeEnum.LINES;
+            }
 
-            event.render.drawBox(x1, y1, z1, x2, y2, z2, sideColor, lineColor, mode, 0);
+            renderer.drawBox(x1, y1, z1, x2, y2, z2, sideColor, lineColor, mode, 0);
         }
     }
 
-    // Nametag piirretään erillisessä 2D-eventissä, jotta se on oikeassa kerroksessa
-    @AxiomEvent
+    // Nametag piirretään 2D-eventissä
+    @Subscribe
     private void onRender2D(Render2DEvent event) {
-        if (event.drawContext == null) return;
+        if (event.getGuiGraphics() == null) return;
         if (!isEnabled() || !nametagEnabled.get() || mc.player == null || mc.level == null) return;
         if (currentTarget == null) return;
 
@@ -295,82 +300,82 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
         BlockState state = mc.level.getBlockState(pos);
         if (state.isAir()) return;
 
-        // Haetaan blokin nimi
+        // Blokin nimi
         String blockName = Component.translatable(state.getBlock().getDescriptionId()).getString();
 
         // Lasketaan blokin yläpinnan korkeus
         AABB box = state.getShape(mc.level, pos).bounds();
         double topY = pos.getY() + box.maxY;
 
-        // Keskipiste ja offsetin verran yläpuolelle
-        double x = pos.getX() + 0.5;
-        double y = topY + nametagOffset.getValue();
-        double z = pos.getZ() + 0.5;
-        nametagPos.set(x, y, z);
+        // Maailmapiste (keskellä x/z, yläpinnan + offset)
+        double worldX = pos.getX() + 0.5;
+        double worldY = topY + nametagOffset.getValue();
+        double worldZ = pos.getZ() + 0.5;
 
-        // Etäisyyspohjainen skaalaus (sama kuin NameTagsissa)
+        // Ruutukoordinaatit
+        Matrix4f proj = mc.gameRenderer.getProjectionMatrix(mc.gameRenderer.getFov(mc.gameRenderer.getMainCamera(), event.getTickDelta(), true));
+        Matrix4f view = new Matrix4f().rotate(mc.gameRenderer.getMainCamera().rotation().conjugate())
+                .translate(-(float) mc.gameRenderer.getMainCamera().position().x,
+                        -(float) mc.gameRenderer.getMainCamera().position().y,
+                        -(float) mc.gameRenderer.getMainCamera().position().z);
+
+        Vector4f clip = new Vector4f((float) worldX, (float) worldY, (float) worldZ, 1.0f);
+        clip.mul(view).mul(proj);
+        if (clip.w <= 0.0f) return; // behind camera
+
+        float invW = 1.0f / clip.w;
+        float ndcX = clip.x * invW;
+        float ndcY = clip.y * invW;
+
+        int width = mc.getWindow().getWidth();
+        int height = mc.getWindow().getHeight();
+        float screenX = (ndcX * 0.5f + 0.5f) * width;
+        float screenY = (1.0f - (ndcY * 0.5f + 0.5f)) * height;
+
+        // Etäisyyspohjainen skaalaus
         Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
-        double dist = Math.sqrt(cameraPos.distanceToSqr(x, y, z));
+        double dist = Math.sqrt(cameraPos.distanceToSqr(worldX, worldY, worldZ));
         double distanceScale = Mth.clamp(1.0 - dist * 0.005, 0.8, 3.0);
         double finalScale = nametagScale.getValue() * distanceScale;
 
-        // Muunnetaan 2D:ksi
-        if (!NametagUtils.worldToScreen(nametagPos, finalScale)) return;
-
-        NametagUtils.scale = finalScale;
-        NametagUtils.begin(nametagPos, event.drawContext);
-
-        // Piirretään nametag (tyyli kopioitu NameTagsin renderGenericNametagista)
-        renderNametag(blockName);
-
-        NametagUtils.end(event.drawContext);
-    }
-
-    private void renderNametag(String text) {
-        TextRenderer textRenderer = TextRenderer.get();
-        boolean shadow = false; // NameTagsissa shadow = false, mutta voidaan lisätä asetus myöhemmin
-
-        // Lasketaan tekstin leveys ja korkeus TextUtilsin avulla
-        double textWidth = text.length() * TextUtils.CHAR_UNIT;
-        double textHeight = TextUtils.FONT_HEIGHT;
-        double padding = 2.0;
-
+        double textWidth = blockName.length() * TextUtils.CHAR_UNIT * finalScale;
+        double textHeight = TextUtils.FONT_HEIGHT * finalScale;
+        double padding = 2.0 * finalScale;
         double bgWidth = textWidth + padding * 2;
         double bgHeight = textHeight + padding * 2;
+        double bgX = screenX - bgWidth / 2;
+        double bgY = screenY - bgHeight / 2;
 
-        // Piirretään tausta asetuksen mukaan
-        drawBackground(-bgWidth / 2, -bgHeight / 2, bgWidth, bgHeight);
+        // Tausta
+        drawBackground(bgX, bgY, bgWidth, bgHeight, finalScale);
 
-        // Piirretään teksti
-        textRenderer.begin(1.0, false, true); // scale=1.0, koska NametagUtils hoitaa skaalauksen
-        textRenderer.render(text, -textWidth / 2, -textHeight / 2, textColor.getCurrentColor(), shadow);
-        textRenderer.end();
+        // Teksti
+        TextRenderer text = TextRenderer.get();
+        text.begin(1.0, false, true);
+        text.render(blockName, bgX + padding, bgY + padding, textColor.getCurrentColor(), false);
+        text.end();
     }
 
-    private void drawBackground(double x, double y, double width, double height) {
+    private void drawBackground(double x, double y, double width, double height, double finalScale) {
         String mode = bgMode.getMode();
         if (mode.equals("None")) return;
 
-        Renderer2D.COLOR.begin();
+        int bgArgb = backgroundColor.getCurrentColor().getARGB();
+        int outlineArgb = outlineColor.getCurrentColor().getARGB();
+        double radius = 3.0 * finalScale;
+        double thickness = Math.max(1.0, finalScale);
 
         if (mode.equals("Filled")) {
-            Renderer2D.COLOR.quad(x - 1, y - 1, width + 2, height + 2, backgroundColor.getCurrentColor());
+            core.addRect2D((float) x, (float) y, (float) width, (float) height, bgArgb);
         } else if (mode.equals("Outline")) {
-            Renderer2D.COLOR.boxLines(x - 1, y - 1, width + 2, height + 2, backgroundColor.getCurrentColor());
+            core.addRectOutline2D((float) x, (float) y, (float) width, (float) height, (float) thickness, outlineArgb);
         } else if (mode.equals("Rounded")) {
-            double radius = 3.0;
-            Renderer2D.COLOR.drawRoundedRect(x - 1, y - 1, width + 2, height + 2, radius, backgroundColor.getCurrentColor());
+            core.addRoundedRect((float) x, (float) y, (float) width, (float) height, (float) radius, bgArgb);
         }
 
-        // Outline-reunus (jos ei ole Outline-tila ja outline-värillä on alpha)
         if (!mode.equals("Outline") && outlineColor.getCurrentColor().getAlpha() > 0) {
-            double outlineThickness = 1.0;
-            double radius = 3.0;
-            Renderer2D.COLOR.drawRoundedRectOutline(x - 1, y - 1, width + 2, height + 2, radius, outlineColor.getCurrentColor(), outlineThickness);
+            core.addRoundedRectOutline((float) x, (float) y, (float) width, (float) height, (float) radius, (float) thickness, outlineArgb);
         }
-
-        Renderer2D.COLOR.end();
-        Renderer2D.COLOR.render();
     }
 
     @Override

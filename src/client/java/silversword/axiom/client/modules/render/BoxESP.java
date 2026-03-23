@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.window.WindowFactory;
@@ -13,10 +14,11 @@ import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.NamedColor;
 import silversword.axiom.client.modules.moduleutils.TargetGroup;
-import silversword.axiom.client.eventbus.AxiomEvent;
-import silversword.axiom.client.render.rendersystem.ShapeMode;
+
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.render.rendersystem.utils.misc.ShapeModeEnum;
+import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingMode;
@@ -100,13 +102,16 @@ public final class BoxESP extends AxiomMod implements ColorConfigurable, Keybind
         // Ei tarvita erillistä rainbow-päivitystä – värit lasketaan lennossa getCurrentColor():ssa
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onRender(Render3DEvent event) {
         if (!isEnabled()) return;
         if (mc.player == null || mc.level == null) return;
 
         double maxDistSq = renderDistance.getValue() * renderDistance.getValue();
         Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
+
+        // Käytetään samaa tickDelta-arvoa kuin Minecraftin renderöinti
+        float tickDelta = RenderUtils.getTickDelta();
 
         for (Entity entity : mc.level.entitiesForRendering()) {
             if (entity == mc.player || !entity.isAlive()) continue;
@@ -117,25 +122,25 @@ public final class BoxESP extends AxiomMod implements ColorConfigurable, Keybind
             Vec3 entityPos = new Vec3(entity.getX(), entity.getY(), entity.getZ());
             if (entityPos.distanceToSqr(cameraPos) > maxDistSq) continue;
 
-            double x = entity.xOld + (entity.getX() - entity.xOld) * event.tickDelta;
-            double y = entity.yOld + (entity.getY() - entity.yOld) * event.tickDelta;
-            double z = entity.zOld + (entity.getZ() - entity.zOld) * event.tickDelta;
+            double x = entity.getX();
+            double y = entity.getY();
+            double z = entity.getZ();
 
             double halfWidth = entity.getBbWidth() / 2.0;
             double height = entity.getBbHeight();
 
             Color baseColor = getColorForGroup(group).getCurrentColor();
 
-            Color sideColor = new Color(baseColor.r, baseColor.g, baseColor.b, 30);
-            Color lineColor = baseColor;
+            int sideColor = new Color(baseColor.r, baseColor.g, baseColor.b, 20).getARGB();
+            int lineColor = baseColor.getARGB();
 
-            ShapeMode mode = switch (boxMode.getMode()) {
-                case "Filled" -> ShapeMode.Sides;
-                case "Both"   -> ShapeMode.Both;
-                default       -> ShapeMode.Lines;
+            ShapeModeEnum mode = switch (boxMode.getMode()) {
+                case "Filled" -> ShapeModeEnum.SIDES;
+                case "Both"   -> ShapeModeEnum.BOTH;
+                default       -> ShapeModeEnum.LINES;
             };
 
-            event.render.drawBox(
+            event.getRenderer().drawBox(
                     x - halfWidth, y, z - halfWidth,
                     x + halfWidth, y + height, z + halfWidth,
                     sideColor, lineColor, mode, 0

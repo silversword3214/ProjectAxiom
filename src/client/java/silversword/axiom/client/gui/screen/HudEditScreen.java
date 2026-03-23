@@ -6,24 +6,24 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
+import org.joml.Matrix4f;
 import silversword.axiom.client.config.HudConfigManager;
 import silversword.axiom.client.gui.core.Theme;
 import silversword.axiom.client.gui.core.ThemeManager;
 import silversword.axiom.client.gui.core.UiContext;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
 import silversword.axiom.client.hud.*;
 
 public final class HudEditScreen extends Screen {
     private static final int GRID_SIZE = 10;
-    private static final Color BACKGROUND_COLOR = new Color(0x80000000); // 50% musta
-    private static final Color GRID_COLOR = new Color(0x40FFFFFF);      // 25% valkoinen
-    private static final Color OUTLINE_NORMAL = new Color(0xFFB0BEC5);
-    private static final Color OUTLINE_HOVER = new Color(0xFFFFD54F);
-    private static final Color OUTLINE_DRAGGING = new Color(0xFFFFA726);
+    private static final int BACKGROUND_COLOR = 0x80000000; // 50% musta
+    private static final int GRID_COLOR = 0x40FFFFFF;      // 25% valkoinen
+    private static final int OUTLINE_NORMAL = 0xFFB0BEC5;
+    private static final int OUTLINE_HOVER = 0xFFFFD54F;
+    private static final int OUTLINE_DRAGGING = 0xFFFFA726;
 
     private HudElement dragging = null;
     private int dragOffX, dragOffY;
@@ -51,61 +51,59 @@ public final class HudEditScreen extends Screen {
         Minecraft mc = Minecraft.getInstance();
         Theme theme = ThemeManager.getCurrentTheme();
 
-        // Aseta 2D-projektio
-        RenderUtils.setup2DProjection(this.width, this.height);
+        // Käytetään Screen-luokan valmiita pikselimittoja (this.width, this.height)
+        Matrix4f proj = new Matrix4f().setOrtho(0, this.width, this.height, 0, -1000, 1000);
+        Renderer2D renderer = new Renderer2D(vanillaCtx, RenderAPI.getInstance().getCore(), proj);
 
-        // Aloita taustojen keräys
-        Renderer2D.COLOR.begin();
+        // Luo UiContext ja HudContext
+        UiContext uiCtx = new UiContext(mc, vanillaCtx, theme, delta, renderer);
+        HudContext hudCtx = new HudContext(mc, vanillaCtx, theme, delta, renderer);
 
-        // Luo UiContext GUI-elementtejä varten
-        UiContext uiCtx = new UiContext(mc, vanillaCtx, theme, delta);
-        // Luo HudContext HUD-elementtien piirtoa varten
-        HudContext hudCtx = new HudContext(mc, vanillaCtx, theme, delta);
-
-        // 1. Piirrä läpikuultava tausta
-        uiCtx.fill(0, 0, width, height, BACKGROUND_COLOR.getPacked());
+        // 1. Piirrä läpikuultava tausta (koko ruudun kokoinen)
+        uiCtx.fill(0, 0, this.width, this.height, BACKGROUND_COLOR);
 
         // 2. Piirrä grid (vain jos raahataan)
         if (gridVisible) {
             drawGrid(uiCtx);
         }
 
-        // 3. Piirrä HUD-elementit (renderEdit) – käytetään HudContextia
+        // 3. Piirrä HUD-elementit (renderEdit)
         for (HudElement e : HudManager.get().elements()) {
             if (!e.enabled()) continue;
             e.renderEdit(hudCtx);
         }
 
-        // 4. Piirrä outlinet (käytetään suoraan Renderer2D.COLORia, mutta voidaan myös uiCtx:n kautta)
+        // 4. Piirrä outlinet
         for (HudElement e : HudManager.get().elements()) {
             if (!e.enabled()) continue;
             drawOutline(uiCtx, e, mouseX, mouseY);
         }
 
-        // 5. Piirrä kaikki COLOR-piirrot
-        Renderer2D.COLOR.render();
-
-        // 6. Piirrä tekstit (käyttäen TextRenderer-järjestelmää)
+        // 5. Piirrä tekstit
         TextRenderer.get().begin(1.0, false, false);
 
-        // 7. Piirrä elementtien nimet
+        // 6. Piirrä elementtien nimet
         for (HudElement e : HudManager.get().elements()) {
             if (!e.enabled()) continue;
             drawElementName(uiCtx, e);
         }
 
-        // 8. Lopeta tekstien piirto
         TextRenderer.get().end();
+
+        // 7. Lähetä kaikki piirto-objektit GPU:lle
+        RenderAPI.getInstance().getCore().flush();
 
         super.render(vanillaCtx, mouseX, mouseY, delta);
     }
 
     private void drawGrid(UiContext ctx) {
-        for (int x = 0; x < width; x += GRID_SIZE) {
-            Renderer2D.COLOR.line(x, 0, x, height, GRID_COLOR);
+        // Piirretään pystysuorat viivat
+        for (int x = 0; x < this.width; x += GRID_SIZE) {
+            ctx.drawOutline(x, 0, 1, this.height, GRID_COLOR);
         }
-        for (int y = 0; y < height; y += GRID_SIZE) {
-            Renderer2D.COLOR.line(0, y, width, y, GRID_COLOR);
+        // Piirretään vaakasuorat viivat
+        for (int y = 0; y < this.height; y += GRID_SIZE) {
+            ctx.drawOutline(0, y, this.width, 1, GRID_COLOR);
         }
     }
 
@@ -116,7 +114,7 @@ public final class HudEditScreen extends Screen {
         int w = Math.max(1, e.width(mc));
         int h = Math.max(1, e.height(mc));
 
-        Color color;
+        int color;
         if (e == dragging) {
             color = OUTLINE_DRAGGING;
         } else if (mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h) {
@@ -125,15 +123,13 @@ public final class HudEditScreen extends Screen {
             color = OUTLINE_NORMAL;
         }
 
-        Renderer2D.COLOR.boxLines(x, y, w, h, color);
+        ctx.drawOutline(x, y, w, h, color);
     }
 
     private void drawElementName(UiContext ctx, HudElement e) {
         Minecraft mc = Minecraft.getInstance();
         int x = e.x();
         int y = e.y();
-        int w = Math.max(1, e.width(mc));
-        // Piirrä nimi elementin yläpuolelle
         ctx.text(e.id(), x, y - 10, 0xFFFFFFFF);
     }
 
@@ -172,7 +168,7 @@ public final class HudEditScreen extends Screen {
         newX = snapToGrid(newX);
         newY = snapToGrid(newY);
 
-        // Pysy ruudun sisällä
+        // Pysy ruudun sisällä (käytetään this.width/this.height)
         newX = clamp(newX, 0, this.width - w);
         newY = clamp(newY, 0, this.height - h);
 

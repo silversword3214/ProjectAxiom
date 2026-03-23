@@ -10,16 +10,16 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
-
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.modules.render.PlayerModelModule;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.texture.TextureRegion;
+
+import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 
 import java.lang.reflect.Field;
 
@@ -205,34 +205,26 @@ public final class PlayerModelHud extends BaseHudElement {
     public void render(HudContext ctx, DeltaTracker tickCounter) {
         if (mc.player == null || mc.level == null) return;
 
-        Color bgColor = new Color(BASE_BG_COLOR);
-        Renderer2D.COLOR.drawRoundedRect(x, y, width, height, BASE_CORNER_RADIUS, bgColor);
+        int bgArgb = BASE_BG_COLOR;
+        ctx.fillRounded(x, y, width, height, BASE_CORNER_RADIUS, bgArgb);
 
         if (playerModelFramebuffer != null && playerModelFramebuffer.getColorTextureView() != null) {
-            TextureRegion region = new TextureRegion(1.0, 1.0);
-            region.x1 = 1.0f;
-            region.y1 = 1.0f;
-            region.x2 = 0.0f;
-            region.y2 = 0.0f;
-
-            Renderer2D.TEXTURE.texQuad(x, y, width, height, region, Color.WHITE);
-
+            GpuTextureView textureView = playerModelFramebuffer.getColorTextureView();
             var sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
-            Renderer2D.TEXTURE.render(playerModelFramebuffer.getColorTextureView(), sampler);
+
+
         }
 
         if (showBorder) {
-            Color borderCol = new Color(borderColor);
-            Renderer2D.COLOR.drawRoundedRectOutline(x, y, width, height, BASE_CORNER_RADIUS, borderCol, 1.0);
+            ctx.drawRoundedOutline(x, y, width, height, BASE_CORNER_RADIUS, borderColor, 1.0);
         }
     }
 
     @Override
     public void renderEdit(HudContext ctx) {
-        Color bgColor = new Color(BASE_BG_COLOR);
-        Renderer2D.COLOR.drawRoundedRect(x, y, width, height, BASE_CORNER_RADIUS, bgColor);
+        ctx.fillRounded(x, y, width, height, BASE_CORNER_RADIUS, BASE_BG_COLOR);
         if (showBorder) {
-            Renderer2D.COLOR.drawRoundedRectOutline(x, y, width, height, BASE_CORNER_RADIUS, new Color(borderColor), 1.0);
+            ctx.drawRoundedOutline(x, y, width, height, BASE_CORNER_RADIUS, borderColor, 1.0);
         }
         ctx.drawScaledText("Player Model", x + 4, y + 4, 0xFFFFFFFF, true, 0.8f);
     }

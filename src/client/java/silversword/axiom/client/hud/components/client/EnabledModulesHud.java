@@ -134,9 +134,9 @@ public final class EnabledModulesHud extends BaseHudElement {
 
         int currentTextColor, currentBarColor, currentBgColor;
         if (customColors.get()) {
-            currentTextColor = textColor.getCurrentColor().getPacked();
-            currentBarColor = barColor.getCurrentColor().getPacked();
-            currentBgColor = backgroundColor.getCurrentColor().getPacked();
+            currentTextColor = textColor.getCurrentColor().getARGB();
+            currentBarColor = barColor.getCurrentColor().getARGB();
+            currentBgColor = backgroundColor.getCurrentColor().getARGB();
         } else {
             currentTextColor = defaultTextColor;
             currentBarColor = defaultBarColor;

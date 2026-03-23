@@ -2,8 +2,6 @@ package silversword.axiom.client.gui.components;
 
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.utils.animation.Animation;
 import silversword.axiom.client.utils.animation.Ease;
 
@@ -12,15 +10,12 @@ import java.util.function.Consumer;
 
 public final class Toggle implements UiComponent {
 
-    // ANIMAATIONOPEUS (yksikköä sekunnissa) – säädä tästä
     private static final float ANIMATION_SPEED = 0.2f;
 
     private Rect bounds = new Rect(0, 0, 10, 10);
     private final String label;
     private final BooleanSupplier getter;
     private final Consumer<Boolean> setter;
-
-    // Animaatio
     private final Animation knobAnim;
     private boolean lastValue = false;
 
@@ -33,32 +28,21 @@ public final class Toggle implements UiComponent {
     }
 
     @Override
-    public Rect getBounds() {
-        return bounds;
-    }
-
+    public Rect getBounds() { return bounds; }
     @Override
-    public void setBounds(Rect bounds) {
-        this.bounds = bounds;
-    }
-
+    public void setBounds(Rect bounds) { this.bounds = bounds; }
     @Override
-    public int getPreferredHeight() {
-        return 18;
-    }
+    public int getPreferredHeight() { return 18; }
 
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
         boolean hover = bounds.contains(mouseX, mouseY);
         boolean currentValue = getter.getAsBoolean();
 
-        // Jos arvo muuttunut ulkoisesti, päivitä animaation target
         if (currentValue != lastValue) {
             knobAnim.setTarget(currentValue ? 1.0f : 0.0f);
             lastValue = currentValue;
         }
-
-        // Päivitä animaatio
         knobAnim.update(delta);
 
         // Label
@@ -71,24 +55,21 @@ public final class Toggle implements UiComponent {
         int sx = bounds.right() - pillW - ui.theme.innerPadding;
         int sy = bounds.y + (bounds.h - pillH) / 2;
 
-        // Interpoloi väri
-        float t = knobAnim.getValue(); // 0..1
+        float t = knobAnim.getValue();
         int bgColor = interpolateColor(ui.theme.toggleOff, ui.theme.toggleOn, t);
-
-        // Piirrä tausta
-        Renderer2D.COLOR.drawRoundedRect(sx, sy, pillW, pillH, pillH / 2, new Color(bgColor));
+        ui.fillRounded(sx, sy, pillW, pillH, bgColor, pillH / 2.0);
 
         // Knob
         int knobSize = pillH - 4;
         int knobRadius = knobSize / 2;
         int minKnobX = sx + 2 + knobRadius;
         int maxKnobX = sx + pillW - knobSize - 2 + knobRadius;
-        float eased = Ease.easeOutQuad(t); // Pehmeä liike
+        float eased = Ease.easeOutQuad(t);
         int knobX = (int) (minKnobX + (maxKnobX - minKnobX) * eased);
         int knobY = sy + 2 + knobRadius;
 
-        Renderer2D.COLOR.drawCircle(knobX, knobY, knobRadius, new Color(ui.theme.panel));
-        Renderer2D.COLOR.drawCircle(knobX, knobY, knobRadius - 2, new Color(ui.theme.textDim));
+        ui.fillCircle(knobX, knobY, knobRadius, ui.theme.panel);
+        ui.fillCircle(knobX, knobY, knobRadius - 2, ui.theme.textDim);
     }
 
     private int interpolateColor(int color1, int color2, float t) {

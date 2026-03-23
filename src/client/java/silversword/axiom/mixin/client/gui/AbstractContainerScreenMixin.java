@@ -14,7 +14,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import silversword.axiom.client.modules.player.ChestStealer;
 import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.utils.render.TextUtils;
 
@@ -26,7 +27,6 @@ public abstract class AbstractContainerScreenMixin {
     @Shadow protected int imageWidth;
     @Shadow public abstract AbstractContainerMenu getMenu();
 
-    // Napin mitat
     private static final int BUTTON_WIDTH = 50;
     private static final int BUTTON_HEIGHT = 15;
 
@@ -46,18 +46,17 @@ public abstract class AbstractContainerScreenMixin {
         boolean hovered = mouseX >= buttonX && mouseX <= buttonX + BUTTON_WIDTH &&
                 mouseY >= buttonY && mouseY <= buttonY + BUTTON_HEIGHT;
 
-        // Taustaväri: vihreä, hover-tilassa vaaleampi
-        Color bgColor = hovered ? new Color(200, 0, 0, 255) : new Color(150, 0, 0, 255);
-        Color borderColor = new Color(255, 255, 255, 200);
+        // Taustaväri (ARGB-int)
+        int bgColor = hovered ? 0xFFC80000 : 0xFF960000; // punainen
+        int borderColor = 0xFFC8C8C8; // vaaleanharmaa
 
-        // Piirretään pyöristetty tausta Renderer2D.COLOR:lla
-        Renderer2D.COLOR.begin();
-        Renderer2D.COLOR.drawRoundedRect(buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT, 3, bgColor);
-        Renderer2D.COLOR.drawRoundedRectOutline(buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT, 3, borderColor, 1);
-        Renderer2D.COLOR.end();
-        Renderer2D.COLOR.render();
+        RenderCore core = RenderAPI.getInstance().getCore();
 
-        // Teksti käyttäen TextRenderer-järjestelmää (sama fontti kuin clickguissa)
+        // Piirrä pyöristetty tausta ja reunus
+        core.addRoundedRect(buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT, 3, bgColor);
+        core.addRoundedRectOutline(buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT, 3, 1.0f, borderColor);
+
+        // Teksti (käyttää uutta TextRenderer-rajapintaa)
         TextRenderer textRenderer = TextRenderer.get();
         textRenderer.begin(0.90, false, true);
         String text = "Steal";
@@ -74,7 +73,6 @@ public abstract class AbstractContainerScreenMixin {
         if (stealer == null || !stealer.isEnabled() || click.button() != 0) return;
 
         AbstractContainerMenu handler = getMenu();
-        // --- LISÄYS: Hyväksytään myös shulker-handler ---
         boolean isValid = handler instanceof ChestMenu ||
                 handler instanceof ShulkerBoxMenu;
         if (!isValid) return;

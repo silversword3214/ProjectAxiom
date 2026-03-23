@@ -10,11 +10,11 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
 import silversword.axiom.client.event.*;
+import silversword.axiom.client.eventbus.EventPriority;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
-import silversword.axiom.client.eventbus.AxiomEvent;
-import silversword.axiom.client.eventbus.Priority;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingNumber;
@@ -195,26 +195,26 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
         pos.add(velX, velY, velZ);
     }
 
-    // Optional: keep mouse scroll for speed adjustment (still works via mixin)
-    @AxiomEvent(priority = Priority.LOW)
+
+    @Subscribe(priority = EventPriority.LOW)
     private void onMouseScroll(MouseScrollEvent event) {
         if (!isEnabled()) return;
         if (speedScrollSensitivity.getValue() > 0 && mc.screen == null) {
             double newSpeed = speed.getValue() + event.value * 0.25 * speedScrollSensitivity.getValue() * speed.getValue();
             if (newSpeed < 0.1) newSpeed = 0.1;
             speed.setValue(newSpeed);
-            event.cancel();
+            event.setCancelled(true);
         }
     }
 
     // The following event handlers are no longer needed for movement
-    // but can be kept for other features (like toggling on damage, etc.)
-    @AxiomEvent
+// but can be kept for other features (like toggling on damage, etc.)
+    @Subscribe
     private void onGameLeft(GameLeftEvent event) {
         if (toggleOnLog.get() && isEnabled()) toggle();
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onPacketReceive(PacketEvent.Receive event) {
         if (!isEnabled()) return;
         if (event.packet instanceof ClientboundPlayerCombatKillPacket pkt) {

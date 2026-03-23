@@ -106,8 +106,8 @@ public final class TargetHUD extends AxiomMod implements ColorConfigurable, Keyb
         element.setTextScale((float) textScale.getValue());
         element.setBackgroundScale((float) backgroundScale.getValue());
         element.setOutlineScale((float) outlineScale.getValue());
-        element.setBorderColor(borderColor.getCurrentColor().getPacked());
-        element.setTextColor(textColor.getCurrentColor().getPacked());
+        element.setBorderColor(borderColor.getCurrentColor().getARGB());
+        element.setTextColor(textColor.getCurrentColor().getARGB());
     }
 
     // ----- ColorConfigurable toteutus -----

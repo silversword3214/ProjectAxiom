@@ -11,11 +11,15 @@ import silversword.axiom.client.event.GetFovEvent;
 import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.render.NoViewBobbingTilt;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
 
 @Mixin(GameRenderer.class)
 public abstract class GameRendererMixin {
 
-
+    @Inject(method = "close", at = @At("RETURN"))
+    private void onGameRendererClose(CallbackInfo ci) {
+        RenderAPI.getInstance().close();
+    }
 
 
     @Inject(method = "bobView", at = @At("HEAD"), cancellable = true)

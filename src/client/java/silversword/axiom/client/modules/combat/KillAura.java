@@ -7,22 +7,22 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.ClipContext;
 import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.eventbus.Subscribe;          // korjattu
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.moduleutils.SmartKillAura.AttackController;
+import silversword.axiom.client.modules.moduleutils.SmartKillAura.RotationHandler;
 import silversword.axiom.client.modules.moduleutils.SmartKillAura.RotationManager;
 import silversword.axiom.client.modules.moduleutils.SmartKillAura.TargetManager;
-import silversword.axiom.client.eventbus.AxiomEvent;
-
-import silversword.axiom.client.render.rendersystem.Renderer3D;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;   // lisätty
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingMode;
 import silversword.axiom.client.setting.SettingSlider;
-import silversword.axiom.client.utils.player.RotationHandler;
+
 
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
@@ -31,6 +31,7 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
     private final TargetManager targetManager = new TargetManager();
     private final AttackController attackController = new AttackController();
     private final RotationManager rotationManager = new RotationManager();
+
 
     private LivingEntity currentTarget = null;
 
@@ -169,7 +170,6 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
     }
 
     private double getYawToTarget(LivingEntity target) {
-        // Tätä ei enää käytetä suoraan, mutta jätetään jos tarvitaan
         double diffX = target.getX() - mc.player.getX();
         double diffZ = target.getZ() - mc.player.getZ();
         return Math.toDegrees(Math.atan2(diffZ, diffX)) - 90.0;
@@ -196,13 +196,13 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
         return false;
     }
 
-    @AxiomEvent
+    @Subscribe
     public void onRender3D(Render3DEvent event) {
         if (!isEnabled() || currentTarget == null || !renderTargetBox.get()) return;
 
-        Renderer3D renderer = event.render;
+        Renderer3D renderer = event.getRenderer();
         AABB box = currentTarget.getBoundingBox();
-        Color color = boxColor.getCurrentColor().copy().a(255);
+        int color = boxColor.getCurrentColor().getARGB();
         renderer.boxOutline(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, color, 0);
     }
 }

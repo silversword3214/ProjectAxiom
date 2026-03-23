@@ -7,7 +7,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
 import silversword.axiom.client.event.render.Render3DEvent;
-import silversword.axiom.client.eventbus.AxiomEvent;
+
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.window.WindowFactory;
@@ -16,9 +17,10 @@ import silversword.axiom.client.modules.ColorConfigurable;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.NamedColor;
-import silversword.axiom.client.render.rendersystem.ShapeMode;
+
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.render.rendersystem.utils.misc.ShapeModeEnum;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingMode;
@@ -63,7 +65,7 @@ public final class BlockOutline extends AxiomMod implements ColorConfigurable, K
         return toggleKey;
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onRender(Render3DEvent event) {
         if (!isEnabled() || mc.player == null || mc.level == null) return;
 
@@ -92,16 +94,16 @@ public final class BlockOutline extends AxiomMod implements ColorConfigurable, K
         double z2 = pos.getZ() + box.maxZ;
 
         Color currentColor = color.getCurrentColor();
-        Color sideColor = new Color(currentColor.r, currentColor.g, currentColor.b, 50); // läpinäkyvämpi täytölle
-        Color lineColor = currentColor;
+        int sideColor = new Color(currentColor.r, currentColor.g, currentColor.b, 50).getARGB();
+        int lineColor = currentColor.getARGB();
 
-        ShapeMode mode = switch (boxMode.getMode()) {
-            case "Filled" -> ShapeMode.Sides;
-            case "Both"   -> ShapeMode.Both;
-            default       -> ShapeMode.Lines;
+        ShapeModeEnum mode = switch (boxMode.getMode()) {
+            case "Filled" -> ShapeModeEnum.SIDES;
+            case "Both"   -> ShapeModeEnum.BOTH;
+            default       -> ShapeModeEnum.LINES;
         };
 
-        event.render.drawBox(x1, y1, z1, x2, y2, z2, sideColor, lineColor, mode, 0);
+        event.getRenderer().drawBox(x1, y1, z1, x2, y2, z2, sideColor, lineColor, mode, 0);
     }
 
     @Override

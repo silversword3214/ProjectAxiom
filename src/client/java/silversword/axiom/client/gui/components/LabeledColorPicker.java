@@ -36,7 +36,7 @@ public class LabeledColorPicker implements UiComponent {
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
         int textY = labelBounds.y + labelBounds.h / 2 - ui.fontHeight() / 2 + 4;
         ui.text(label, labelBounds.x, textY, ui.theme.text);
-        ui.fill(swatchBounds, color.getCurrentColor().getPacked());
+        ui.fill(swatchBounds, color.getCurrentColor().getARGB());
     }
 
     @Override

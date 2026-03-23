@@ -65,7 +65,7 @@ public final class WindowFactory {
         int x = (screenW - w) / 2;
         int y = (screenH - h) / 2;
 
-        Window main = new Window(WindowIds.MAIN, "Obsidian Client modules", x, y, w, h);
+        Window main = new Window(WindowIds.MAIN, "", x, y, w, h);
         main.setClosable(false);
 
         CategoryTabs tabs = new CategoryTabs(

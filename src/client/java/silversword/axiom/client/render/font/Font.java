@@ -3,9 +3,8 @@ package silversword.axiom.client.render.font;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.TextureFormat;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import silversword.axiom.client.render.rendersystem.VertexBufferBuilder;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
-
+import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.utils.texture.Texture;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.stb.*;
@@ -120,27 +119,30 @@ public class Font {
         return height;
     }
 
-    public double render(VertexBufferBuilder mesh, String string, double x, double y, Color color, double scale) {
+    public double render(RenderCore core, String string, double x, double y, Color color, double scale) {
         y += ascent * this.scale * scale;
 
         int length = string.length();
-        mesh.ensureCapacity(length * 4, length * 6);
 
         for (int i = 0; i < length; i++) {
             int cp = string.charAt(i);
             CharData c = charMap.get(cp);
             if (c == null) c = charMap.get(32);
 
-            mesh.quad(
-                    mesh.vec2(x + c.x0 * scale, y + c.y0 * scale).uv(c.u0, c.v0).color(color).next(),
-                    mesh.vec2(x + c.x0 * scale, y + c.y1 * scale).uv(c.u0, c.v1).color(color).next(),
-                    mesh.vec2(x + c.x1 * scale, y + c.y1 * scale).uv(c.u1, c.v1).color(color).next(),
-                    mesh.vec2(x + c.x1 * scale, y + c.y0 * scale).uv(c.u1, c.v0).color(color).next()
+            float x0 = (float) (x + c.x0 * scale);
+            float y0 = (float) (y + c.y0 * scale);
+            float x1 = (float) (x + c.x1 * scale);
+            float y1 = (float) (y + c.y1 * scale);
+
+            core.addTextQuadMesh(
+                    texture,
+                    x0, y0, x1, y1,
+                    c.u0, c.v0, c.u1, c.v1,
+                    color.r / 255f, color.g / 255f, color.b / 255f, color.a / 255f
             );
 
             x += c.xAdvance * scale;
         }
-
         return x;
     }
 

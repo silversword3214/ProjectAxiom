@@ -1,190 +1,68 @@
 package silversword.axiom.client.eventbus;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Function;
 
-import silversword.axiom.client.eventbus.listeners.IListener;
-import silversword.axiom.client.eventbus.listeners.LambdaListener;
+public class EventBus {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventBus.class);
+    private final Map<Class<?>, List<HandlerEntry>> handlers = new ConcurrentHashMap<>();
 
-/**
- * Default implementation of {@link IEventBus}.
- */
-public class EventBus implements silversword.axiom.client.eventbus.IEventBus {
-    private static class LambdaFactoryInfo {
-        public final String packagePrefix;
-        public final LambdaListener.Factory factory;
+    public void register(Object listener) {
+        Class<?> clazz = listener.getClass();
+        for (Method method : clazz.getDeclaredMethods()) {
+            if (method.isAnnotationPresent(Subscribe.class)) {
+                if (method.getParameterCount() != 1) {
+                    LOGGER.warn("Event handler {} in {} must have exactly one parameter", method.getName(), clazz.getName());
+                    continue;
+                }
+                Class<?> eventType = method.getParameterTypes()[0];
+                EventPriority priority = method.getAnnotation(Subscribe.class).priority();
+                method.setAccessible(true);
 
-        public LambdaFactoryInfo(String packagePrefix, LambdaListener.Factory factory) {
-            this.packagePrefix = packagePrefix;
-            this.factory = factory;
-        }
-    }
-
-    private final Map<Object, List<IListener>> listenerCache = new ConcurrentHashMap<>();
-    private final Map<Class<?>, List<IListener>> staticListenerCache = new ConcurrentHashMap<>();
-
-    private final Map<Class<?>, List<IListener>> listenerMap = new ConcurrentHashMap<>();
-
-    private final List<LambdaFactoryInfo> lambdaFactoryInfos = new ArrayList<>();
-
-    @Override
-    public void registerLambdaFactory(String packagePrefix, LambdaListener.Factory factory) {
-        synchronized (lambdaFactoryInfos) {
-            lambdaFactoryInfos.add(new LambdaFactoryInfo(packagePrefix, factory));
-        }
-    }
-
-    @Override
-    public boolean isListening(Class<?> axiomClass) {
-        List<IListener> listeners = listenerMap.get(axiomClass);
-        return listeners != null && !listeners.isEmpty();
-    }
-
-    @Override
-    public <T> T post(T event) {
-        List<IListener> listeners = listenerMap.get(event.getClass());
-
-        if (listeners != null) {
-            for (IListener listener : listeners) listener.call(event);
-        }
-
-        return event;
-    }
-
-    @Override
-    public <T extends ICancellable> T post(T event) {
-        List<IListener> listeners = listenerMap.get(event.getClass());
-
-        if (listeners != null) {
-            event.setCancelled(false);
-
-            for (IListener listener : listeners) {
-                listener.call(event);
-                if (event.isCancelled()) break;
+                handlers.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>())
+                        .add(new HandlerEntry(listener, method, priority));
+                LOGGER.debug("Registered handler for {} in {}", eventType.getSimpleName(), clazz.getSimpleName());
             }
         }
-
-        return event;
     }
 
-    @Override
-    public void subscribe(Object object) {
-        subscribe(getListeners(object.getClass(), object), false);
-    }
-
-    @Override
-    public void subscribe(Class<?> axiomClass) {
-        subscribe(getListeners(axiomClass, null), true);
-    }
-
-    @Override
-    public void subscribe(IListener listener) {
-        subscribe(listener, false);
-    }
-
-    private void subscribe(List<IListener> listeners, boolean onlyStatic) {
-        for (IListener listener : listeners) subscribe(listener, onlyStatic);
-    }
-
-    private void subscribe(IListener listener, boolean onlyStatic) {
-        if (onlyStatic) {
-            if (listener.isStatic()) insert(listenerMap.computeIfAbsent(listener.getTarget(), aClass -> new CopyOnWriteArrayList<>()), listener);
-        }
-        else {
-            insert(listenerMap.computeIfAbsent(listener.getTarget(), aClass -> new CopyOnWriteArrayList<>()), listener);
+    public void unregister(Object listener) {
+        for (List<HandlerEntry> list : handlers.values()) {
+            list.removeIf(entry -> entry.listener == listener);
         }
     }
 
-    private void insert(List<IListener> listeners, IListener listener) {
-        int i = 0;
-        for (; i < listeners.size(); i++) {
-            if (listener.getPriority() > listeners.get(i).getPriority()) break;
-        }
+    public void post(Object event) {
+        List<HandlerEntry> entries = handlers.get(event.getClass());
+        if (entries == null || entries.isEmpty()) return;
 
-        listeners.add(i, listener);
-    }
+        // Lajitellaan prioriteetin mukaan (korkein ensin)
+        List<HandlerEntry> sorted = new ArrayList<>(entries);
+        sorted.sort(Comparator.comparingInt(e -> -e.priority.ordinal()));
 
-    @Override
-    public void unsubscribe(Object object) {
-        unsubscribe(getListeners(object.getClass(), object), false);
-    }
-
-    @Override
-    public void unsubscribe(Class<?> axiomClass) {
-        unsubscribe(getListeners(axiomClass, null), true);
-    }
-
-    @Override
-    public void unsubscribe(IListener listener) {
-        unsubscribe(listener, false);
-    }
-
-    private void unsubscribe(List<IListener> listeners, boolean staticOnly) {
-        for (IListener listener : listeners) unsubscribe(listener, staticOnly);
-    }
-
-    private void unsubscribe(IListener listener, boolean staticOnly) {
-        List<IListener> l = listenerMap.get(listener.getTarget());
-
-        if (l != null) {
-            if (staticOnly) {
-                if (listener.isStatic()) l.remove(listener);
-            }
-            else l.remove(listener);
-        }
-    }
-
-    private List<IListener> getListeners(Class<?> axiomClass, Object object) {
-        Function<Object, List<IListener>> func = o -> {
-            List<IListener> listeners = new CopyOnWriteArrayList<>();
-
-            getListeners(listeners, axiomClass, object);
-
-            return listeners;
-        };
-
-        if (object == null) return staticListenerCache.computeIfAbsent(axiomClass, func);
-
-        // We need to check if the instances are the same and avoid using .equals() and .hashCode()
-        for (Object key : listenerCache.keySet()) {
-            if (key == object) return listenerCache.get(object);
-        }
-
-        List<IListener> listeners = func.apply(object);
-        listenerCache.put(object, listeners);
-        return listeners;
-    }
-
-    private void getListeners(List<IListener> listeners, Class<?> axiomClass, Object object) {
-        for (Method method : axiomClass.getDeclaredMethods()) {
-            if (isValid(method)) {
-                listeners.add(new LambdaListener(getLambdaFactory(axiomClass), axiomClass, object, method));
+        for (HandlerEntry entry : sorted) {
+            try {
+                entry.method.invoke(entry.listener, event);
+            } catch (Exception e) {
+                LOGGER.error("Error invoking event handler {} in {}", entry.method.getName(), entry.listener.getClass().getName(), e);
             }
         }
-
-        if (axiomClass.getSuperclass() != null) getListeners(listeners, axiomClass.getSuperclass(), object);
     }
 
-    private boolean isValid(Method method) {
-        if (!method.isAnnotationPresent(AxiomEvent.class)) return false;
-        if (method.getReturnType() != void.class) return false;
-        if (method.getParameterCount() != 1) return false;
+    private static class HandlerEntry {
+        final Object listener;
+        final Method method;
+        final EventPriority priority;
 
-        return !method.getParameters()[0].getType().isPrimitive();
-    }
-
-    private LambdaListener.Factory getLambdaFactory(Class<?> axiomClass) {
-        synchronized (lambdaFactoryInfos) {
-            for (LambdaFactoryInfo info : lambdaFactoryInfos) {
-                if (axiomClass.getName().startsWith(info.packagePrefix)) return info.factory;
-            }
+        HandlerEntry(Object listener, Method method, EventPriority priority) {
+            this.listener = listener;
+            this.method = method;
+            this.priority = priority;
         }
-
-        throw new Exception(axiomClass);
     }
 }

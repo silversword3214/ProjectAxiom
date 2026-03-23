@@ -14,7 +14,8 @@ import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.NamedColor;
 import silversword.axiom.client.modules.moduleutils.TargetGroup;
-import silversword.axiom.client.eventbus.AxiomEvent;
+import silversword.axiom.client.eventbus.Subscribe;          // korjattu: @Subscribe
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;  // korjattu: import
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
@@ -84,7 +85,7 @@ public final class Tracers extends AxiomMod implements ColorConfigurable, Keybin
 
         addHiddenSetting(toggleKey);
 
-        // Näkyvät asetukset (lisätty drawBehind mukaan)
+        // Näkyvät asetukset
         addSetting(renderDistance);
         addSetting(targetPoint);
         addSetting(drawPillar);
@@ -107,15 +108,21 @@ public final class Tracers extends AxiomMod implements ColorConfigurable, Keybin
         // Ei tarvita
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onRender(Render3DEvent event) {
         if (!isEnabled()) return;
         if (mc.player == null || mc.level == null) return;
 
         Camera camera = mc.gameRenderer.getMainCamera();
         Vec3 cameraPos = camera.position();
-        Vec3 cameraDir = mc.player.getViewVector(event.tickDelta);
+        Vec3 cameraDir = mc.player.getViewVector(event.getTickDelta());
         double maxDistSq = renderDistance.getValue() * renderDistance.getValue();
+
+        // Käytä renderöijää tapahtumasta
+        Renderer3D renderer = event.getRenderer();
+
+        // Lähtöpiste (ruudun keskipiste maailmassa) – päivittyy Renderer3D:ssä
+        Vec3 start = RenderUtils.center;
 
         for (Entity entity : mc.level.entitiesForRendering()) {
             if (entity == mc.player || !entity.isAlive()) continue;
@@ -133,9 +140,9 @@ public final class Tracers extends AxiomMod implements ColorConfigurable, Keybin
                 if (toEntity.dot(cameraDir) <= 0) continue;
             }
 
-            double x = entity.xOld + (entity.getX() - entity.xOld) * event.tickDelta;
-            double y = entity.yOld + (entity.getY() - entity.yOld) * event.tickDelta;
-            double z = entity.zOld + (entity.getZ() - entity.zOld) * event.tickDelta;
+            double x = entity.xOld + (entity.getX() - entity.xOld) * event.getTickDelta();
+            double y = entity.yOld + (entity.getY() - entity.yOld) * event.getTickDelta();
+            double z = entity.zOld + (entity.getZ() - entity.zOld) * event.getTickDelta();
 
             if ("Head".equals(targetPoint.getMode())) {
                 y += entity.getBbHeight() * 0.9;
@@ -143,19 +150,16 @@ public final class Tracers extends AxiomMod implements ColorConfigurable, Keybin
                 y += entity.getBbHeight() * 0.5;
             }
 
-            // Haetaan väri ja käytetään getCurrentColor() rainbow-tukea varten
-            Color color = getColorForGroup(group).getCurrentColor();
+            // Haetaan väri ARGB-int
+            int color = getColorForGroup(group).getCurrentColor().getARGB();
 
-            event.render.drawLine(
-                    RenderUtils.center.x, RenderUtils.center.y, RenderUtils.center.z,
-                    x, y, z,
-                    color
-            );
+            // Piirrä tracer-viiva (oletuspaksuus 1.0f)
+            renderer.drawLine(start.x, start.y, start.z, x, y, z, color, 1.0f);
 
             if (drawPillar.get()) {
                 double groundY = entity.getY();
                 double topY = groundY + entity.getBbHeight();
-                event.render.drawLine(x, groundY, z, x, topY, z, color);
+                renderer.drawLine(x, groundY, z, x, topY, z, color, 1.0f);
             }
         }
     }
@@ -181,7 +185,7 @@ public final class Tracers extends AxiomMod implements ColorConfigurable, Keybin
             case NEUTRAL -> neutralColor;
             case WATER   -> waterColor;
             case BOSS    -> bossColor;
-            default      -> playerColor; // fallback (tai mikä tahansa olemassa oleva)
+            default      -> playerColor;
         };
     }
 

@@ -11,6 +11,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.chunk.LevelChunk;
 import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.window.WindowFactory;
 import silversword.axiom.client.main.AxiomMod;
@@ -20,10 +21,9 @@ import silversword.axiom.client.modules.moduleutils.BlockColorSelectable;
 import silversword.axiom.client.modules.moduleutils.BlockSelectionView;
 import silversword.axiom.client.modules.render.blockesp.Block;
 import silversword.axiom.client.modules.render.blockesp.Group;
-import silversword.axiom.client.eventbus.AxiomEvent;
-import silversword.axiom.client.render.rendersystem.ShapeMode;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.render.rendersystem.utils.misc.ShapeModeEnum;
 import silversword.axiom.client.setting.*;
 import silversword.axiom.client.modules.render.blockesp.*;
 
@@ -156,7 +156,7 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
         defaultTracer.speed = 1.0f;
 
         defaultBlockData = new BlockData(
-                ShapeMode.Lines,
+                ShapeModeEnum.LINES,
                 defaultLine,
                 defaultSide,
                 false,
@@ -329,24 +329,24 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
         return list;
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onRender(Render3DEvent event) {
         if (!isEnabled() || mc.player == null || mc.level == null) return;
 
         double maxDistSq = renderDistance.getValue() * renderDistance.getValue();
-        Vec3 cameraPos = event.cameraX != 0 ? new Vec3(event.cameraX, event.cameraY, event.cameraZ) : mc.player.position();
+        Vec3 cameraPos = event.getCameraPos();
 
         for (Block block : allBlocks.values()) {
             if (block.pos.distToCenterSqr(cameraPos) > maxDistSq) continue;
             BlockData data = getBlockData(block.block);
-            block.render(event.render, data);
+            block.render(event.getRenderer(), data);
         }
 
         if (tracerEnabled.get()) {
             for (Group group : groups) {
                 BlockData data = getBlockData(group.block);
                 if (data.tracer) {
-                    group.renderTracer(event.render, data.tracerColor.getCurrentColor());
+                    group.renderTracer(event.getRenderer(), data.tracerColor.getCurrentColor());
                 }
             }
         }

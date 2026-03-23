@@ -2,7 +2,6 @@ package silversword.axiom.client.gui.components;
 
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 
 import java.util.ArrayList;
@@ -130,8 +129,7 @@ public final class ScrollContainer implements UiComponent {
             boolean hover = bounds.contains(mouseX, mouseY);
             if (hover) {
                 Rect thumb = getScrollbarThumbRect();
-                Renderer2D.COLOR.drawRoundedRect(thumb.x, thumb.y, thumb.w, thumb.h,
-                        thumb.w / 2.0, new Color(ui.theme.accent));
+                ui.fillRounded(thumb.x, thumb.y, thumb.w, thumb.h, ui.theme.accent, thumb.w / 2.0);
             }
         }
     }

@@ -5,6 +5,7 @@ import silversword.axiom.client.gui.core.*;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.misc.DeathLocationModule;
 import silversword.axiom.client.modules.render.WaypointModule;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.texture.Texture;
 import silversword.axiom.client.render.rendersystem.utils.texture.TextureManager;
@@ -113,8 +114,17 @@ public final class ModuleRow implements UiComponent {
 
 
         if (gearTexture != null) {
-            DrawTexture.add(GEAR_TEXTURE, gearRect.x + 2, gearRect.y + 2, gearRect.w - 4, gearRect.h - 2, gearRotation, new Color(255, 255, 255, 255));
+            RenderAPI.getInstance().getCore().addRotatedTexture(
+                    GEAR_TEXTURE,
+                    gearRect.x + 2,
+                    gearRect.y + 2,
+                    gearRect.w - 4,
+                    gearRect.h - 2,
+                    gearRotation,
+                    0xFFFFFFFF
+            );
         } else {
+            // Fallback to dots
             ui.fill(gearRect, gearHover ? ui.theme.buttonHover : ui.theme.panel);
             String dots = "...";
             int dotsW = ui.textWidth(dots);

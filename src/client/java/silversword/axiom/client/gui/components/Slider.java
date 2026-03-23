@@ -3,7 +3,6 @@ package silversword.axiom.client.gui.components;
 import net.minecraft.client.Minecraft;
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 
 import java.util.Locale;
@@ -123,11 +122,12 @@ public final class Slider implements UiComponent {
         int trackY = sliderArea.y;
         int radius = 3;
 
-        Renderer2D.COLOR.drawRoundedRect(sliderArea.x, trackY, sliderArea.w, 6, radius, new Color(ui.theme.sliderTrack));
-
+        // Track
+        ui.fillRounded(sliderArea.x, trackY, sliderArea.w, 6, ui.theme.sliderTrack, radius);
+        // Fill
         double pct = (value - min) / (max - min);
         int fillW = (int) Math.round(sliderArea.w * pct);
-        Renderer2D.COLOR.drawRoundedRect(sliderArea.x, trackY, fillW, 6, radius, new Color(ui.theme.sliderFill));
+        ui.fillRounded(sliderArea.x, trackY, fillW, 6, ui.theme.sliderFill, radius);
 
         // Knob
         int knobSize = 12;
@@ -136,8 +136,8 @@ public final class Slider implements UiComponent {
         int knobCenterX = knobX + knobSize / 2;
         int knobCenterY = knobY + knobSize / 2;
 
-        Renderer2D.COLOR.drawCircle(knobCenterX, knobCenterY, knobSize / 2, new Color(ui.theme.scrollbarHover));
-        Renderer2D.COLOR.drawCircle(knobCenterX, knobCenterY, knobSize / 2 - 2, new Color(ui.theme.panel));
+        ui.fillCircle(knobCenterX, knobCenterY, knobSize / 2, ui.theme.scrollbarHover);
+        ui.fillCircle(knobCenterX, knobCenterY, knobSize / 2 - 2, ui.theme.panel);
 
         if (dragging && dragSliderArea != null) {
             double nv = applyStep(clamp(valueFromMouse(mouseX, dragSliderArea)));

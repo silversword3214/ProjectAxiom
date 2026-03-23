@@ -2,9 +2,8 @@ package silversword.axiom.client.gui.core;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.font.TextRenderer;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
 
 public class UiContext {
     public final Minecraft mc;
@@ -12,63 +11,65 @@ public class UiContext {
     public final Theme theme;
     public final float delta;
     private final TextRenderer uiText;
+    private final Renderer2D renderer;
 
-    public UiContext(Minecraft mc, GuiGraphics draw, Theme theme, float delta) {
+    public UiContext(Minecraft mc, GuiGraphics draw, Theme theme, float delta, Renderer2D renderer) {
         this.mc = mc;
         this.draw = draw;
         this.theme = theme;
         this.delta = delta;
         this.uiText = TextRenderer.get();
+        this.renderer = renderer;
     }
 
     public void fill(Rect r, int argb) {
-        Renderer2D.COLOR.quad(r.x, r.y, r.w, r.h, new Color(argb));
+        renderer.drawRect(r.x, r.y, r.w, r.h, argb);
     }
 
     public void fill(int x, int y, int w, int h, int argb) {
-        Renderer2D.COLOR.quad(x, y, w, h, new Color(argb));
+        renderer.drawRect(x, y, w, h, argb);
     }
 
     public void fillRounded(Rect r, int argb, double radius) {
-        Renderer2D.COLOR.drawRoundedRect(r.x, r.y, r.w, r.h, radius, new Color(argb));
+        renderer.drawRoundedRect(r.x, r.y, r.w, r.h, radius, argb);
     }
 
     public void fillRounded(int x, int y, int w, int h, int argb, double radius) {
-        Renderer2D.COLOR.drawRoundedRect(x, y, w, h, radius, new Color(argb));
+        renderer.drawRoundedRect(x, y, w, h, radius, argb);
     }
 
     public void fillRoundedCustom(Rect r, int argb, double radius,
                                   boolean topLeft, boolean topRight, boolean bottomRight, boolean bottomLeft) {
-        Renderer2D.COLOR.drawRoundedRectCustom(r.x, r.y, r.w, r.h, radius, new Color(argb),
+        renderer.drawRoundedRectCustom(r.x, r.y, r.w, r.h, radius, argb,
                 topLeft, topRight, bottomRight, bottomLeft);
     }
 
     public void drawRoundedOutline(Rect r, int argb, double radius, double thickness) {
-        Renderer2D.COLOR.drawRoundedRectOutline(r.x, r.y, r.w, r.h, radius, new Color(argb), thickness);
+        renderer.drawRoundedRectOutline(r.x, r.y, r.w, r.h, radius, argb, thickness);
     }
 
     public void drawRectOutline(Rect r, int argb, double thickness) {
-        Color color = new Color(argb);
-        Renderer2D.COLOR.lineThick(r.x, r.y, r.x + r.w, r.y, thickness, color); // ylä
-        Renderer2D.COLOR.lineThick(r.x + r.w, r.y, r.x + r.w, r.y + r.h, thickness, color); // oikea
-        Renderer2D.COLOR.lineThick(r.x + r.w, r.y + r.h, r.x, r.y + r.h, thickness, color); // ala
-        Renderer2D.COLOR.lineThick(r.x, r.y + r.h, r.x, r.y, thickness, color); // vasen
+        renderer.drawRectOutline(r.x, r.y, r.w, r.h, (float) thickness, argb);
     }
 
     public void drawOutline(Rect r, int argb) {
-        Renderer2D.COLOR.boxLines(r.x, r.y, r.w, r.h, new Color(argb));
+        renderer.drawRectOutline(r.x, r.y, r.w, r.h, 1f, argb);
     }
 
     public void drawOutline(int x, int y, int w, int h, int argb) {
-        Renderer2D.COLOR.boxLines(x, y, w, h, new Color(argb));
+        renderer.drawRectOutline(x, y, w, h, 1f, argb);
+    }
+
+    public void fillCircle(int cx, int cy, double radius, int argb) {
+        renderer.drawCircle(cx, cy, radius, argb);
     }
 
     public void text(String s, int x, int y, int argb) {
-        uiText.render(s, x, y, new Color(argb), false);
+        uiText.render(s, x, y, new silversword.axiom.client.render.rendersystem.utils.color.Color(argb), false);
     }
 
     public void textShadow(String s, int x, int y, int argb) {
-        uiText.render(s, x, y, new Color(argb), true);
+        uiText.render(s, x, y, new silversword.axiom.client.render.rendersystem.utils.color.Color(argb), true);
     }
 
     public int textWidth(String s) {

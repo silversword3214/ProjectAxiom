@@ -4,7 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 
 
-import silversword.axiom.client.render.rendersystem.Renderer3D;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.world.Dir;
 
@@ -38,9 +38,8 @@ public class Block {
     }
 
     public void render(Renderer3D renderer, BlockData data) {
-        Color line = data.lineColor.getCurrentColor();
-        Color side = data.sideColor.getCurrentColor();
-
+        int line = data.lineColor.getCurrentColor().getARGB();
+        int side = data.sideColor.getCurrentColor().getARGB();
 
         double x1 = pos.getX();
         double y1 = pos.getY();

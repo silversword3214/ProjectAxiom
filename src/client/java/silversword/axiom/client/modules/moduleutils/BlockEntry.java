@@ -70,7 +70,7 @@ public class BlockEntry implements UiComponent {
         if (module instanceof BlockColorSelectable) {
             BlockColorSelectable colorModule = (BlockColorSelectable) module;
             SettingColor sc = colorModule.getBlockColor(block);
-            int blockColor = sc != null ? sc.getCurrentColor().getPacked() : 0xFFFFFFFF;
+            int blockColor = sc != null ? sc.getCurrentColor().getARGB() : 0xFFFFFFFF;
 
             ui.fill(colorSwatchRect.x - 1, colorSwatchRect.y - 1,
                     colorSwatchRect.w + 2, colorSwatchRect.h + 2,

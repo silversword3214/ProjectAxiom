@@ -3,6 +3,7 @@ package silversword.axiom.client.modules.render;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.window.WindowFactory;
@@ -11,7 +12,7 @@ import silversword.axiom.client.modules.ColorConfigurable;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.NamedColor;
-import silversword.axiom.client.eventbus.AxiomEvent;
+
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.setting.SettingKeybind;
@@ -95,18 +96,17 @@ public final class Breadcrumbs extends AxiomMod implements ColorConfigurable, Ke
         }
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onRender(Render3DEvent event) {
         if (!isEnabled() || points.size() < 2) return;
 
-        Color color = trailColor.getCurrentColor();
-        float width = (float) lineWidth.getValue(); // voidaan käyttää myöhemmin
+        int color = trailColor.getCurrentColor().getARGB();
 
         // Piirretään viivat peräkkäisten pisteiden välille
         for (int i = 0; i < points.size() - 1; i++) {
             BreadcrumbPoint p1 = points.get(i);
             BreadcrumbPoint p2 = points.get(i + 1);
-            event.render.drawLine(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, color);
+            event.getRenderer().drawLine(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, color);
         }
     }
 

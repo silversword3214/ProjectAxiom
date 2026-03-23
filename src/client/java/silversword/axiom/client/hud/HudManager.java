@@ -3,11 +3,14 @@ package silversword.axiom.client.hud;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.DeltaTracker;
+import org.joml.Matrix4f;
 import silversword.axiom.client.gui.core.Theme;
 import silversword.axiom.client.gui.core.ThemeManager;
 import silversword.axiom.client.gui.screen.ClickGuiScreen;
 import silversword.axiom.client.hud.core.HudContext;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
+import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
 
 import java.util.*;
 
@@ -69,22 +72,23 @@ public final class HudManager {
 
         Theme theme = ThemeManager.getCurrentTheme();
         float delta = tickCounter.getGameTimeDeltaTicks();
-        HudContext ctx = new HudContext(mc, draw, theme, delta);
 
-        // Aloita fillien keräys
-        Renderer2D.COLOR.begin();
+        // Luo projektiomatriisi (pikselikoordinaatit)
+        Matrix4f proj = RenderUtils.getUnscaledProjection();
+        Renderer2D renderer = new Renderer2D(draw, RenderAPI.getInstance().getCore(), proj);
+        HudContext ctx = new HudContext(mc, draw, theme, delta, renderer);
 
-        // Kerää fillit ja tekstit (tekstit tallennetaan ctx:n listaan)
+        // Piirrä kaikki elementit
         for (HudElement e : elements) {
             if (!e.enabled()) continue;
             e.render(ctx, tickCounter);
         }
 
-        // Renderöi fillit
-        Renderer2D.COLOR.render();
-
-        // Piirrä tallennetut tekstit fillien päälle
+        // Piirrä tallennetut tekstit
         ctx.renderTexts();
+
+        // Lähetä kaikki GPU:lle
+        RenderAPI.getInstance().getCore().flush();
     }
 
     public HudElement hitTest(int mouseX, int mouseY) {

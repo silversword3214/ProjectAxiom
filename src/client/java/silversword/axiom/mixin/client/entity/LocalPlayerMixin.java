@@ -7,19 +7,21 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import silversword.axiom.client.managers.ModuleManager;
+import silversword.axiom.client.modules.moduleutils.SmartKillAura.RotationHandler;
 import silversword.axiom.client.modules.movement.NoSlow;
+
 
 @Mixin(LocalPlayer.class)
 public class LocalPlayerMixin {
 
     @Inject(method = "sendPosition", at = @At("HEAD"))
     private void onPreSendMovementPackets(CallbackInfo ci) {
-        silversword.axiom.client.utils.player.RotationHandler.onPreSendMovementPackets();
+        RotationHandler.onPreSendMovementPackets();
     }
 
     @Inject(method = "sendPosition", at = @At("TAIL"))
     private void onPostSendMovementPackets(CallbackInfo ci) {
-        silversword.axiom.client.utils.player.RotationHandler.onPostSendMovementPackets();
+        RotationHandler.onPostSendMovementPackets();
     }
 
     @Inject(method = "itemUseSpeedMultiplier", at = @At("RETURN"), cancellable = true)

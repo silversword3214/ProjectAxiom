@@ -1,14 +1,10 @@
 #version 330 core
-
-out vec4 color;
-
 uniform sampler2D u_Texture;
-
-in vec2 v_TexCoord;
-in vec4 v_Color;
+in vec2 texCoord;
+in vec4 vertexColor;
+out vec4 fragColor;
 
 void main() {
-
-    float alpha = texture(u_Texture, v_TexCoord).r;
-    color = vec4(1.0, 1.0, 1.0, alpha) * v_Color;
+    float alpha = texture(u_Texture, texCoord).r;
+    fragColor = vec4(vertexColor.rgb, vertexColor.a * alpha);
 }

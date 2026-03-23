@@ -15,10 +15,11 @@ import silversword.axiom.client.event.packets.PacketEvent;
 @Mixin(Connection.class)
 public abstract class ConnectionMixin {
 
-
     @Inject(at = @At("HEAD"), method = "send(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;)V", cancellable = true)
     private void onSendPacket(Packet<?> packet, @Nullable ChannelFutureListener listener, CallbackInfo ci) {
-        if (AxiomInitialize.EVENT_BUS.post(new PacketEvent.Send(packet, (Connection) (Object) this)).isCancelled()) {
+        PacketEvent.Send event = new PacketEvent.Send(packet, (Connection) (Object) this);
+        AxiomInitialize.EVENT_BUS.post(event);
+        if (event.isCancelled()) {
             ci.cancel();
         }
     }

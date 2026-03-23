@@ -1,175 +1,67 @@
 package silversword.axiom.client.render.rendersystem.utils.render;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.BlockPos;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-import org.joml.Vector3d;
+import org.joml.Quaternionf;
 import org.joml.Vector4f;
-import silversword.axiom.client.event.render.Render3DEvent;
-import silversword.axiom.client.main.AxiomInitialize;
-import silversword.axiom.client.eventbus.AxiomEvent;
-import silversword.axiom.client.render.rendersystem.CustomRenderingPipelineProvider;
-
-import silversword.axiom.client.render.rendersystem.Renderer3D;
-import silversword.axiom.client.render.rendersystem.ShapeMode;
-
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.misc.Pool;
-
-import java.util.List;
 
 public class RenderUtils {
-    private static final Minecraft mc = Minecraft.getInstance();
 
-    public static boolean rendering3D = true;
-
-    public static Vec3 center = new Vec3(0, 0, 0);
+    public static Vec3 center = Vec3.ZERO;
 
     public static final Matrix4f projection = new Matrix4f();
-    public static final Matrix4f modelView = new Matrix4f();
-    public static final Matrix4f view = new Matrix4f();
 
-    private static final Pool<RenderBlock> renderBlockPool = new Pool<>(RenderBlock::new);
-    private static final List<RenderBlock> renderBlocks = new ObjectArrayList<>();
-    public static final Renderer3D renderer3D = new Renderer3D(CustomRenderingPipelineProvider.WORLD_COLORED_LINES, CustomRenderingPipelineProvider.WORLD_COLORED);
+    /**
+     * Gets the current game's projection matrix for world rendering.
+     *
+     * @param tickDelta The partial tick time (from DeltaTracker)
+     * @return The projection matrix
+     */
 
+    public static Matrix4f getProjectionMatrix(float tickDelta) {
+        GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
+        Camera camera = gameRenderer.getMainCamera();
+        float fov = gameRenderer.getFov(camera, tickDelta, true);
+        return gameRenderer.getProjectionMatrix(fov);
+    }
 
-    public static Vec3 currentCameraPos = Vec3.ZERO;
-
-    public static void init() {
-        AxiomInitialize.EVENT_BUS.subscribe(RenderUtils.class);
+    public static Matrix4f getViewMatrix(Camera camera) {
+        Vec3 pos = camera.position();
+        Quaternionf rot = camera.rotation();
+        return new Matrix4f()
+                .rotate(rot.conjugate())
+                .translate(-(float) pos.x, -(float) pos.y, -(float) pos.z);
     }
 
 
 
-    public static void updateMatrices(Matrix4f proj, Matrix4f viewMatrix) {
-        projection.set(proj);
-        modelView.set(view);
-        RenderUtils.view.set(viewMatrix);
+    public static float getTickDelta() {
+        return Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
     }
 
-    public static void setup2DProjection(int width, int height) {
-        projection.setOrtho(0, width, height, 0, 0, 1000);
-    }
-
+    // Screen center
     public static void updateScreenCenter(Matrix4f projection, Matrix4f view) {
-        RenderUtils.projection.set(projection);
-
-        Matrix4f invProjection = new Matrix4f(projection).invert();
+        Matrix4f invProj = new Matrix4f(projection).invert();
         Matrix4f invView = new Matrix4f(view).invert();
-
-        Vector4f center4 = new Vector4f(0, 0, 0, 1).mul(invProjection).mul(invView);
+        Vector4f center4 = new Vector4f(0, 0, 0, 1).mul(invProj).mul(invView);
         center4.div(center4.w);
-
-        Vec3 camera = mc.gameRenderer.getMainCamera().position();
-        center = new Vec3(camera.x + center4.x, camera.y + center4.y, camera.z + center4.z);
+        center = new Vec3(center4.x, center4.y, center4.z);
     }
 
-    public static void unscaledProjection() {
-        float width = mc.getWindow().getWidth();
-        float height = mc.getWindow().getHeight();
-
-        // near = -1000, far = 1000 (z=0 on välissä)
-        projection.setOrtho(0, width, height, 0, 0, 1000);
-        rendering3D = false;
+    public static Matrix4f getScaledProjection(GuiGraphics graphics) {
+        int w = graphics.guiWidth();
+        int h = graphics.guiHeight();
+        return new Matrix4f().setOrtho(0, w, h, 0, -1000, 1000);
     }
 
-    public static void scaledProjection() {
-        float width = (float) (mc.getWindow().getWidth() / mc.getWindow().getGuiScale());
-        float height = (float) (mc.getWindow().getHeight() / mc.getWindow().getGuiScale());
-
-        float tickDelta = mc.getDeltaTracker().getGameTimeDeltaTicks();
-        projection.set(mc.gameRenderer.getProjectionMatrix(tickDelta));
-        rendering3D = true;
-    }
-
-    public static void renderTickingBlock(BlockPos blockPos, Color sideColor, Color lineColor, ShapeMode shapeMode, int excludeDir, int duration, boolean fade, boolean shrink) {
-        renderBlocks.removeIf(next -> {
-            if (next.pos.equals(blockPos)) {
-                renderBlockPool.free(next);
-                return true;
-            }
-            return false;
-        });
-
-        renderBlocks.add(renderBlockPool.get().set(blockPos, sideColor, lineColor, shapeMode, excludeDir, duration, fade, shrink));
-    }
-
-    public static void onTick() {
-        renderBlocks.removeIf(block -> {
-            block.ticks--;
-            if (block.ticks <= 0) {
-                renderBlockPool.free(block);
-                return true;
-            }
-            return false;
-        });
-    }
-
-    @AxiomEvent
-    private static void onRender(Render3DEvent event) {
-        // TÄRKEÄÄ: Box-renderöinti vaatii puskurin avaamisen ja sulkemisen tässä
-        // Jos Tracers jo avaa sen, tämä saattaa aiheuttaa "begin() called twice"
-        // Parempi käyttää event.renderer.box suoraan jos mahdollista
-        renderBlocks.forEach(block -> block.render(event));
-    }
-
-    public static class RenderBlock {
-        public final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-        public final Color sideColor = new Color();
-        public final Color lineColor = new Color();
-        public ShapeMode shapeMode;
-        public int excludeDir;
-        public int ticks, duration;
-        public boolean fade, shrink;
-
-        public RenderBlock set(BlockPos blockPos, Color side, Color line, ShapeMode mode, int exclude, int dur, boolean f, boolean s) {
-            pos.set(blockPos);
-            sideColor.set(side);
-            lineColor.set(line);
-            shapeMode = mode;
-            excludeDir = exclude;
-            fade = f;
-            shrink = s;
-            ticks = dur;
-            duration = dur;
-            return this;
-        }
-
-        public void render(Render3DEvent event) {
-            double d = (double) ticks / duration;
-            double x1 = pos.getX(), y1 = pos.getY(), z1 = pos.getZ();
-            double x2 = pos.getX() + 1, y2 = pos.getY() + 1, z2 = pos.getZ() + 1;
-
-            int sideA = sideColor.a;
-            int lineA = lineColor.a;
-
-            if (fade) {
-                sideColor.a *= d;
-                lineColor.a *= d;
-            }
-            if (shrink) {
-                double offset = (1.0 - d) / 2.0;
-                x1 += offset; y1 += offset; z1 += offset;
-                x2 -= offset; y2 -= offset; z2 -= offset;
-            }
-
-            // Käytetään eventin omaa rendereriä (Renderer3D)
-            event.render.drawBox(x1, y1, z1, x2, y2, z2, sideColor, lineColor, shapeMode, excludeDir);
-
-            sideColor.a = sideA;
-            lineColor.a = lineA;
-        }
-
-    }
-
-    public static Vector3d set(Vector3d vec, Vec3 v) {
-        vec.x = v.x;
-        vec.y = v.y;
-        vec.z = v.z;
-
-        return vec;
+    public static Matrix4f getUnscaledProjection() {
+        var window = Minecraft.getInstance().getWindow();
+        int w = window.getWidth();
+        int h = window.getHeight();
+        return new Matrix4f().setOrtho(0, w, h, 0, -1000, 1000);
     }
 }

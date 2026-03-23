@@ -1,127 +1,100 @@
 package silversword.axiom.client.render.rendersystem.utils.render;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.util.Mth;
-import org.joml.*;
-import silversword.axiom.client.managers.ModuleManager;
-import silversword.axiom.client.modules.render.Zoom;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
+import org.joml.Vector4f;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
+import silversword.axiom.client.hud.core.HudContext;
+import silversword.axiom.client.render.rendersystem.utils.color.Color;
 
-public class NametagUtils {
+public final class NametagUtils {
     private static final Minecraft mc = Minecraft.getInstance();
 
-    public static double scale;
+    /**
+     * Converts a 3D world position to 2D screen coordinates.
+     * @param renderer the active 3D renderer (provides projection & view matrices)
+     * @param worldPos world position
+     * @return a new Vec3 containing (screenX, screenY, depth) if in front, otherwise null
+     */
+    public static Vec3 worldToScreen(Renderer3D renderer, Vec3 worldPos) {
+        Matrix4f proj = renderer.getProjectionMatrix();
+        Matrix4f view = renderer.getViewMatrix();
 
-    private static final Vector4f vec4 = new Vector4f();
-    private static final Vector4f mmMat4 = new Vector4f();
-    private static final Vector4f pmMat4 = new Vector4f();
-    private static final Vector3d camera = new Vector3d();
-    private static final Vector3d cameraNegated = new Vector3d();
-    private static final Matrix4f model = new Matrix4f();
-    private static final Matrix4f projection = new Matrix4f();
-    private static double windowScale;
+        Vector4f clip = new Vector4f((float) worldPos.x, (float) worldPos.y, (float) worldPos.z, 1.0f);
+        clip.mul(view).mul(proj);
 
-    public static void onRender(Matrix4f modelView) {
-        model.set(modelView);
-        NametagUtils.projection.set(RenderUtils.projection);
+        if (clip.w <= 0.0f) return null; // behind camera
 
-        RenderUtils.set(camera, mc.gameRenderer.getMainCamera().position());
-        cameraNegated.set(camera);
-        cameraNegated.negate();
+        // Perspective division
+        float invW = 1.0f / clip.w;
+        float ndcX = clip.x * invW;
+        float ndcY = clip.y * invW;
 
-        windowScale = mc.getWindow().calculateScale(1, false);
+        // Convert to screen coordinates
+        int width = mc.getWindow().getWidth();
+        int height = mc.getWindow().getHeight();
+        float screenX = (ndcX * 0.5f + 0.5f) * width;
+        float screenY = (1.0f - (ndcY * 0.5f + 0.5f)) * height;
+        float depth = clip.z * invW;
+
+        return new Vec3(screenX, screenY, depth);
     }
 
-    public static boolean worldToScreen(Vector3d pos, double scale) {
-        return worldToScreen(pos, scale, true);
-    }
+    /**
+     * Draws a text nametag at the given screen position (pixel coordinates).
+     * @param ctx HUD context for drawing
+     * @param screenX screen X coordinate
+     * @param screenY screen Y coordinate
+     * @param text the text to draw
+     * @param textColor text color
+     * @param bgColor background color (may be transparent)
+     * @param scale text scale (1.0 = normal size)
+     */
+    public static void drawNametag(HudContext ctx, double screenX, double screenY,
+                                   String text, Color textColor, Color bgColor, float scale) {
+        float padding = 4 * scale;
+        float radius = 3 * scale;
 
-    public static boolean worldToScreen(Vector3d pos, double scale, boolean distanceScaling) {
-        return worldToScreen(pos, scale, distanceScaling, false);
-    }
+        // Text dimensions
+        float textWidth = ctx.textWidth(text) * scale;
+        float textHeight = ctx.fontHeight() * scale;
 
-    public static boolean worldToScreen(Vector3d pos, double scale, boolean distanceScaling, boolean allowBehind) {
-        Zoom zoom = ModuleManager.getInstance().getModule(Zoom.class);
-        NametagUtils.scale = scale * zoom.getScaling();
-        if (distanceScaling) {
-            NametagUtils.scale *= getScale(pos);
+        // Background rectangle
+        float bgX = (float) (screenX - textWidth / 2 - padding);
+        float bgY = (float) (screenY - textHeight - padding * 2);
+        float bgW = textWidth + padding * 2;
+        float bgH = textHeight + padding * 2;
+
+        // Draw background
+        if (bgColor.getAlpha() > 0) {
+            ctx.fillRounded((int) bgX, (int) bgY, (int) bgW, (int) bgH, (int) radius, bgColor.getARGB());
         }
 
-        vec4.set(cameraNegated.x + pos.x, cameraNegated.y + pos.y, cameraNegated.z + pos.z, 1);
+        // Draw text
+        float textX = bgX + padding;
+        float textY = bgY + padding;
+        ctx.drawScaledText(text, (int) textX, (int) textY, textColor.getARGB(), true, scale);
+    }
 
-        vec4.mul(model, mmMat4);
-        mmMat4.mul(projection, pmMat4);
+    /**
+     * Convenience method: converts world position to screen and draws nametag.
+     * @param renderer active 3D renderer
+     * @param ctx HUD context
+     * @param worldPos world position
+     * @param text text to display
+     * @param textColor text color
+     * @param bgColor background color
+     * @param scale text scale
+     * @return true if drawn, false if behind camera
+     */
+    public static boolean renderNametag(Renderer3D renderer, HudContext ctx,
+                                        Vec3 worldPos, String text,
+                                        Color textColor, Color bgColor, float scale) {
+        Vec3 screenPos = worldToScreen(renderer, worldPos);
+        if (screenPos == null) return false;
 
-        boolean behind = pmMat4.w <= 0.f;
-
-        if (behind && !allowBehind) return false;
-
-        toScreen(pmMat4);
-        double x = pmMat4.x * mc.getWindow().getWidth();
-        double y = pmMat4.y * mc.getWindow().getHeight();
-
-        if (behind) {
-            x = mc.getWindow().getWidth() - x;
-            y = mc.getWindow().getHeight() - y;
-        }
-
-        if (Double.isInfinite(x) || Double.isInfinite(y)) return false;
-
-        pos.set(x / windowScale, mc.getWindow().getHeight() - y / windowScale, allowBehind ? pmMat4.w : pmMat4.z);
+        drawNametag(ctx, screenPos.x, screenPos.y, text, textColor, bgColor, scale);
         return true;
-    }
-
-    public static void begin(Vector3d pos) {
-        Matrix4fStack matrices = RenderSystem.getModelViewStack();
-        begin(matrices, pos);
-    }
-
-    public static void begin(Vector3d pos, GuiGraphics drawContext) {
-        begin(pos);
-
-        Matrix3x2fStack matrices = drawContext.pose();
-        matrices.pushMatrix();
-        matrices.scale(1.0f / mc.getWindow().getGuiScale());
-        matrices.translate((float) pos.x, (float) pos.y);
-        matrices.scale((float) scale, (float) scale);
-    }
-
-    private static void begin(Matrix4fStack matrices, Vector3d pos) {
-        matrices.pushMatrix();
-        matrices.translate((float) pos.x, (float) pos.y, 0);
-        matrices.scale((float) scale, (float) scale, 1);
-    }
-
-    public static void end() {
-        RenderSystem.getModelViewStack().popMatrix();
-    }
-
-    public static void end(GuiGraphics drawContext) {
-        end();
-        drawContext.pose().popMatrix();
-    }
-
-    private static double getScale(Vector3d pos) {
-        double dist = camera.distance(pos);
-        return Mth.clamp(1 - dist * 0.01, 0.5, Integer.MAX_VALUE);
-    }
-
-    private static void toScreen(Vector4f vec) {
-        float newW = 1.0f / vec.w * 0.5f;
-
-        vec.x = vec.x * newW + 0.5f;
-        vec.y = vec.y * newW + 0.5f;
-        vec.z = vec.z * newW + 0.5f;
-        vec.w = newW;
-    }
-
-    public static Vector3d set(Vector3d vec, Entity entity, double tickDelta) {
-        vec.x = Mth.lerp(tickDelta, entity.xOld, entity.getX());
-        vec.y = Mth.lerp(tickDelta, entity.yOld, entity.getY());
-        vec.z = Mth.lerp(tickDelta, entity.zOld, entity.getZ());
-
-        return vec;
     }
 }

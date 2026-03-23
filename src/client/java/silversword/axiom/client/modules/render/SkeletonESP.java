@@ -5,6 +5,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.window.WindowFactory;
@@ -14,7 +15,6 @@ import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.NamedColor;
 import silversword.axiom.client.modules.moduleutils.TargetGroup;
-import silversword.axiom.client.eventbus.AxiomEvent;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.setting.SettingBoolean;
@@ -106,7 +106,7 @@ public final class SkeletonESP extends AxiomMod implements ColorConfigurable, Ke
         // Nothing needed
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onRender(Render3DEvent event) {
         if (!isEnabled()) return;
         if (mc.player == null || mc.level == null) return;
@@ -219,7 +219,7 @@ public final class SkeletonESP extends AxiomMod implements ColorConfigurable, Ke
 
     // Helper to call the correct line method with double coordinates
     private void drawLine(Render3DEvent event, double[] from, double[] to, Color color) {
-        event.render.drawLine(from[0], from[1], from[2], to[0], to[1], to[2], color);
+        event.getRenderer().drawLine(from[0], from[1], from[2], to[0], to[1], to[2], color);
     }
 
     private boolean shouldDrawGroup(TargetGroup group) {

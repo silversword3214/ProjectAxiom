@@ -35,7 +35,6 @@
     "MouseHandlerScrollMixin",
     "gui.TitleScreenMixin",
     "GuiMixin",
-
     "gui.PauseScreenMixin",
     "gui.AbstractContainerScreenMixin",
     "overlays.NoFireOverlayEntityMixin",
@@ -53,17 +52,12 @@
     "render.XRayLightmapMixin",
     "render.XRayAmbientOcclusionMixin",
     "render.FogRendererMixin",
-    "render.RenderSystemMixin",
-
-    "render.rendersystem.GlCommandEncoderMixin",
-    "render.rendersystem.GlDeviceMixin",
-    "render.rendersystem.RenderPipelineMixin",
+    "render.LineSmoothingMixin",
+    "render.ApplyLineSmoothingMixin",
     "accessors.CameraAccessor",
     "accessors.ClientboundEntityEventPacketAccessor",
     "net.ClientboundResourcePackPushPacketMixin",
-
     "accessors.EntityFireTicksAccessor",
-
     "CameraInvoker"
   ],
   "injectors": {

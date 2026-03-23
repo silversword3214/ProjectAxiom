@@ -190,20 +190,20 @@ public final class RadarModule extends AxiomMod implements ColorConfigurable, Ke
         // Korkeusindikaattori
         hud.setHeightIndicator(heightIndicator.getMode());
         hud.setHeightRange(heightRange.getValue());
-        hud.setAboveColor(aboveColor.getCurrentColor().getPacked());
-        hud.setBelowColor(belowColor.getCurrentColor().getPacked());
-        hud.setSameLevelColor(sameLevelColor.getCurrentColor().getPacked());
+        hud.setAboveColor(aboveColor.getCurrentColor().getARGB());
+        hud.setBelowColor(belowColor.getCurrentColor().getARGB());
+        hud.setSameLevelColor(sameLevelColor.getCurrentColor().getARGB());
 
         // Kompassi
         hud.setShowCompass(showCompass.get()); // UUSI
 
         // Värit ryhmille
-        hud.setPlayerColor(playerColor.getCurrentColor().getPacked());
-        hud.setHostileColor(hostileColor.getCurrentColor().getPacked());
-        hud.setPassiveColor(passiveColor.getCurrentColor().getPacked());
-        hud.setNeutralColor(neutralColor.getCurrentColor().getPacked());
-        hud.setWaterColor(waterColor.getCurrentColor().getPacked());
-        hud.setBossColor(bossColor.getCurrentColor().getPacked());
+        hud.setPlayerColor(playerColor.getCurrentColor().getARGB());
+        hud.setHostileColor(hostileColor.getCurrentColor().getARGB());
+        hud.setPassiveColor(passiveColor.getCurrentColor().getARGB());
+        hud.setNeutralColor(neutralColor.getCurrentColor().getARGB());
+        hud.setWaterColor(waterColor.getCurrentColor().getARGB());
+        hud.setBossColor(bossColor.getCurrentColor().getARGB());
     }
 
     private void ensureHudRegistered() {
@@ -221,13 +221,13 @@ public final class RadarModule extends AxiomMod implements ColorConfigurable, Ke
 
     public int getColorForGroup(TargetGroup group) {
         return switch (group) {
-            case PLAYER  -> playerColor.getCurrentColor().getPacked();
-            case HOSTILE -> hostileColor.getCurrentColor().getPacked();
-            case PASSIVE -> passiveColor.getCurrentColor().getPacked();
-            case NEUTRAL -> neutralColor.getCurrentColor().getPacked();
-            case WATER   -> waterColor.getCurrentColor().getPacked();
-            case BOSS    -> bossColor.getCurrentColor().getPacked();
-            default      -> playerColor.getCurrentColor().getPacked();
+            case PLAYER  -> playerColor.getCurrentColor().getARGB();
+            case HOSTILE -> hostileColor.getCurrentColor().getARGB();
+            case PASSIVE -> passiveColor.getCurrentColor().getARGB();
+            case NEUTRAL -> neutralColor.getCurrentColor().getARGB();
+            case WATER   -> waterColor.getCurrentColor().getARGB();
+            case BOSS    -> bossColor.getCurrentColor().getARGB();
+            default      -> playerColor.getCurrentColor().getARGB();
         };
     }
 

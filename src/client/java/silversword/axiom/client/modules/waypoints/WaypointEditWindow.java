@@ -5,7 +5,6 @@ import silversword.axiom.client.gui.core.*;
 import silversword.axiom.client.gui.window.WindowFactory;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.managers.WaypointManager;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 
@@ -33,7 +32,7 @@ public class WaypointEditWindow implements UiComponent {
     private boolean bgColorPickerOpen = false;
     private boolean outlineColorPickerOpen = false;
 
-    // Väliaikaiset värit
+    // Väliaikaiset värit (ARGB-int)
     private int tempColor;
     private int tempBgColor;
     private int tempOutlineColor;
@@ -99,7 +98,7 @@ public class WaypointEditWindow implements UiComponent {
         colorPickerOpen = true;
         SettingColor tempSetting = new SettingColor("temp", new Color(tempColor));
         HsvColorPicker picker = new HsvColorPicker(tempSetting, () -> {
-            tempColor = tempSetting.getCurrentColor().getPacked();
+            tempColor = tempSetting.getCurrentColor().getARGB(); // korjattu: getPacked -> getARGB
         });
         openPickerWindow("color_picker_" + waypoint.id, picker, () -> colorPickerOpen = false);
     }
@@ -109,7 +108,7 @@ public class WaypointEditWindow implements UiComponent {
         bgColorPickerOpen = true;
         SettingColor tempSetting = new SettingColor("temp", new Color(tempBgColor));
         HsvColorPicker picker = new HsvColorPicker(tempSetting, () -> {
-            tempBgColor = tempSetting.getCurrentColor().getPacked();
+            tempBgColor = tempSetting.getCurrentColor().getARGB(); // korjattu
         });
         openPickerWindow("bg_color_picker_" + waypoint.id, picker, () -> bgColorPickerOpen = false);
     }
@@ -119,7 +118,7 @@ public class WaypointEditWindow implements UiComponent {
         outlineColorPickerOpen = true;
         SettingColor tempSetting = new SettingColor("temp", new Color(tempOutlineColor));
         HsvColorPicker picker = new HsvColorPicker(tempSetting, () -> {
-            tempOutlineColor = tempSetting.getCurrentColor().getPacked();
+            tempOutlineColor = tempSetting.getCurrentColor().getARGB(); // korjattu
         });
         openPickerWindow("outline_color_picker_" + waypoint.id, picker, () -> outlineColorPickerOpen = false);
     }
@@ -131,7 +130,7 @@ public class WaypointEditWindow implements UiComponent {
                 new UiComponent() {
                     @Override
                     public Rect getBounds() {
-                        return picker.getBounds(); // <-- TÄRKEÄ: palautetaan pickerin bounds
+                        return picker.getBounds();
                     }
                     @Override
                     public void setBounds(Rect bounds) {
@@ -239,25 +238,27 @@ public class WaypointEditWindow implements UiComponent {
         yField.render(ui, mouseX, mouseY, delta);
         zField.render(ui, mouseX, mouseY, delta);
 
+        // Väriesikatselu (pääväri)
         Rect cb = colorButton.getBounds();
-        Renderer2D.COLOR.quad(cb.x, cb.y, cb.w, cb.h, new Color(tempColor));
+        ui.fill(cb, tempColor);
         if (cb.contains(mouseX, mouseY))
-            Renderer2D.COLOR.boxLines(cb.x, cb.y, cb.w, cb.h, new Color(0xFFFFFFFF));
+            ui.drawOutline(cb, 0xFFFFFFFF);
 
         enabledToggle.render(ui, mouseX, mouseY, delta);
         scaleSlider.render(ui, mouseX, mouseY, delta);
         showBgToggle.render(ui, mouseX, mouseY, delta);
 
+        // Taustaväri
         Rect bgcb = bgColorButton.getBounds();
-        Renderer2D.COLOR.quad(bgcb.x, bgcb.y, bgcb.w, bgcb.h, new Color(tempBgColor));
+        ui.fill(bgcb, tempBgColor);
         if (bgcb.contains(mouseX, mouseY))
-            Renderer2D.COLOR.boxLines(bgcb.x, bgcb.y, bgcb.w, bgcb.h, new Color(0xFFFFFFFF));
+            ui.drawOutline(bgcb, 0xFFFFFFFF);
 
         showOutlineToggle.render(ui, mouseX, mouseY, delta);
         Rect olcb = outlineColorButton.getBounds();
-        Renderer2D.COLOR.quad(olcb.x, olcb.y, olcb.w, olcb.h, new Color(tempOutlineColor));
+        ui.fill(olcb, tempOutlineColor);
         if (olcb.contains(mouseX, mouseY))
-            Renderer2D.COLOR.boxLines(olcb.x, olcb.y, olcb.w, olcb.h, new Color(0xFFFFFFFF));
+            ui.drawOutline(olcb, 0xFFFFFFFF);
 
         shapeDropdown.render(ui, mouseX, mouseY, delta);
         saveButton.render(ui, mouseX, mouseY, delta);

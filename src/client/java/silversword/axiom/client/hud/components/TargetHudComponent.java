@@ -8,8 +8,6 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
 
 public final class TargetHudComponent extends BaseHudElement {
     private long lingerMs = 1500;
@@ -120,9 +118,9 @@ public final class TargetHudComponent extends BaseHudElement {
 
         int lines = 0;
         int textW = 0;
-        if (showName) { lines++; textW = Math.max(textW, ctx.textWidth(name)); }
-        if (showHealthText) { lines++; textW = Math.max(textW, ctx.textWidth(hpText)); }
-        if (showDistance) { lines++; textW = Math.max(textW, ctx.textWidth(distText)); }
+        if (showName) { lines++; textW = Math.max(textW, (int) (ctx.textWidth(name) * textScale)); }
+        if (showHealthText) { lines++; textW = Math.max(textW, (int) (ctx.textWidth(hpText) * textScale)); }
+        if (showDistance) { lines++; textW = Math.max(textW, (int) (ctx.textWidth(distText) * textScale)); }
         if (lines == 0 && !showHealthBar) return;
 
         int minW = (int) (BASE_MIN_WIDTH * backgroundScale);
@@ -134,20 +132,17 @@ public final class TargetHudComponent extends BaseHudElement {
         int x0 = x;
         int y0 = y;
 
-        // Haetaan värit ja sovelletaan alpha
+        // Värit alpha-kerroin huomioiden
         int bg = applyAlpha((backgroundAlpha << 24) | 0x000000, alphaMul);
         int border = applyAlpha(borderColor, alphaMul);
         int txt = applyAlpha(textColor, alphaMul);
 
-        Color bgCol = new Color(bg);
-        Color borderCol = new Color(border);
-
         // Tausta pyöristettynä
-        Renderer2D.COLOR.drawRoundedRect(x0, y0, boxW, boxH, CORNER_RADIUS, bgCol);
+        ctx.fillRounded(x0, y0, boxW, boxH, CORNER_RADIUS, bg);
 
         // Reunus (paksuus skaalautuu, vähintään 1px)
         double thickness = Math.max(1.0, outlineScale);
-        Renderer2D.COLOR.drawRoundedRectOutline(x0, y0, boxW, boxH, CORNER_RADIUS, borderCol, thickness);
+        ctx.drawRoundedOutline(x0, y0, boxW, boxH, CORNER_RADIUS, border, thickness);
 
         int tx = x0 + padding;
         int ty = y0 + padding;
@@ -173,10 +168,10 @@ public final class TargetHudComponent extends BaseHudElement {
             int barBg = applyAlpha(0xFF222222, alphaMul);
             int barFill = applyAlpha(getHealthColor(pct), alphaMul);
 
-            Renderer2D.COLOR.drawRoundedRect(barX, barY, barW, barH, 2, new Color(barBg));
-
-            Renderer2D.COLOR.quad(barX, barY, fillW, barH, new Color(barFill));
-
+            // Tausta (pyöristetty) – voisi olla suorakaidekin
+            ctx.fillRounded(barX, barY, barW, barH, 2, barBg);
+            // Täyttö (suorakaide, ei pyöristetty – voisi olla pyöristettykin)
+            ctx.fill(barX, barY, fillW, barH, barFill);
         }
     }
 

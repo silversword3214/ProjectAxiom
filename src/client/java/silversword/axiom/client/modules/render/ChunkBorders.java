@@ -3,6 +3,7 @@ package silversword.axiom.client.modules.render;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.window.WindowFactory;
@@ -11,7 +12,8 @@ import silversword.axiom.client.modules.ColorConfigurable;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.NamedColor;
-import silversword.axiom.client.eventbus.AxiomEvent;
+
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.setting.SettingBoolean;
@@ -67,7 +69,7 @@ public final class ChunkBorders extends AxiomMod implements ColorConfigurable, K
     @Override
     protected void onTick() {}
 
-    @AxiomEvent
+    @Subscribe
     private void onRender(Render3DEvent event) {
         if (!isEnabled() || mc.player == null || mc.level == null) return;
 
@@ -79,6 +81,8 @@ public final class ChunkBorders extends AxiomMod implements ColorConfigurable, K
         double minY = mc.level.getMinY();
         double maxY = mc.level.getMaxY();
         double playerY = mc.player.getY();
+
+        Renderer3D renderer = event.getRenderer();
 
         for (int cx = playerChunkX - radius; cx <= playerChunkX + radius; cx++) {
             for (int cz = playerChunkZ - radius; cz <= playerChunkZ + radius; cz++) {
@@ -96,7 +100,7 @@ public final class ChunkBorders extends AxiomMod implements ColorConfigurable, K
 
                 if (isCurrentChunk) {
                     // Piirrä highlight-chunk
-                    Color hlColor = highlightColor.getCurrentColor();
+                    int hlColor = highlightColor.getCurrentColor().getARGB();
                     double fromY = highlightOnlyFromPlayer.get() ? playerY : minY;
                     double toY = maxY;
 
@@ -107,12 +111,12 @@ public final class ChunkBorders extends AxiomMod implements ColorConfigurable, K
                             double zPos = z1 + i;
 
                             // x-akselin suuntaiset reunat (z = z1 ja z = z2)
-                            event.render.drawLine(xPos, fromY, z1, xPos, toY, z1, hlColor);
-                            event.render.drawLine(xPos, fromY, z2, xPos, toY, z2, hlColor);
+                            renderer.drawLine(xPos, fromY, z1, xPos, toY, z1, hlColor);
+                            renderer.drawLine(xPos, fromY, z2, xPos, toY, z2, hlColor);
 
                             // z-akselin suuntaiset reunat (x = x1 ja x = x2)
-                            event.render.drawLine(x1, fromY, zPos, x1, toY, zPos, hlColor);
-                            event.render.drawLine(x2, fromY, zPos, x2, toY, zPos, hlColor);
+                            renderer.drawLine(x1, fromY, zPos, x1, toY, zPos, hlColor);
+                            renderer.drawLine(x2, fromY, zPos, x2, toY, zPos, hlColor);
                         }
                     }
 
@@ -124,33 +128,33 @@ public final class ChunkBorders extends AxiomMod implements ColorConfigurable, K
                         // Viivat kulkevat x-suunnassa ja z-suunnassa (kuten grid)
                         for (double y = yStart; y <= yEnd; y += 2) {
                             // x-suuntaiset viivat (z = z1 ja z = z2)
-                            event.render.drawLine(x1, y, z1, x2, y, z1, hlColor);
-                            event.render.drawLine(x1, y, z2, x2, y, z2, hlColor);
+                            renderer.drawLine(x1, y, z1, x2, y, z1, hlColor);
+                            renderer.drawLine(x1, y, z2, x2, y, z2, hlColor);
                             // z-suuntaiset viivat (x = x1 ja x = x2)
-                            event.render.drawLine(x1, y, z1, x1, y, z2, hlColor);
-                            event.render.drawLine(x2, y, z1, x2, y, z2, hlColor);
+                            renderer.drawLine(x1, y, z1, x1, y, z2, hlColor);
+                            renderer.drawLine(x2, y, z1, x2, y, z2, hlColor);
                         }
                     }
                 } else {
                     // Piirrä muut chunkit – vain ulkoreunat (koko korkeus)
-                    Color useColor = gridColor.getCurrentColor();
+                    int useColor = gridColor.getCurrentColor().getARGB();
 
                     // Pystyviivat (neljä kulmaa)
-                    event.render.drawLine(x1, minY, z1, x1, maxY, z1, useColor);
-                    event.render.drawLine(x2, minY, z1, x2, maxY, z1, useColor);
-                    event.render.drawLine(x1, minY, z2, x1, maxY, z2, useColor);
-                    event.render.drawLine(x2, minY, z2, x2, maxY, z2, useColor);
+                    renderer.drawLine(x1, minY, z1, x1, maxY, z1, useColor);
+                    renderer.drawLine(x2, minY, z1, x2, maxY, z1, useColor);
+                    renderer.drawLine(x1, minY, z2, x1, maxY, z2, useColor);
+                    renderer.drawLine(x2, minY, z2, x2, maxY, z2, useColor);
 
                     // Vaakaviivat alhaalla ja ylhäällä
-                    event.render.drawLine(x1, minY, z1, x2, minY, z1, useColor);
-                    event.render.drawLine(x1, minY, z2, x2, minY, z2, useColor);
-                    event.render.drawLine(x1, minY, z1, x1, minY, z2, useColor);
-                    event.render.drawLine(x2, minY, z1, x2, minY, z2, useColor);
+                    renderer.drawLine(x1, minY, z1, x2, minY, z1, useColor);
+                    renderer.drawLine(x1, minY, z2, x2, minY, z2, useColor);
+                    renderer.drawLine(x1, minY, z1, x1, minY, z2, useColor);
+                    renderer.drawLine(x2, minY, z1, x2, minY, z2, useColor);
 
-                    event.render.drawLine(x1, maxY, z1, x2, maxY, z1, useColor);
-                    event.render.drawLine(x1, maxY, z2, x2, maxY, z2, useColor);
-                    event.render.drawLine(x1, maxY, z1, x1, maxY, z2, useColor);
-                    event.render.drawLine(x2, maxY, z1, x2, maxY, z2, useColor);
+                    renderer.drawLine(x1, maxY, z1, x2, maxY, z1, useColor);
+                    renderer.drawLine(x1, maxY, z2, x2, maxY, z2, useColor);
+                    renderer.drawLine(x1, maxY, z1, x1, maxY, z2, useColor);
+                    renderer.drawLine(x2, maxY, z1, x2, maxY, z2, useColor);
                 }
             }
         }

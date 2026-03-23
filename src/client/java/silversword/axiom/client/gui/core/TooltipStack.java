@@ -1,10 +1,5 @@
 package silversword.axiom.client.gui.core;
 
-import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.utils.render.TextUtils;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,39 +27,25 @@ public final class TooltipStack {
     public static void renderAll(UiContext ui) {
         if (entries.isEmpty()) return;
 
-        // Aloitetaan uusi COLOR-renderöinti tooltipeille
-        Renderer2D.COLOR.begin();
-        // Aloitetaan uusi TEXT-renderöinti tooltipeille (scale 1.0, ei shadow)
-        TextRenderer textRenderer = TextRenderer.get();
-        textRenderer.begin(1, false, false);
-
         for (TooltipEntry entry : entries) {
-            renderTooltip(ui, textRenderer, entry.text, entry.mouseX, entry.mouseY);
+            renderTooltip(ui, entry.text, entry.mouseX, entry.mouseY);
         }
-        // Lopetetaan COLOR-puskuri ja renderöidään se
-        Renderer2D.COLOR.render();
-
-        textRenderer.end();
-
         entries.clear();
     }
 
-    private static void renderTooltip(UiContext ui, TextRenderer textRenderer, String text, double mouseX, double mouseY) {
+    private static void renderTooltip(UiContext ui, String text, double mouseX, double mouseY) {
         String[] lines = text.split("\n");
         int lineCount = lines.length;
 
-        // Lasketaan levein rivi TextUtils.CHAR_UNIT:lla
         int maxWidth = 0;
         for (String line : lines) {
-            int lineWidth = line.length() * TextUtils.CHAR_UNIT;
+            int lineWidth = ui.textWidth(line);
             if (lineWidth > maxWidth) maxWidth = lineWidth;
         }
 
-        // Laatikon koko: teksti + 2*padding molemmissa suunnissa
         int boxWidth = maxWidth + 2 * PADDING;
-        int boxHeight = lineCount * TextUtils.FONT_HEIGHT + 2 * PADDING;
+        int boxHeight = lineCount * ui.fontHeight() + 2 * PADDING;
 
-        // Sijoitetaan hiiren lähelle, pidetään ruudun sisällä
         double x = mouseX + 12;
         double y = mouseY - 12;
         int screenWidth = ui.mc.getWindow().getGuiScaledWidth();
@@ -79,16 +60,16 @@ public final class TooltipStack {
         if (x < 2) x = 2;
         if (y < 2) y = 2;
 
-        // Piirretään tausta (lisätään suoraan COLOR-puskuriin)
-        Renderer2D.COLOR.drawRoundedRect(x, y, boxWidth, boxHeight, RADIUS, new Color(ui.theme.panel));
-        Renderer2D.COLOR.drawRoundedRectOutline(x, y, boxWidth, boxHeight, RADIUS, new Color(ui.theme.border), 1);
+        // Tausta
+        ui.fillRounded((int) x, (int) y, boxWidth, boxHeight, ui.theme.panel, RADIUS);
+        ui.drawRoundedOutline(new Rect((int) x, (int) y, boxWidth, boxHeight), ui.theme.border, RADIUS, 1.0);
 
-        // Piirretään teksti (lisätään suoraan TEXT-puskuriin)
+        // Teksti
         int textX = (int) x + PADDING;
         int textY = (int) y + PADDING;
         for (String line : lines) {
-            textRenderer.render(line, textX, textY, new Color(ui.theme.text), false);
-            textY += TextUtils.FONT_HEIGHT;
+            ui.text(line, textX, textY, ui.theme.text);
+            textY += ui.fontHeight();
         }
     }
 }

@@ -1,5 +1,6 @@
 package silversword.axiom.client.modules.combat;
 
+import com.google.common.eventbus.Subscribe;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.world.phys.BlockHitResult;
@@ -13,10 +14,9 @@ import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.moduleutils.SmartKillAura.AttackController;
 import silversword.axiom.client.modules.moduleutils.SmartKillAura.TargetManager;
-import silversword.axiom.client.eventbus.AxiomEvent;
 
-import silversword.axiom.client.render.rendersystem.Renderer3D;
 
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.setting.*;
@@ -179,13 +179,13 @@ public class TPAura extends AxiomMod implements KeybindConfigurable {
         return result.getType() == HitResult.Type.MISS;
     }
 
-    @AxiomEvent
+    @Subscribe
     public void onRender3D(Render3DEvent event) {
         if (!isEnabled() || currentTarget == null || !renderTargetBox.get()) return;
 
-        Renderer3D renderer = event.render; // Oletetaan, että event.renderer on nyt tyyppiä WorldRenderer
+        Renderer3D renderer = event.getRenderer();
         AABB box = currentTarget.getBoundingBox();
-        Color color = boxColor.getCurrentColor().copy().a(255);
+        int color = boxColor.getCurrentColor().getARGB();
         renderer.boxOutline(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, color, 0);
     }
 }

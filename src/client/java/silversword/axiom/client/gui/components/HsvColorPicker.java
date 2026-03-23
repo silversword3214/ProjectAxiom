@@ -3,8 +3,8 @@ package silversword.axiom.client.gui.components;
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.color.RainbowColor;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.render.rendersystem.utils.color.RainbowColor;
 
 public class HsvColorPicker implements UiComponent {
 
@@ -137,7 +137,7 @@ public class HsvColorPicker implements UiComponent {
                 float v = 1f - (float) y / svRect.h;
                 for (int x = 0; x < svRect.w; x++) {
                     float s = (float) x / svRect.w;
-                    gradientCache[x][y] = Color.fromHsv(hue, s, v).getPacked();
+                    gradientCache[x][y] = Color.fromHsv(hue, s, v).getARGB();
                 }
             }
             gradientDirty = false;
@@ -165,7 +165,7 @@ public class HsvColorPicker implements UiComponent {
             float h = 360f * y / hueRect.h;
             Color c = Color.fromHsv(h, 1f, 1f);
             int height = Math.min(step, hueRect.h - y);
-            ui.fill(hueRect.x, hueRect.y + y, hueRect.w, height, c.getPacked());
+            ui.fill(hueRect.x, hueRect.y + y, hueRect.w, height, c.getARGB());
         }
     }
 
@@ -191,7 +191,7 @@ public class HsvColorPicker implements UiComponent {
             currentColor = Color.fromHsv(hue, saturation, value);
             currentColor.a = (int)(alpha * 255);
         }
-        ui.fill(currentColorRect, currentColor.getPacked());
+        ui.fill(currentColorRect, currentColor.getARGB());
         ui.text("Current", currentColorRect.x, currentColorRect.y - 10, ui.theme.text);
 
         // Rainbow-toggle (oikea ylä)
@@ -207,7 +207,7 @@ public class HsvColorPicker implements UiComponent {
                 float h = (i / (float) rainbowToggleRect.w) * 360f;
                 Color c = Color.fromHsv(h, 1f, 1f);
                 ui.fill(rainbowToggleRect.x + i, rainbowToggleRect.y,
-                        Math.min(4, rainbowToggleRect.w - i), 3, c.getPacked());
+                        Math.min(4, rainbowToggleRect.w - i), 3, c.getARGB());
             }
         }
         String toggleText = rainbow ? "Rainbow: ON" : "Rainbow: OFF";

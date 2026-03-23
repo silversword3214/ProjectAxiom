@@ -6,13 +6,14 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
-import silversword.axiom.client.eventbus.AxiomEvent;
-import silversword.axiom.client.render.rendersystem.ShapeMode;
+
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.render.rendersystem.utils.misc.ShapeModeEnum;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingSlider;
 
@@ -112,7 +113,7 @@ public final class CaveESP extends AxiomMod implements KeybindConfigurable {
         return false;
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onRender(Render3DEvent event) {
         if (!isEnabled()) return;
         if (mc.player == null || mc.level == null || caveBlocks.isEmpty()) return;
@@ -126,10 +127,10 @@ public final class CaveESP extends AxiomMod implements KeybindConfigurable {
             if (pos.distToCenterSqr(playerPos) > maxDistSq) continue;
 
             double half = 0.5;
-            event.render.drawBox(
+            event.getRenderer().drawBox(
                     pos.getX() + 0.5 - half, pos.getY(), pos.getZ() + 0.5 - half,
                     pos.getX() + 0.5 + half, pos.getY() + 1.0, pos.getZ() + 0.5 + half,
-                    color, color, ShapeMode.Lines, 0
+                    color, color, ShapeModeEnum.LINES, 0
             );
         }
     }

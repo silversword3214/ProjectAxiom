@@ -4,10 +4,11 @@ import net.minecraft.util.Mth;
 import silversword.axiom.client.event.GetFovEvent;
 import silversword.axiom.client.event.MouseScrollEvent;
 import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
-import silversword.axiom.client.eventbus.AxiomEvent;
+
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingNumber;
@@ -95,7 +96,7 @@ public class Zoom extends AxiomMod implements KeybindConfigurable {
         }
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onRender3D(Render3DEvent event) {
         if (!smooth.get()) {
             currentZoom = isEnabled() ? targetZoom : 1.0;
@@ -111,7 +112,7 @@ public class Zoom extends AxiomMod implements KeybindConfigurable {
         }
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onMouseScroll(MouseScrollEvent event) {
         if (!isEnabled()) return;
         if (scrollSensitivity.getValue() <= 0) return;
@@ -121,11 +122,11 @@ public class Zoom extends AxiomMod implements KeybindConfigurable {
         double delta = event.value * 0.25 * scrollSensitivity.getValue() * targetZoom;
         targetZoom += delta;
         targetZoom = Mth.clamp(targetZoom, 1, 50);
-        event.cancel();
+        event.setCancelled(true);
         System.out.println("Mouse scroll, targetZoom=" + targetZoom);
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onGetFov(GetFovEvent event) {
         if (!isEnabled()) return;
         if (mc.player == null || mc.level == null) return;

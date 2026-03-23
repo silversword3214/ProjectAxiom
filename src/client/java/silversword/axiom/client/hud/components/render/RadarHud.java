@@ -8,8 +8,8 @@ import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.modules.moduleutils.TargetGroup;
 import silversword.axiom.client.modules.render.RadarModule;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
@@ -43,7 +43,7 @@ public final class RadarHud extends BaseHudElement {
     private int sameLevelColor = 0xFFFFFFFF;
 
     // Kompassi
-    private boolean showCompass = true; // UUSI
+    private boolean showCompass = true;
 
     // Värit ryhmille
     private int playerColor = 0xFF00FFC8;
@@ -64,7 +64,7 @@ public final class RadarHud extends BaseHudElement {
         this.module = module;
     }
 
-    // Setterit
+    // Setterit (pysyvät ennallaan)
     public void setSize(int size) { this.size = size; }
     public void setRenderDistance(double d) { renderDistance = d; }
     public void setDotSize(double d) { dotSize = d; }
@@ -85,7 +85,7 @@ public final class RadarHud extends BaseHudElement {
     public void setAboveColor(int c) { aboveColor = c; }
     public void setBelowColor(int c) { belowColor = c; }
     public void setSameLevelColor(int c) { sameLevelColor = c; }
-    public void setShowCompass(boolean b) { showCompass = b; } // UUSI
+    public void setShowCompass(boolean b) { showCompass = b; }
     public void setPlayerColor(int c) { playerColor = c; }
     public void setHostileColor(int c) { hostileColor = c; }
     public void setPassiveColor(int c) { passiveColor = c; }
@@ -101,27 +101,29 @@ public final class RadarHud extends BaseHudElement {
     public void render(HudContext ctx, DeltaTracker tickCounter) {
         if (mc.player == null || mc.level == null) return;
 
-        float scaledSize = size * radarScale;
-        int centerX = (int) (x + scaledSize / 2);
-        int centerY = (int) (y + scaledSize / 2);
-        double scale = (scaledSize / 2.0) / renderDistance;
-        int radius = (int) (scaledSize / 2);
+        RenderCore core = RenderAPI.getInstance().getCore();
 
-        // Piirrä tausta ja reunus
-        Color bgColor = new Color(0x80000000);
-        Color borderCol = new Color(BASE_BORDER_COLOR);
+        float scaledSize = size * radarScale;
+        float centerX = x + scaledSize / 2;
+        float centerY = y + scaledSize / 2;
+        double scale = (scaledSize / 2.0) / renderDistance;
+        float radius = scaledSize / 2;
+
+        // Tausta ja reunus
+        int bgArgb = 0x80000000;
+        int borderArgb = BASE_BORDER_COLOR;
+
         if ("CIRCLE".equals(radarShape)) {
-            Renderer2D.COLOR.drawCircle(centerX, centerY, radius, bgColor);
-            Renderer2D.COLOR.drawCircleOutline(centerX, centerY, radius, borderCol, 1.0);
+            core.addCircle(centerX, centerY, radius, bgArgb);
+            core.addCircleOutline(centerX, centerY, radius, 1.0f, borderArgb);
         } else {
-            Renderer2D.COLOR.drawRoundedRect(x, y, scaledSize, scaledSize, BASE_CORNER_RADIUS, bgColor);
-            Renderer2D.COLOR.drawRoundedRectOutline(x, y, scaledSize, scaledSize, BASE_CORNER_RADIUS, borderCol, 1.0);
+            core.addRoundedRect(x, y, scaledSize, scaledSize, BASE_CORNER_RADIUS, bgArgb);
+            core.addRoundedRectOutline(x, y, scaledSize, scaledSize, BASE_CORNER_RADIUS, 1.0f, borderArgb);
         }
 
         // Ristikko
-        Color axisCol = new Color(BASE_LINE_COLOR);
-        Renderer2D.COLOR.line(x, centerY, x + scaledSize, centerY, axisCol);
-        Renderer2D.COLOR.line(centerX, y, centerX, y + scaledSize, axisCol);
+        core.addLine2D(x, centerY, x + scaledSize, centerY, 1.0f, BASE_LINE_COLOR);
+        core.addLine2D(centerX, y, centerX, y + scaledSize, 1.0f, BASE_LINE_COLOR);
 
         // Suuntavektorit
         Vec3 playerPos = mc.player.position();
@@ -129,9 +131,9 @@ public final class RadarHud extends BaseHudElement {
         forward = new Vec3(forward.x, 0, forward.z).normalize();
         Vec3 right = forward.cross(new Vec3(0, 1, 0)).normalize();
 
-        // Kompassi (vain jos päällä)
+        // Kompassi
         if (showCompass) {
-            drawCompass(ctx, centerX, centerY, radius, textScale, forward, right);
+            drawCompass(ctx, (int) centerX, (int) centerY, (int) radius, textScale, forward, right);
         }
 
         // Entiteetit
@@ -149,8 +151,8 @@ public final class RadarHud extends BaseHudElement {
             double relForward = dx * forward.x + dz * forward.z;
             double relRight = dx * right.x + dz * right.z;
 
-            int dotX = centerX + (int) (relRight * scale);
-            int dotY = centerY - (int) (relForward * scale);
+            float dotX = centerX + (float) (relRight * scale);
+            float dotY = centerY - (float) (relForward * scale);
 
             // Ympyrän leikkaus
             if ("CIRCLE".equals(radarShape)) {
@@ -165,28 +167,28 @@ public final class RadarHud extends BaseHudElement {
             float alpha = 1.0f;
             if ("OPACITY".equals(heightIndicator) && heightRange > 0) {
                 float factor = (float) Math.min(1.0, Math.abs(dy) / heightRange);
-                alpha = 1.0f - factor * 0.7f; // tummenee korkeuden mukaan
+                alpha = 1.0f - factor * 0.7f;
             }
             int finalColor = applyAlpha(baseColor, alpha);
 
-            // Piirrä ympyrä entiteetin ympärille (vain fill, ei outlinea)
+            // Ympyrä entiteetin ympärille
             if (showEntityCircles) {
-                double circleRad = entityCircleSize * dotScale;
-                int fillColor = (finalColor & 0x00FFFFFF) | (0x80 << 24); // 50% läpinäkyvä
-                Renderer2D.COLOR.drawCircle(dotX, dotY, circleRad, new Color(fillColor));
+                float circleRad = (float) (entityCircleSize * dotScale);
+                int fillColor = (finalColor & 0x00FFFFFF) | (0x80 << 24);
+                core.addCircle(dotX, dotY, circleRad, fillColor);
             }
 
-            // Piirrä itse piste
-            int finalDotSize = (int) (dotSize * dotScale);
-            Renderer2D.COLOR.quad(dotX - finalDotSize/2, dotY - finalDotSize/2, finalDotSize, finalDotSize, new Color(finalColor));
+            // Piste
+            float finalDotSize = (float) (dotSize * dotScale);
+            core.addRect2D(dotX - finalDotSize/2, dotY - finalDotSize/2, finalDotSize, finalDotSize, finalColor);
 
-            // LINE-indikaattori
+            // Korkeusindikaattori (viiva)
             if ("LINE".equals(heightIndicator) && dy != 0) {
                 int lineLength = (int) Math.min(20, Math.abs(dy) / heightRange * 20);
                 if (dy > 0) {
-                    Renderer2D.COLOR.line(dotX, dotY - finalDotSize/2, dotX, dotY - finalDotSize/2 - lineLength, new Color(aboveColor));
+                    core.addLine2D(dotX, dotY - finalDotSize/2, dotX, dotY - finalDotSize/2 - lineLength, 1.0f, aboveColor);
                 } else {
-                    Renderer2D.COLOR.line(dotX, dotY + finalDotSize/2, dotX, dotY + finalDotSize/2 + lineLength, new Color(belowColor));
+                    core.addLine2D(dotX, dotY + finalDotSize/2, dotX, dotY + finalDotSize/2 + lineLength, 1.0f, belowColor);
                 }
             }
         }
@@ -252,8 +254,9 @@ public final class RadarHud extends BaseHudElement {
     @Override
     public void renderEdit(HudContext ctx) {
         float scaledSize = size * radarScale;
-        Renderer2D.COLOR.drawRoundedRect(x, y, scaledSize, scaledSize, BASE_CORNER_RADIUS, new Color(0x80000000));
-        Renderer2D.COLOR.drawRoundedRectOutline(x, y, scaledSize, scaledSize, BASE_CORNER_RADIUS, new Color(BASE_BORDER_COLOR), 1.0);
+        RenderCore core = RenderAPI.getInstance().getCore();
+        core.addRoundedRect(x, y, scaledSize, scaledSize, BASE_CORNER_RADIUS, 0x80000000);
+        core.addRoundedRectOutline(x, y, scaledSize, scaledSize, BASE_CORNER_RADIUS, 1.0f, BASE_BORDER_COLOR);
         ctx.drawScaledText("Radar", x + 4, y + 4, 0xFFFFFFFF, true, textScale);
     }
 }

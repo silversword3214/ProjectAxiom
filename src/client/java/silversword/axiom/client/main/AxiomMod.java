@@ -68,10 +68,10 @@ public abstract class AxiomMod {
         this.enabled = enabled;
 
         if (enabled) {
-            AxiomInitialize.EVENT_BUS.subscribe(this);
+            AxiomInitialize.EVENT_BUS.register(this);
             onEnable();
         } else {
-            AxiomInitialize.EVENT_BUS.unsubscribe(this);
+            AxiomInitialize.EVENT_BUS.register(this);
             onDisable();
         }
     }

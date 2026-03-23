@@ -12,8 +12,6 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -124,10 +122,10 @@ public final class PlayerInfoHudComponent extends BaseHudElement {
             }
         }
 
-        // Haetaan nykyiset värit (saatu moduulista)
-        Color bgCol = new Color(backgroundColor);
-        Color borderCol = new Color(borderColor);
-        Color txtCol = new Color(textColor);
+        // Haetaan nykyiset värit (int)
+        int bg = applyAlpha(backgroundColor, alphaMul);
+        int border = applyAlpha(borderColor, alphaMul);
+        int txt = applyAlpha(textColor, alphaMul);
 
         // Skaalatut mitat (backgroundScale vaikuttaa kaikkiin taustamittoihin)
         int padding = (int) (BASE_PADDING * backgroundScale);
@@ -200,17 +198,12 @@ public final class PlayerInfoHudComponent extends BaseHudElement {
         int x0 = x;
         int y0 = y;
 
-        // Alpha-fade (jos käytössä)
-        int bg = applyAlpha(backgroundColor, alphaMul);
-        int border = applyAlpha(borderColor, alphaMul);
-        int txt = applyAlpha(textColor, alphaMul);
-
         // Tausta (pyöristetty)
-        Renderer2D.COLOR.drawRoundedRect(x0, y0, boxW, boxH, CORNER_RADIUS, new Color(bg));
+        ctx.fillRounded(x0, y0, boxW, boxH, CORNER_RADIUS, bg);
 
         // Reunus – paksuus skaalautuu backgroundScale:lla, mutta vähintään 1px
         double thickness = Math.max(1.0, backgroundScale);
-        Renderer2D.COLOR.drawRoundedRectOutline(x0, y0, boxW, boxH, CORNER_RADIUS, new Color(border), thickness);
+        ctx.drawRoundedOutline(x0, y0, boxW, boxH, CORNER_RADIUS, border, thickness);
 
         int tx = x0 + padding;
         int ty = y0 + padding;
@@ -278,8 +271,7 @@ public final class PlayerInfoHudComponent extends BaseHudElement {
         ctx.drawItem(stack, x, y); // vanilla item
         if (showDurability && stack.isDamageableItem()) {
             int pct = durabilityPct(stack);
-            int color = getDurabilityColor(pct);
-            color = applyAlpha(color, alphaMul);
+            int color = applyAlpha(getDurabilityColor(pct), alphaMul);
             String t = Integer.toString(pct);
             int tw = (int) (ctx.textWidth(t) * textScale);
             int tx = x + (slotSize - tw) / 2;
@@ -371,7 +363,9 @@ public final class PlayerInfoHudComponent extends BaseHudElement {
     private static int clamp(int v, int min, int max) { return Math.max(min, Math.min(max, v)); }
     private static int applyAlpha(int argb, float mul) {
         int a = (argb >>> 24) & 0xFF;
-        int na = clamp((int) (a * mul), 0, 255);
+        int na = (int) (a * mul);
+        if (na < 0) na = 0;
+        if (na > 255) na = 255;
         return (na << 24) | (argb & 0x00FFFFFF);
     }
 }

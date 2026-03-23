@@ -1,11 +1,15 @@
 package silversword.axiom.client.modules.render;
 
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
 import org.joml.Vector3d;
+import org.joml.Vector4f;
 import silversword.axiom.client.event.render.Render2DEvent;
 import silversword.axiom.client.event.render.Render3DEvent;
-import silversword.axiom.client.eventbus.AxiomEvent;
+
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.window.WindowFactory;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.managers.WaypointManager;
@@ -13,7 +17,9 @@ import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.waypoints.Waypoint;
 import silversword.axiom.client.modules.waypoints.WaypointManagerWindow;
 import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
+
+import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.render.rendersystem.utils.render.NametagUtils;
@@ -26,6 +32,7 @@ import silversword.axiom.client.utils.render.TextUtils;
 
 public final class WaypointModule extends AxiomMod {
     private final Minecraft mc = Minecraft.getInstance();
+    private final Vector3d pos = new Vector3d();
 
     // Global settings that affect rendering
     public final SettingBoolean showWaypoints = new SettingBoolean("Show Waypoints", true);
@@ -38,7 +45,7 @@ public final class WaypointModule extends AxiomMod {
     public final SettingBoolean showOutline = new SettingBoolean("Show Outline", true);
     public final SettingColor outlineColor = new SettingColor("Outline Color", new Color(255,255,255,255));
     public final SettingMode shape = new SettingMode("Shape", new String[]{"Circle", "Square", "Rounded"}, "Rounded");
-    private final Vector3d pos = new Vector3d();
+
 
     public WaypointModule() {
         super("Waypoints", "Manage and display custom waypoints", ModuleCategory.RENDER);
@@ -71,40 +78,60 @@ public final class WaypointModule extends AxiomMod {
 
     }
 
-    @AxiomEvent
-    private void onRender3D(Render3DEvent event) {
-        NametagUtils.onRender(RenderUtils.view);
-    }
-
-    // WaypointModule.java (korjattu renderöinti)
-
-    @AxiomEvent
+    @Subscribe
     private void onRender2D(Render2DEvent event) {
-        if (event.drawContext == null) return;
+        if (event.getGuiGraphics() == null) return;
         if (!isEnabled() || !showWaypoints.get() || mc.level == null || mc.player == null) return;
 
+        // Haetaan renderöijä ja core
+        RenderCore core = RenderAPI.getInstance().getCore();
         double maxDist = maxRenderDistance.getValue();
         boolean showDist = showDistance.get();
+
+        // Kameran tiedot ruutumuunnokseen
+        Camera camera = mc.gameRenderer.getMainCamera();
+        Matrix4f proj = mc.gameRenderer.getProjectionMatrix(
+                mc.gameRenderer.getFov(camera, event.getTickDelta(), true));
+        Matrix4f view = new Matrix4f()
+                .rotate(camera.rotation().conjugate())
+                .translate(-(float) camera.position().x,
+                        -(float) camera.position().y,
+                        -(float) camera.position().z);
 
         for (Waypoint wp : WaypointManager.getInstance().getAll()) {
             if (!wp.enabled) continue;
             double dist = mc.player.position().distanceTo(new Vec3(wp.x, wp.y, wp.z));
             if (dist > maxDist) continue;
 
-            pos.set(wp.x, wp.y + 0.5, wp.z);
-            if (!NametagUtils.worldToScreen(pos, (float) wp.scale)) continue;
-            NametagUtils.scale = (float) wp.scale;
-            NametagUtils.begin(pos, event.drawContext);
+            // Muunnetaan maailmapiste ruutukoordinaateiksi
+            Vec3 worldPos = new Vec3(wp.x, wp.y + 0.5, wp.z);
+            Vec3 screenPos = worldToScreen(proj, view, worldPos);
+            if (screenPos == null) continue;
 
-            // Piirretään pin ja tekstit
-            renderWaypointPin(wp, dist, showDist);
-
-            NametagUtils.end(event.drawContext);
+            // Piirretään pin ja tekstit käyttäen corea
+            renderWaypointPin(core, wp, screenPos.x, screenPos.y, dist, showDist, wp.scale);
         }
     }
 
-    private void renderWaypointPin(Waypoint wp, double dist, boolean showDist) {
-        double scale = wp.scale;
+    private Vec3 worldToScreen(Matrix4f proj, Matrix4f view, Vec3 worldPos) {
+        Vector4f clip = new Vector4f((float) worldPos.x, (float) worldPos.y, (float) worldPos.z, 1.0f);
+        clip.mul(view).mul(proj);
+        if (clip.w <= 0.0f) return null;
+
+        float invW = 1.0f / clip.w;
+        float ndcX = clip.x * invW;
+        float ndcY = clip.y * invW;
+
+        int width = mc.getWindow().getWidth();
+        int height = mc.getWindow().getHeight();
+        float screenX = (ndcX * 0.5f + 0.5f) * width;
+        float screenY = (1.0f - (ndcY * 0.5f + 0.5f)) * height;
+
+        return new Vec3(screenX, screenY, 0);
+    }
+
+    private void renderWaypointPin(RenderCore core, Waypoint wp, double screenX, double screenY,
+                                   double dist, boolean showDist, double scale) {
         double charWidth = TextUtils.CHAR_UNIT * scale;
         double charHeight = TextUtils.FONT_HEIGHT * scale;
         double padding = 2.0 * scale;
@@ -113,7 +140,6 @@ public final class WaypointModule extends AxiomMod {
         double textWidth = charWidth;
         double textHeight = charHeight;
 
-        // Pinin koko muodon mukaan
         double pinWidth, pinHeight;
         if (wp.shape.equals("Circle")) {
             double diameter = Math.max(textWidth, textHeight) + 2 * padding;
@@ -123,61 +149,61 @@ public final class WaypointModule extends AxiomMod {
             pinHeight = textHeight + 2 * padding;
         }
 
-        double pinX = -pinWidth / 2;
-        double pinY = -pinHeight / 2;
+        double pinX = screenX - pinWidth / 2;
+        double pinY = screenY - pinHeight / 2;
 
-        Renderer2D.COLOR.begin();
-        TextRenderer textRenderer = TextRenderer.get();
+        // Haetaan värit (int ARGB)
+        int bgColor = wp.bgColor;
+        int outlineColor = wp.outlineColor;
+        int textColor = wp.color;
 
         // Tausta
         if (wp.showBg) {
-            Color bg = new Color(wp.bgColor);
             if (wp.shape.equals("Circle")) {
-                Renderer2D.COLOR.drawCircle(0, 0, pinWidth / 2, bg);
+                core.addCircle((float) screenX, (float) screenY, (float) (pinWidth / 2), bgColor);
             } else if (wp.shape.equals("Square")) {
-                Renderer2D.COLOR.quad(pinX, pinY, pinWidth, pinHeight, bg);
+                core.addRect2D((float) pinX, (float) pinY, (float) pinWidth, (float) pinHeight, bgColor);
             } else {
                 double radius = 3.0 * scale;
-                Renderer2D.COLOR.drawRoundedRect(pinX, pinY, pinWidth, pinHeight, radius, bg);
+                core.addRoundedRect((float) pinX, (float) pinY, (float) pinWidth, (float) pinHeight, (float) radius, bgColor);
             }
         }
 
         // Reunus
         if (wp.showOutline) {
-            Color outline = new Color(wp.outlineColor);
+            double thickness = Math.max(1.0, scale);
             if (wp.shape.equals("Circle")) {
-                Renderer2D.COLOR.drawCircleOutline(0, 0, pinWidth / 2, outline, 1.0);
+                core.addCircleOutline((float) screenX, (float) screenY, (float) (pinWidth / 2), (float) thickness, outlineColor);
             } else if (wp.shape.equals("Square")) {
-                Renderer2D.COLOR.boxLines(pinX, pinY, pinWidth, pinHeight, outline);
+                core.addRectOutline2D((float) pinX, (float) pinY, (float) pinWidth, (float) pinHeight, (float) thickness, outlineColor);
             } else {
                 double radius = 3.0 * scale;
-                Renderer2D.COLOR.drawRoundedRectOutline(pinX, pinY, pinWidth, pinHeight, radius, outline, 1.0);
+                core.addRoundedRectOutline((float) pinX, (float) pinY, (float) pinWidth, (float) pinHeight, (float) radius, (float) thickness, outlineColor);
             }
         }
 
-        // Pääkirjain (iso ja tarkka)
-        textRenderer.beginBig();
-        double letterX = -textWidth / 2;
-        double letterY = -textHeight / 2;
-        textRenderer.render(letter, letterX, letterY, new Color(wp.color), true);
-        textRenderer.end();
+        // Pääkirjain
+        TextRenderer text = TextRenderer.get();
+        text.begin(scale, false, true);
+        double letterX = screenX - textWidth / 2;
+        double letterY = screenY - textHeight / 2;
+        text.render(letter, letterX, letterY, new Color(textColor), true);
+        text.end();
 
-        // Etäisyysteksti (pienempi, varjolla)
+        // Etäisyysteksti
         if (showDist) {
             int d = (int) Math.round(dist);
             String distText = d + "m";
-            double distScale = 0.7; // pienempi skaala
+            double distScale = 0.7;
             double distCharWidth = TextUtils.CHAR_UNIT * distScale;
             double distWidth = distText.length() * distCharWidth;
-            double distX = -distWidth / 2;
-            double distY = pinHeight / 2 + 2.0 * scale; // hieman pinin alapuolelle
+            double distX = screenX - distWidth / 2;
+            double distY = screenY + pinHeight / 2 + 2.0 * scale;
 
-            textRenderer.begin(distScale, false, false);
-            textRenderer.render(distText, distX, distY, new Color(0xFFFFFFFF), true);
-            textRenderer.end();
+            text.begin(distScale, false, false);
+            text.render(distText, distX, distY, new Color(0xFFFFFFFF), true);
+            text.end();
         }
-
-        Renderer2D.COLOR.render();
     }
 
     private void renderEdgeIndicator(Waypoint wp, double dist, boolean showDist, float scale) {

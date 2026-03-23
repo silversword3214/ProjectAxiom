@@ -6,16 +6,19 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.event.packets.PacketEvent;
 import silversword.axiom.client.event.render.Render2DEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
+
+import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingNumber;
 import silversword.axiom.client.utils.render.TextUtils;
-import silversword.axiom.client.eventbus.AxiomEvent;
+
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -24,6 +27,7 @@ import java.util.List;
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
 public class Blink extends AxiomMod implements KeybindConfigurable {
+    private final RenderCore core = RenderAPI.getInstance().getCore();
     private final SettingKeybind toggleKey;
     private final SettingNumber textScale;
     private final SettingNumber limit;
@@ -85,7 +89,7 @@ public class Blink extends AxiomMod implements KeybindConfigurable {
 
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onPacketSend(PacketEvent.Send event) {
         if (!active) return;
 
@@ -102,7 +106,7 @@ public class Blink extends AxiomMod implements KeybindConfigurable {
         }
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onRender2D(Render2DEvent event) {
         if (!active || mc.player == null) return;
 
@@ -123,10 +127,11 @@ public class Blink extends AxiomMod implements KeybindConfigurable {
         double textWidth = text.length() * TextUtils.CHAR_UNIT * scale;
         double textHeight = TextUtils.FONT_HEIGHT * scale;
 
-        int scaledWidth = event.screenWidth;
-        int scaledHeight = event.screenHeight;
+        // Haetaan ruudun koko eventistä
+        int scaledWidth = event.getScreenWidth();
+        int scaledHeight = event.getScreenHeight();
 
-        // Hotbar on yleensä 22px korkea ja sijaitsee 3px pohjasta (Minecraftin oletus)
+        // Hotbar on yleensä 22px korkea ja sijaitsee 3px pohjasta
         int hotbarY = scaledHeight - 22;
         int x = (int) ((scaledWidth - textWidth) / 2);
         int y = hotbarY - (int) textHeight - 10;
@@ -136,13 +141,16 @@ public class Blink extends AxiomMod implements KeybindConfigurable {
         double bgY = y - padding;
         double bgWidth = textWidth + padding * 2;
         double bgHeight = textHeight + padding * 2;
+        double radius = 3 * scale;
+        double thickness = Math.max(1.0, scale);
 
-        Renderer2D.COLOR.begin();
-        Renderer2D.COLOR.drawRoundedRect(bgX, bgY, bgWidth, bgHeight, 3 * scale, new Color(0, 0, 0, 150));
-        Renderer2D.COLOR.end();
+        // Piirrä tausta coren kautta
+        int bgArgb = new Color(0, 0, 0, 150).getARGB();
+        core.addRoundedRect((float) bgX, (float) bgY, (float) bgWidth, (float) bgHeight, (float) radius, bgArgb);
 
+        // Piirrä teksti
         tr.begin(scale, false, true);
-        tr.render(text, x, y, Color.WHITE);
+        tr.render(text, x, y, Color.WHITE, false);
         tr.end();
     }
 }

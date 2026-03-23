@@ -12,16 +12,16 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.moduleutils.InteractItemEvent;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.modules.ModuleCategory;
-import silversword.axiom.client.eventbus.AxiomEvent;
-import silversword.axiom.client.render.rendersystem.ShapeMode;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.render.rendersystem.utils.misc.ShapeModeEnum;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingMode;
@@ -57,7 +57,7 @@ public class AirPlace extends AxiomMod implements KeybindConfigurable {
         addHiddenSetting(lineColor.getSetting());
         addHiddenSetting(toggleKey);
 
-        AxiomInitialize.EVENT_BUS.subscribe(this);
+        AxiomInitialize.EVENT_BUS.register(this);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class AirPlace extends AxiomMod implements KeybindConfigurable {
         return toggleKey;
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onInteractItem(InteractItemEvent event) {
         if (!isActive()) return;
         if (!(hitResult instanceof BlockHitResult bhr)) return;
@@ -100,7 +100,7 @@ public class AirPlace extends AxiomMod implements KeybindConfigurable {
         }
     }
 
-    @AxiomEvent
+    @Subscribe
     private void onRender(Render3DEvent event) {
         if (!isActive()) return;
         if (!render.get()) return;
@@ -117,12 +117,12 @@ public class AirPlace extends AxiomMod implements KeybindConfigurable {
         double y2 = y1 + 1;
         double z2 = z1 + 1;
 
-        // Muunnetaan asetusmerkkijono ShapeMode-enumiksi
-        ShapeMode mode = ShapeMode.valueOf(shapeMode.getMode());
-        Color side = sideColor.getCurrentColor();   // Tukee rainbow-tilaa
-        Color line = lineColor.getCurrentColor();
+        // Muunnetaan asetusmerkkijono ShapeModeEnumiksi
+        ShapeModeEnum mode = ShapeModeEnum.valueOf(shapeMode.getMode().toUpperCase());
+        int side = sideColor.getCurrentColor().getARGB();
+        int line = lineColor.getCurrentColor().getARGB();
 
-        event.render.drawBox(x1, y1, z1, x2, y2, z2, side, line, mode, 0);
+        event.getRenderer().drawBox(x1, y1, z1, x2, y2, z2, side, line, mode, 0);
     }
 
     private boolean isHoldingPlaceable() {

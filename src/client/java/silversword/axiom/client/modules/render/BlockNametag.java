@@ -7,10 +7,10 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector3d;
+import org.joml.Matrix4f;
+import org.joml.Vector4f;
 import silversword.axiom.client.event.render.Render2DEvent;
-import silversword.axiom.client.event.render.Render3DEvent;
-import silversword.axiom.client.eventbus.AxiomEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.window.WindowFactory;
@@ -20,23 +20,22 @@ import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.NamedColor;
 import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
-import silversword.axiom.client.render.rendersystem.utils.render.NametagUtils;
-import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingMode;
 import silversword.axiom.client.setting.SettingNumber;
 import silversword.axiom.client.setting.SettingSlider;
 import silversword.axiom.client.utils.render.TextUtils;
 
-
 import java.util.Arrays;
 import java.util.List;
 
 public final class BlockNametag extends AxiomMod implements ColorConfigurable, KeybindConfigurable {
     private final Minecraft mc = Minecraft.getInstance();
+    private final RenderCore core = RenderAPI.getInstance().getCore();
 
     // --- Settings -------------------------------------------------
     private final SettingNumber scale;
@@ -54,7 +53,6 @@ public final class BlockNametag extends AxiomMod implements ColorConfigurable, K
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
 
     // --------------------------------------------------------------
-    private final Vector3d pos = new Vector3d();
     private BlockPos currentBlockPos = null;
     private String currentBlockName = null;
 
@@ -122,81 +120,78 @@ public final class BlockNametag extends AxiomMod implements ColorConfigurable, K
         currentBlockName = Component.translatable(state.getBlock().getDescriptionId()).getString();
     }
 
-    // --------------------------- 3D -> 2D conversion -----------------------
-    @AxiomEvent
-    private void onRender3D(Render3DEvent event) {
-        NametagUtils.onRender(RenderUtils.view);
-    }
-
-    @AxiomEvent
+    // --------------------------- 2D rendering -----------------------
+    @Subscribe
     private void onRender2D(Render2DEvent event) {
-        if (event.drawContext == null) return;
+        if (event.getGuiGraphics() == null) return;
         if (!isEnabled() || currentBlockPos == null || currentBlockName == null) return;
 
-        // Lasketaan blokin keskipiste + offset
+        // Lasketaan maailmapiste (blokin keskipiste + y-offset)
         double x = currentBlockPos.getX() + 0.5;
         double y = currentBlockPos.getY() + 0.5 + nameOffset.getValue();
         double z = currentBlockPos.getZ() + 0.5;
-        pos.set(x, y, z);
+        Vec3 worldPos = new Vec3(x, y, z);
 
-        // Muunnetaan 2D:ksi käyttäen asetettua skaalaa
-        if (!NametagUtils.worldToScreen(pos, scale.getValue())) return;
+        // Muunnetaan ruutukoordinaateiksi
+        Matrix4f proj = mc.gameRenderer.getProjectionMatrix(mc.gameRenderer.getFov(mc.gameRenderer.getMainCamera(), event.getTickDelta(), true));
+        Matrix4f view = new Matrix4f().rotate(mc.gameRenderer.getMainCamera().rotation().conjugate())
+                .translate(-(float) mc.gameRenderer.getMainCamera().position().x,
+                        -(float) mc.gameRenderer.getMainCamera().position().y,
+                        -(float) mc.gameRenderer.getMainCamera().position().z);
 
-        // Asetetaan skaala
-        NametagUtils.scale = scale.getValue();
+        Vector4f clip = new Vector4f((float) worldPos.x, (float) worldPos.y, (float) worldPos.z, 1.0f);
+        clip.mul(view).mul(proj);
+        if (clip.w <= 0.0f) return; // behind camera
 
-        NametagUtils.begin(pos, event.drawContext);
+        float invW = 1.0f / clip.w;
+        float ndcX = clip.x * invW;
+        float ndcY = clip.y * invW;
 
-        // Piirretään nametag
-        renderNametag();
+        int width = mc.getWindow().getWidth();
+        int height = mc.getWindow().getHeight();
+        float screenX = (ndcX * 0.5f + 0.5f) * width;
+        float screenY = (1.0f - (ndcY * 0.5f + 0.5f)) * height;
 
-        NametagUtils.end(event.drawContext);
-    }
-
-    private void renderNametag() {
-        // Lasketaan tekstin leveys ja korkeus TextUtilsin avulla (kuten NameTagsissa)
-        int textLength = currentBlockName.length();
-        double textWidth = textLength * TextUtils.CHAR_UNIT;
-        double textHeight = TextUtils.FONT_HEIGHT;
-
-        double padding = 2.0;
+        double finalScale = scale.getValue();
+        double textWidth = currentBlockName.length() * TextUtils.CHAR_UNIT * finalScale;
+        double textHeight = TextUtils.FONT_HEIGHT * finalScale;
+        double padding = 2.0 * finalScale;
         double bgWidth = textWidth + padding * 2;
         double bgHeight = textHeight + padding * 2;
+        double bgX = screenX - bgWidth / 2;
+        double bgY = screenY - bgHeight / 2;
 
         // Piirretään tausta
-        drawBackground(-bgWidth / 2, -bgHeight / 2, bgWidth, bgHeight);
+        drawBackground(bgX, bgY, bgWidth, bgHeight, finalScale);
 
         // Piirretään teksti
-        TextRenderer textRenderer = TextRenderer.get();
-        boolean shadow = false;
-        textRenderer.begin(1.0, false, true); // scale 1.0, koska NametagUtils on hoitanut skaalauksen
-        textRenderer.render(currentBlockName, -textWidth / 2, -textHeight / 2, textColor.getCurrentColor(), shadow);
-        textRenderer.end();
+        TextRenderer text = TextRenderer.get();
+        text.begin(1.0, false, true);
+        text.render(currentBlockName, bgX + padding, bgY + padding, textColor.getCurrentColor(), false);
+        text.end();
     }
 
-    private void drawBackground(double x, double y, double width, double height) {
+    private void drawBackground(double x, double y, double width, double height, double finalScale) {
         String mode = bgMode.getMode();
         if (mode.equals("None")) return;
 
-        Renderer2D.COLOR.begin();
+        int bgArgb = background.getCurrentColor().getARGB();
+        int outlineArgb = outline.getCurrentColor().getARGB();
+        double radius = 3.0 * finalScale;
+        double thickness = Math.max(1.0, finalScale);
 
         if (mode.equals("Filled")) {
-            Renderer2D.COLOR.quad(x - 1, y - 1, width + 2, height + 2, background.getCurrentColor());
+            core.addRect2D((float) x, (float) y, (float) width, (float) height, bgArgb);
         } else if (mode.equals("Outline")) {
-            Renderer2D.COLOR.boxLines(x - 1, y - 1, width + 2, height + 2, background.getCurrentColor());
+            // Piirretään reunus neljänä viivana
+            core.addRectOutline2D((float) x, (float) y, (float) width, (float) height, (float) thickness, outlineArgb);
         } else if (mode.equals("Rounded")) {
-            double radius = 3.0;
-            Renderer2D.COLOR.drawRoundedRect(x - 1, y - 1, width + 2, height + 2, radius, background.getCurrentColor());
+            core.addRoundedRect((float) x, (float) y, (float) width, (float) height, (float) radius, bgArgb);
         }
 
         if (!mode.equals("Outline") && outline.getCurrentColor().getAlpha() > 0) {
-            double outlineThickness = 1.0;
-            double radius = 3.0;
-            Renderer2D.COLOR.drawRoundedRectOutline(x - 1, y - 1, width + 2, height + 2, radius, outline.getCurrentColor(), outlineThickness);
+            core.addRoundedRectOutline((float) x, (float) y, (float) width, (float) height, (float) radius, (float) thickness, outlineArgb);
         }
-
-        Renderer2D.COLOR.end();
-        Renderer2D.COLOR.render();
     }
 
     // --------------------------- Color Config ------------------------------

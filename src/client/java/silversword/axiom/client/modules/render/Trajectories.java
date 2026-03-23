@@ -15,13 +15,14 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.ClipContext;
 import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
-import silversword.axiom.client.eventbus.AxiomEvent;
-import silversword.axiom.client.render.rendersystem.ShapeMode;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.render.rendersystem.utils.misc.ShapeModeEnum;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingMode;
@@ -70,10 +71,12 @@ public final class Trajectories extends AxiomMod implements KeybindConfigurable 
     @Override
     protected void onTick() {}
 
-    @AxiomEvent
+    @Subscribe
     private void onRender(Render3DEvent event) {
         if (!isEnabled()) return;
         if (mc.player == null || mc.level == null) return;
+
+        Renderer3D renderer = event.getRenderer();
 
         Player player = mc.player;
         ItemStack heldItem = player.getMainHandItem();
@@ -103,7 +106,7 @@ public final class Trajectories extends AxiomMod implements KeybindConfigurable 
 
             if (!drawThroughBlocks.get() && !isVisible(p1, p2)) continue;
 
-            event.render.drawLine(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, currentLineColor);
+            renderer.drawLine(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, currentLineColor);
         }
 
         if (drawImpact.get() && impactPoint != null) {
@@ -112,10 +115,10 @@ public final class Trajectories extends AxiomMod implements KeybindConfigurable 
 
             if (lastHitType == HitResult.Type.ENTITY) {
                 double size = 0.5;
-                event.render.drawBox(
+                renderer.drawBox(
                         impactPoint.x - size/2, impactPoint.y - size/2, impactPoint.z - size/2,
                         impactPoint.x + size/2, impactPoint.y + size/2, impactPoint.z + size/2,
-                        currentImpactColor, currentImpactColor, ShapeMode.Both, 0
+                        currentImpactColor, currentImpactColor, ShapeModeEnum.BOTH, 0
                 );
             } else if (lastHitType == HitResult.Type.BLOCK) {
                 drawOrientedSquare(event, impactPoint, hitSide, currentImpactColor);
@@ -124,6 +127,9 @@ public final class Trajectories extends AxiomMod implements KeybindConfigurable 
     }
 
     private void drawOrientedSquare(Render3DEvent event, Vec3 point, Direction side, Color color) {
+
+        Renderer3D renderer = event.getRenderer();
+
         double size = 0.3;
         Vec3 right, up;
 
@@ -152,10 +158,10 @@ public final class Trajectories extends AxiomMod implements KeybindConfigurable 
         Vec3 p3 = point.subtract(right).subtract(up);
         Vec3 p4 = point.subtract(right).add(up);
 
-        event.render.drawLine(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, color);
-        event.render.drawLine(p2.x, p2.y, p2.z, p3.x, p3.y, p3.z, color);
-        event.render.drawLine(p3.x, p3.y, p3.z, p4.x, p4.y, p4.z, color);
-        event.render.drawLine(p4.x, p4.y, p4.z, p1.x, p1.y, p1.z, color);
+        renderer.drawLine(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, color);
+        renderer.drawLine(p2.x, p2.y, p2.z, p3.x, p3.y, p3.z, color);
+        renderer.drawLine(p3.x, p3.y, p3.z, p4.x, p4.y, p4.z, color);
+        renderer.drawLine(p4.x, p4.y, p4.z, p1.x, p1.y, p1.z, color);
     }
 
     private boolean isThrowable(ItemStack stack) {

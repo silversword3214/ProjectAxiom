@@ -2,8 +2,6 @@ package silversword.axiom.client.gui.components;
 
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
-import silversword.axiom.client.render.rendersystem.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.utils.KeyNames;
 import silversword.axiom.client.utils.render.TextUtils;
@@ -93,9 +91,9 @@ public class KeybindEditor implements UiComponent {
         boolean hover = btnRect.contains(mouseX, mouseY);
         int bgColor = hover ? ui.theme.buttonHover : ui.theme.button;
 
-        // Piirrä nappi (pyöristetty reunus)
-        Renderer2D.COLOR.drawRoundedRect(btnRect.x, btnRect.y, btnRect.w, btnRect.h, radius, new Color(ui.theme.border));
-        Renderer2D.COLOR.drawRoundedRect(btnRect.x + 1, btnRect.y + 1, btnRect.w - 2, btnRect.h - 2, Math.max(0, radius - 1), new Color(bgColor));
+
+        ui.fillRounded(btnRect.x, btnRect.y, btnRect.w, btnRect.h, ui.theme.border, radius);
+        ui.fillRounded(btnRect.x + 1, btnRect.y + 1, btnRect.w - 2, btnRect.h - 2, bgColor, Math.max(0, radius - 1));
 
         int textY = btnY + BUTTON_HEIGHT / 2 - TextUtils.FONT_HEIGHT / 2;
         ui.text("Reset", btnX + 10, textY, ui.theme.text);
