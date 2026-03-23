@@ -108,13 +108,11 @@ public final class ModuleManager {
 
         // Render
         safeAdd(new WaypointModule());
-        safeAdd(new ShaderESP());
         safeAdd(new BoxESP());
         safeAdd(new ChestESP());
         safeAdd(new CaveESP());
         safeAdd(new LavaESP());
         safeAdd(new SkeletonESP());
-        safeAdd(new Chams());
         safeAdd(new NameTags());
         safeAdd(new SearchBlocks());
         safeAdd(new Tracers());

@@ -39,8 +39,7 @@ public abstract class CustomRenderingPipelineProvider {
     public static RenderPipeline UI_COLORED_LINES;
     public static RenderPipeline UI_TEXTURED;
     public static RenderPipeline UI_TEXT;
-    public static RenderPipeline POST_OUTLINE;
-    public static RenderPipeline POST_CHAMS;
+
 
     // List of builders (each corresponds to one pipeline)
     private static final List<PipelineBuilder> BUILDERS = new ArrayList<>();
@@ -131,32 +130,7 @@ public abstract class CustomRenderingPipelineProvider {
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
 
-        BUILDERS.add(new PipelineBuilder()
-                .withLocation(ProjectAxiom.identifier("pipeline/post/outline"))
-                .withVertexFormat(CustomVertexFormats.POS2, VertexFormat.Mode.TRIANGLES)
-                .withVertexShader(ProjectAxiom.identifier("shaders/post-process/base.vert"))
-                .withFragmentShader(ProjectAxiom.identifier("shaders/post-process/outline.frag"))
-                .withSampler("u_Texture")
-                .withUniform("PostData", UniformType.UNIFORM_BUFFER)
-                .withUniform("OutlineData", UniformType.UNIFORM_BUFFER)
-                .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
-                .withDepthWrite(false)
-                .withBlend(BlendFunction.TRANSLUCENT)
-                .withCull(false));
 
-        BUILDERS.add(new PipelineBuilder()
-                .withLocation(ProjectAxiom.identifier("pipeline/post/chams"))
-                .withVertexFormat(CustomVertexFormats.POS2, VertexFormat.Mode.TRIANGLES)
-                .withVertexShader(ProjectAxiom.identifier("shaders/post-process/base.vert"))
-                .withFragmentShader(ProjectAxiom.identifier("shaders/post-process/image.frag"))
-                .withSampler("u_Texture")
-                .withSampler("u_TextureI")
-                .withUniform("PostData", UniformType.UNIFORM_BUFFER)
-                .withUniform("ImageData", UniformType.UNIFORM_BUFFER) // <-- image.frag odottaa ImageDataa
-                .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
-                .withDepthWrite(false)
-                .withBlend(BlendFunction.TRANSLUCENT)
-                .withCull(false));
 
         // Initial build
         rebuildAll();
@@ -203,8 +177,7 @@ public abstract class CustomRenderingPipelineProvider {
                 case 5 -> UI_COLORED_LINES = pipeline;
                 case 6 -> UI_TEXTURED = pipeline;
                 case 7 -> UI_TEXT = pipeline;
-                case 8 -> POST_OUTLINE = pipeline;
-                case 9 -> POST_CHAMS = pipeline;
+
 
             }
             index++;
@@ -219,7 +192,7 @@ public abstract class CustomRenderingPipelineProvider {
 
         RenderPipeline[] pipelines = {
                 WORLD_COLORED, WORLD_COLORED_LINES, WORLD_COLORED_DEPTH, WORLD_COLORED_LINES_DEPTH,
-                UI_COLORED, UI_COLORED_LINES, UI_TEXTURED, UI_TEXT, POST_OUTLINE, POST_CHAMS
+                UI_COLORED, UI_COLORED_LINES, UI_TEXTURED, UI_TEXT
         };
 
         for (RenderPipeline pipeline : pipelines) {

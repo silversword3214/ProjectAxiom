@@ -23,7 +23,7 @@ import silversword.axiom.client.eventbus.IEventBus;
 import silversword.axiom.client.modules.waypoints.WaypointCommands;
 import silversword.axiom.client.render.rendersystem.CustomRenderingPipelineProvider;
 import silversword.axiom.client.render.rendersystem.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.postprocess.PostProcessShaders;
+
 import silversword.axiom.client.sound.CustomSounds;
 
 
@@ -57,8 +57,6 @@ public final class AxiomInitialize implements ClientModInitializer {
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
 
             Renderer2D.init();
-            PostProcessShaders.init();
-            // custom font renderer must be created after the device is available
             silversword.axiom.client.render.font.Fonts.refresh();
         });
 
