@@ -1,11 +1,16 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.block.entity.*;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.chunk.ChunkStatus;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
+import net.minecraft.world.level.block.entity.BarrelBlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import net.minecraft.world.level.block.entity.EnderChestBlockEntity;
+import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.chunk.LevelChunk;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
@@ -26,7 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class ChestESP extends AxiomMod implements ColorConfigurable, KeybindConfigurable {
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     // Värit (package-private customizerille)
     final SettingColor chestColor;
@@ -103,25 +108,25 @@ public final class ChestESP extends AxiomMod implements ColorConfigurable, Keybi
     @AxiomEvent
     private void onRender(Render3DEvent event) {
         if (!isEnabled()) return;
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
         double maxDistSq = renderDistance.getValue() * renderDistance.getValue();
-        Vec3d cameraPos = mc.gameRenderer.getCamera().getCameraPos();
+        Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
 
         int chunkRadius = (int) Math.ceil(renderDistance.getValue() / 16.0) + 1;
-        int playerChunkX = mc.player.getChunkPos().x;
-        int playerChunkZ = mc.player.getChunkPos().z;
+        int playerChunkX = mc.player.chunkPosition().x;
+        int playerChunkZ = mc.player.chunkPosition().z;
 
         for (int cx = playerChunkX - chunkRadius; cx <= playerChunkX + chunkRadius; cx++) {
             for (int cz = playerChunkZ - chunkRadius; cz <= playerChunkZ + chunkRadius; cz++) {
-                WorldChunk chunk = mc.world.getChunkManager().getChunk(cx, cz, ChunkStatus.FULL, false);
+                LevelChunk chunk = mc.level.getChunkSource().getChunk(cx, cz, ChunkStatus.FULL, false);
                 if (chunk == null) continue;
 
                 for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
-                    BlockPos pos = blockEntity.getPos();
-                    Vec3d blockCenter = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+                    BlockPos pos = blockEntity.getBlockPos();
+                    Vec3 blockCenter = new Vec3(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
 
-                    if (blockCenter.squaredDistanceTo(cameraPos) > maxDistSq) continue;
+                    if (blockCenter.distanceToSqr(cameraPos) > maxDistSq) continue;
 
                     StorageType type = getStorageType(blockEntity);
                     if (type == StorageType.OTHER) continue;
@@ -152,7 +157,7 @@ public final class ChestESP extends AxiomMod implements ColorConfigurable, Keybi
         if (be instanceof ChestBlockEntity) {
             // Tarkista onko trapped chest? ChestBlockEntity ei erota, pitää katsoa lohkon tyyppiä
             // Yksinkertaisuuden vuoksi käytetään nimeä tai lohkoa
-            if (be.getCachedState().getBlock().getTranslationKey().contains("trapped")) {
+            if (be.getBlockState().getBlock().getDescriptionId().contains("trapped")) {
                 return StorageType.TRAPPED_CHEST;
             }
             return StorageType.CHEST;
@@ -205,8 +210,8 @@ public final class ChestESP extends AxiomMod implements ColorConfigurable, Keybi
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("chestesp_color", "ChestESP Color Customizer", sw, sh, content);
     }

@@ -1,11 +1,11 @@
 package silversword.axiom.client.gui.screen;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.network.chat.Component;
 import silversword.axiom.client.config.HudConfigManager;
 import silversword.axiom.client.gui.core.Theme;
 import silversword.axiom.client.gui.core.ThemeManager;
@@ -31,24 +31,24 @@ public final class HudEditScreen extends Screen {
     private boolean gridVisible = false;
 
     public HudEditScreen() {
-        super(Text.literal("HUD Edit"));
+        super(Component.literal("HUD Edit"));
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 
     @Override
-    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
         // Estetään vaniljan taustan piirto
     }
 
     @Override
-    public void render(DrawContext vanillaCtx, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics vanillaCtx, int mouseX, int mouseY, float delta) {
         this.lastMouseX = mouseX;
         this.lastMouseY = mouseY;
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         Theme theme = ThemeManager.getCurrentTheme();
 
         // Aseta 2D-projektio
@@ -110,7 +110,7 @@ public final class HudEditScreen extends Screen {
     }
 
     private void drawOutline(UiContext ctx, HudElement e, int mouseX, int mouseY) {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         int x = e.x();
         int y = e.y();
         int w = Math.max(1, e.width(mc));
@@ -129,7 +129,7 @@ public final class HudEditScreen extends Screen {
     }
 
     private void drawElementName(UiContext ctx, HudElement e) {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         int x = e.x();
         int y = e.y();
         int w = Math.max(1, e.width(mc));
@@ -138,7 +138,7 @@ public final class HudEditScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(Click click, boolean doubled) {
+    public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
         if (click.button() != 0) return super.mouseClicked(click, doubled);
 
         int mx = (int) click.x();
@@ -157,11 +157,11 @@ public final class HudEditScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(Click click, double offsetX, double offsetY) {
+    public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
         if (dragging == null) return super.mouseDragged(click, offsetX, offsetY);
         if (click.button() != 0) return super.mouseDragged(click, offsetX, offsetY);
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         int newX = (int) click.x() - dragOffX;
         int newY = (int) click.y() - dragOffY;
 
@@ -181,7 +181,7 @@ public final class HudEditScreen extends Screen {
     }
 
     @Override
-    public boolean mouseReleased(Click click) {
+    public boolean mouseReleased(MouseButtonEvent click) {
         if (click.button() == 0) {
             dragging = null;
             gridVisible = false;
@@ -198,10 +198,10 @@ public final class HudEditScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(KeyInput input) {
+    public boolean keyPressed(KeyEvent input) {
         if (input.isEscape()) {
             HudConfigManager.save(HudManager.get());
-            close();
+            onClose();
             return true;
         }
         if (input.key() == 261) { // DELETE

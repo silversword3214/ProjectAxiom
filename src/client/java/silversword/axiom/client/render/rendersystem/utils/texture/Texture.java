@@ -6,9 +6,9 @@ import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.TextureFormat;
 import com.mojang.blaze3d.textures.GpuTextureView;
-import net.minecraft.client.gl.GpuSampler;
-import net.minecraft.client.texture.AbstractTexture;
-import net.minecraft.client.texture.NativeImage;
+import com.mojang.blaze3d.textures.GpuSampler;
+import net.minecraft.client.renderer.texture.AbstractTexture;
+import com.mojang.blaze3d.platform.NativeImage;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.stb.STBImage;
@@ -21,18 +21,18 @@ import java.nio.IntBuffer;
 
 public class Texture extends AbstractTexture {
     public Texture(int width, int height, TextureFormat format, FilterMode min, FilterMode mag) {
-        glTexture = RenderSystem.getDevice().createTexture("", 15, format, width, height, 1, 1);
-        sampler = RenderSystem.getSamplerCache().get(AddressMode.REPEAT, AddressMode.REPEAT, min, mag, false);
+        texture = RenderSystem.getDevice().createTexture("", 15, format, width, height, 1, 1);
+        sampler = RenderSystem.getSamplerCache().getSampler(AddressMode.REPEAT, AddressMode.REPEAT, min, mag, false);
 
-        glTextureView = RenderSystem.getDevice().createTextureView(glTexture);
+        textureView = RenderSystem.getDevice().createTextureView(texture);
     }
 
     public int getWidth() {
-        return getGlTexture().getWidth(0);
+        return getTexture().getWidth(0);
     }
 
     public int getHeight() {
-        return getGlTexture().getHeight(0);
+        return getTexture().getHeight(0);
     }
 
     public void upload(byte[] bytes) {
@@ -43,15 +43,15 @@ public class Texture extends AbstractTexture {
         var image = getImage();
 
         buffer.rewind();
-        MemoryUtil.memCopy(MemoryUtil.memAddress(buffer), image.imageId(), buffer.remaining());
+        MemoryUtil.memCopy(MemoryUtil.memAddress(buffer), image.getPointer(), buffer.remaining());
 
-        RenderSystem.getDevice().createCommandEncoder().writeToTexture(glTexture, image);
+        RenderSystem.getDevice().createCommandEncoder().writeToTexture(texture, image);
 
         image.close();
     }
 
     private @NotNull NativeImage getImage() {
-        NativeImage.Format imageFormat = switch (glTexture.getFormat()) {
+        NativeImage.Format imageFormat = switch (texture.getFormat()) {
             case RGBA8 -> NativeImage.Format.RGBA;
             case RED8 -> NativeImage.Format.LUMINANCE;
             default -> throw new IllegalArgumentException();
@@ -63,7 +63,7 @@ public class Texture extends AbstractTexture {
     }
 
     public GpuTextureView textureView() {
-        return glTextureView;
+        return textureView;
     }
 
     public GpuSampler sampler() {

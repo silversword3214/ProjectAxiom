@@ -1,7 +1,7 @@
 package silversword.axiom.client.hud;
 
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 import silversword.axiom.client.hud.components.*;
 import silversword.axiom.client.hud.components.client.EnabledModulesHud;
 import silversword.axiom.client.hud.components.client.WatermarkHud;
@@ -26,8 +26,8 @@ public final class AxiomHudBootstrap {
 
         // Rekisteröi Fabric HUD -layer VAIN KERRAN
         if (!layerRegistered) {
-            HudElementRegistry.addLast(Identifier.of("projectaxiom", "hud"), (ctx, tickCounter) -> {
-                RenderUtils.setup2DProjection(ctx.getScaledWindowWidth(), ctx.getScaledWindowHeight());
+            HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("projectaxiom", "hud"), (ctx, tickCounter) -> {
+                RenderUtils.setup2DProjection(ctx.guiWidth(), ctx.guiHeight());
 
                 HudManager.get().renderAll(ctx, tickCounter);
 

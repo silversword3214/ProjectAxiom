@@ -77,7 +77,7 @@ public class FontUtils {
     }
 
     public static List<File> getUFontDirs() {
-        return switch (net.minecraft.util.Util.getOperatingSystem()) {
+        return switch (net.minecraft.util.Util.getPlatform()) {
             case WINDOWS -> List.of(new File(System.getProperty("user.home") + "\\AppData\\Local\\Microsoft\\Windows\\Fonts"));
             case OSX -> List.of(new File(System.getProperty("user.home") + "/Library/Fonts/"));
             default -> List.of(new File(System.getProperty("user.home") + "/.local/share/fonts"), new File(System.getProperty("user.home") + "/.fonts"));
@@ -85,7 +85,7 @@ public class FontUtils {
     }
 
     public static List<File> getSFontDirs() {
-        return switch (net.minecraft.util.Util.getOperatingSystem()) {
+        return switch (net.minecraft.util.Util.getPlatform()) {
             case WINDOWS -> List.of(new File("C:\\Windows\\Fonts"));
             case OSX -> List.of(new File("/Library/Fonts"), new File("/System/Library/Fonts"));
             default -> List.of(new File("/usr/share/fonts"), new File("/usr/local/share/fonts"));

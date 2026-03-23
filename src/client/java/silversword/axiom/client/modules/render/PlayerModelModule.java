@@ -1,7 +1,7 @@
 package silversword.axiom.client.modules.render;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.window.WindowFactory;
@@ -25,7 +25,7 @@ public final class PlayerModelModule extends AxiomMod implements ColorConfigurab
     private static final String HUD_ID = "PlayerModel";
     private PlayerModelHud hud;
 
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     // ------------------- Asetukset -------------------
     public final SettingNumber width;
@@ -96,9 +96,9 @@ public final class PlayerModelModule extends AxiomMod implements ColorConfigurab
         // Tapahtuman poistaminen jätetään – moduuli ei ole päällä, ei haittaa
     }
 
-    private void onClientTick(MinecraftClient client) {
-        if (hud != null && hud.enabled() && client.world != null && client.player != null) {
-            hud.renderWorldToFramebuffer(client.getRenderTickCounter());
+    private void onClientTick(Minecraft client) {
+        if (hud != null && hud.enabled() && client.level != null && client.player != null) {
+            hud.renderWorldToFramebuffer(client.getDeltaTracker());
         }
     }
 
@@ -144,8 +144,8 @@ public final class PlayerModelModule extends AxiomMod implements ColorConfigurab
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("playermodel_color", "Player Model Color Customizer", sw, sh, content);
     }

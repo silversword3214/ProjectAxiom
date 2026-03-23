@@ -1,10 +1,10 @@
 package silversword.axiom.client.modules.movement;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
-import net.minecraft.util.math.Vec2f;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.world.phys.Vec2;
+import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.event.packets.PacketEvent;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.main.AxiomInitialize;
@@ -13,7 +13,7 @@ import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingMode;
 import silversword.axiom.client.setting.SettingSlider;
-import silversword.axiom.mixin.client.accessors.PlayerMoveC2SPacketAccessor;
+import silversword.axiom.mixin.client.accessors.ServerboundMovePlayerPacketAccessor;
 
 import java.util.Random;
 
@@ -71,7 +71,7 @@ public class Flight extends AxiomMod implements KeybindConfigurable {
     // Tämä metodi kutsutaan aina, kun paketti lähetetään (PacketEvent.Send)
     public void onSendPacket(PacketEvent.Send event) {
         Packet<?> packet = event.getPacket();
-        if (!(packet instanceof PlayerMoveC2SPacket movePacket)) return;
+        if (!(packet instanceof ServerboundMovePlayerPacket movePacket)) return;
         // Vain Packet-moodissa tehdään manipulaatio
         if (!antiKickMode.getMode().equals("Packet")) return;
 
@@ -81,23 +81,23 @@ public class Flight extends AxiomMod implements KeybindConfigurable {
         }
     }
 
-    private double getYFromPacket(PlayerMoveC2SPacket packet) {
-        if (packet instanceof PlayerMoveC2SPacket.PositionAndOnGround p) {
+    private double getYFromPacket(ServerboundMovePlayerPacket packet) {
+        if (packet instanceof ServerboundMovePlayerPacket.Pos p) {
             return p.getY(lastPacketY);
-        } else if (packet instanceof PlayerMoveC2SPacket.Full p) {
+        } else if (packet instanceof ServerboundMovePlayerPacket.PosRot p) {
             return p.getY(lastPacketY);
         }
         return Double.MAX_VALUE;
     }
 
-    private void antiKickPacket(PlayerMoveC2SPacket packet, double currentY) {
-        MinecraftClient mc = MinecraftClient.getInstance();
+    private void antiKickPacket(ServerboundMovePlayerPacket packet, double currentY) {
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
         if (delayLeft <= 0 && lastPacketY != Double.MAX_VALUE &&
-                shouldFlyDown(currentY, lastPacketY) && !mc.player.isOnGround()) {
+                shouldFlyDown(currentY, lastPacketY) && !mc.player.onGround()) {
 
-            ((PlayerMoveC2SPacketAccessor) packet).axiom$setY(lastPacketY - 0.03130);
+            ((ServerboundMovePlayerPacketAccessor) packet).axiom$setY(lastPacketY - 0.03130);
         } else {
             lastPacketY = currentY;
         }
@@ -110,8 +110,8 @@ public class Flight extends AxiomMod implements KeybindConfigurable {
 
     @Override
     public void onTick() {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.player == null || mc.getNetworkHandler() == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.getConnection() == null) return;
 
         // ---- Packet-moodin laskurien päivitys (anti‑kick) ----
         if (antiKickMode.getMode().equals("Packet")) {
@@ -130,21 +130,21 @@ public class Flight extends AxiomMod implements KeybindConfigurable {
         mc.player.fallDistance = 0.0f;
 
         if (mode.equals("Vanilla")) {
-            mc.player.getAbilities().allowFlying = true;
+            mc.player.getAbilities().mayfly = true;
             mc.player.getAbilities().flying = true;
-            mc.player.getAbilities().setFlySpeed((float) (speed.getValue() * 0.05));
-            mc.player.getAbilities().setWalkSpeed((float) (speed.getValue() * 0.1));
-            mc.player.sendAbilitiesUpdate();
+            mc.player.getAbilities().setFlyingSpeed((float) (speed.getValue() * 0.05));
+            mc.player.getAbilities().setWalkingSpeed((float) (speed.getValue() * 0.1));
+            mc.player.onUpdateAbilities();
             return;
         }
 
         mc.player.getAbilities().flying = false;
-        mc.player.getAbilities().allowFlying = false;
+        mc.player.getAbilities().mayfly = false;
 
-        Vec2f movementInput = mc.player.input.getMovementInput();
+        Vec2 movementInput = mc.player.input.getMoveVector();
         double forward = movementInput.y;
         double strafe = movementInput.x;
-        float yaw = mc.player.getYaw();
+        float yaw = mc.player.getYRot();
 
         double speedVal = speed.getValue();
         double vSpeedVal = vSpeed.getValue();
@@ -159,8 +159,8 @@ public class Flight extends AxiomMod implements KeybindConfigurable {
             motionZ = cos * forward * speedVal + sin * strafe * speedVal;
         }
 
-        if (mc.options.jumpKey.isPressed()) motionY += vSpeedVal;
-        if (mc.options.sneakKey.isPressed()) motionY -= vSpeedVal;
+        if (mc.options.keyJump.isDown()) motionY += vSpeedVal;
+        if (mc.options.keyShift.isDown()) motionY -= vSpeedVal;
 
         // Vanha anti-kick (vain jos ei Packet-moodi)
         if (!antiKickMode.getMode().equals("Packet")) {
@@ -173,11 +173,11 @@ public class Flight extends AxiomMod implements KeybindConfigurable {
         }
 
         if (mode.equals("Velocity")) {
-            mc.player.setVelocity(motionX, motionY, motionZ);
+            mc.player.setDeltaMovement(motionX, motionY, motionZ);
         } else if (mode.equals("Packet")) {
-            mc.player.setVelocity(motionX, motionY, motionZ);
+            mc.player.setDeltaMovement(motionX, motionY, motionZ);
 
-            Vec3d pos = mc.player.getEntityPos();
+            Vec3 pos = mc.player.position();
             double newX = pos.x + motionX;
             double newY = pos.y + motionY;
             double newZ = pos.z + motionZ;
@@ -199,9 +199,9 @@ public class Flight extends AxiomMod implements KeybindConfigurable {
     }
 
     private void sendPos(double x, double y, double z, boolean onGround) {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        mc.getNetworkHandler().sendPacket(
-                new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, onGround, mc.player.horizontalCollision)
+        Minecraft mc = Minecraft.getInstance();
+        mc.getConnection().send(
+                new ServerboundMovePlayerPacket.Pos(x, y, z, onGround, mc.player.horizontalCollision)
         );
     }
 
@@ -211,10 +211,10 @@ public class Flight extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onEnable() {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc != null && mc.options != null) {
-            oldFovEffectScale = mc.options.getFovEffectScale().getValue();
-            mc.options.getFovEffectScale().setValue(0.0);
+            oldFovEffectScale = mc.options.fovEffectScale().get();
+            mc.options.fovEffectScale().set(0.0);
         }
         packetCounter = 0;
         antiKickTimer = (int) antiKickInterval.getValue();
@@ -226,19 +226,19 @@ public class Flight extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onDisable() {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc != null && mc.options != null && oldFovEffectScale != null) {
-            mc.options.getFovEffectScale().setValue(oldFovEffectScale);
+            mc.options.fovEffectScale().set(oldFovEffectScale);
             oldFovEffectScale = null;
         }
         if (mc != null && mc.player != null) {
             mc.player.setNoGravity(false);
             mc.player.fallDistance = 0.0f;
             mc.player.getAbilities().flying = false;
-            mc.player.getAbilities().allowFlying = false;
-            mc.player.getAbilities().setFlySpeed(0.05f);
-            mc.player.getAbilities().setWalkSpeed(0.1f);
-            mc.player.sendAbilitiesUpdate();
+            mc.player.getAbilities().mayfly = false;
+            mc.player.getAbilities().setFlyingSpeed(0.05f);
+            mc.player.getAbilities().setWalkingSpeed(0.1f);
+            mc.player.onUpdateAbilities();
         }
 
         packetCounter = 0;

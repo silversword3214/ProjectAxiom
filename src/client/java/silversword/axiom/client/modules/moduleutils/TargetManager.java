@@ -1,8 +1,8 @@
 package silversword.axiom.client.modules.moduleutils;
 
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -23,7 +23,7 @@ public class TargetManager {
      * @param targetMode "Players", "Mobs" tai "Both"
      * @return lähin kelvollinen kohde, tai null jos ei löydy
      */
-    public static LivingEntity getClosest(World world, double range, String targetMode) {
+    public static LivingEntity getClosest(Level world, double range, String targetMode) {
         return getClosest(world, range, targetMode, entity -> true);
     }
 
@@ -36,12 +36,12 @@ public class TargetManager {
      * @param extraFilter ylimääräinen ehto (esim. ignoreBots)
      * @return lähin kelvollinen kohde, tai null jos ei löydy
      */
-    public static LivingEntity getClosest(World world, double range, String targetMode, Predicate<LivingEntity> extraFilter) {
+    public static LivingEntity getClosest(Level world, double range, String targetMode, Predicate<LivingEntity> extraFilter) {
         if (mc.player == null) return null;
 
-        List<LivingEntity> entities = world.getEntitiesByClass(
+        List<LivingEntity> entities = world.getEntitiesOfClass(
                 LivingEntity.class,
-                mc.player.getBoundingBox().expand(range),
+                mc.player.getBoundingBox().inflate(range),
                 e -> e != mc.player && e.isAlive() && isValidTarget(e, targetMode) && extraFilter.test(e)
         );
 
@@ -58,8 +58,8 @@ public class TargetManager {
      */
     public static boolean isValidTarget(LivingEntity entity, String targetMode) {
         return switch (targetMode) {
-            case "Players" -> entity instanceof PlayerEntity;
-            case "Mobs" -> !(entity instanceof PlayerEntity);
+            case "Players" -> entity instanceof Player;
+            case "Mobs" -> !(entity instanceof Player);
             case "Both" -> true;
             default -> false;
         };
@@ -68,8 +68,8 @@ public class TargetManager {
     /**
      * Yksinkertainen bottientarkistus (vertaa tablistiin).
      */
-    public static boolean isBot(PlayerEntity player) {
-        return mc.getNetworkHandler().getPlayerList().stream()
-                .noneMatch(entry -> entry.getProfile().id().equals(player.getUuid()));
+    public static boolean isBot(Player player) {
+        return mc.getConnection().getOnlinePlayers().stream()
+                .noneMatch(entry -> entry.getProfile().id().equals(player.getUUID()));
     }
 }

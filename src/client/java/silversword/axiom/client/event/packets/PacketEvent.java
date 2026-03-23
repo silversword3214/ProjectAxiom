@@ -1,14 +1,14 @@
 package silversword.axiom.client.event.packets;
 
-import net.minecraft.network.ClientConnection;
-import net.minecraft.network.packet.Packet;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.Packet;
 
 public abstract class PacketEvent {
     private final Packet<?> packet;
-    private final ClientConnection connection;
+    private final Connection connection;
     private boolean cancelled = false;
 
-    public PacketEvent(Packet<?> packet, ClientConnection connection) {
+    public PacketEvent(Packet<?> packet, Connection connection) {
         this.packet = packet;
         this.connection = connection;
     }
@@ -17,7 +17,7 @@ public abstract class PacketEvent {
         return packet;
     }
 
-    public ClientConnection getConnection() {
+    public Connection getConnection() {
         return connection;
     }
 
@@ -30,13 +30,13 @@ public abstract class PacketEvent {
     }
 
     public static class Send extends PacketEvent {
-        public Send(Packet<?> packet, ClientConnection connection) {
+        public Send(Packet<?> packet, Connection connection) {
             super(packet, connection);
         }
     }
 
     public static class Received extends PacketEvent {
-        public Received(Packet<?> packet, ClientConnection connection) {
+        public Received(Packet<?> packet, Connection connection) {
             super(packet, connection);
         }
     }

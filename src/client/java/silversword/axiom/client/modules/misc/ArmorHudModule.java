@@ -139,8 +139,8 @@ public final class ArmorHudModule extends AxiomMod implements ColorConfigurable,
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("armorhud_colors", "ArmorHUD Colors", sw, sh, content);
     }

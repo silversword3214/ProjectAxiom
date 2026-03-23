@@ -35,14 +35,14 @@ public class WeatherChanger extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onEnable() {
-        if (mc.world != null) {
+        if (mc.level != null) {
             applyWeather();
         }
     }
 
     @Override
     public void onTick() {
-        if (mc.world == null) return;
+        if (mc.level == null) return;
         if (lockWeather.get()) {
             applyWeather();
         }
@@ -68,8 +68,8 @@ public class WeatherChanger extends AxiomMod implements KeybindConfigurable {
                 break;
         }
 
-        mc.world.setRainGradient(rain);
-        mc.world.setThunderGradient(thunder);
+        mc.level.setRainLevel(rain);
+        mc.level.setThunderLevel(thunder);
     }
 
 

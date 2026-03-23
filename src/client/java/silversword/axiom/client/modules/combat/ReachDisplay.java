@@ -1,8 +1,8 @@
 package silversword.axiom.client.modules.combat;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.window.WindowFactory;
@@ -89,7 +89,7 @@ public class ReachDisplay extends AxiomMod implements ColorConfigurable, Keybind
 
     @Override
     protected void onTick() {
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
         // Päivitetään värit elementille
         element.setBackgroundColor(backgroundColor.getCurrentColor().getPacked());
@@ -104,8 +104,8 @@ public class ReachDisplay extends AxiomMod implements ColorConfigurable, Keybind
 
         double distance = mc.player.distanceTo(target);
         int ping = -1;
-        if (showPing.get() && target instanceof PlayerEntity) {
-            ping = getPing((PlayerEntity) target);
+        if (showPing.get() && target instanceof Player) {
+            ping = getPing((Player) target);
         }
 
         element.setData(target, distance, ping);
@@ -116,7 +116,7 @@ public class ReachDisplay extends AxiomMod implements ColorConfigurable, Keybind
         LivingEntity closest = null;
         double closestDist = Double.MAX_VALUE;
 
-        for (Entity entity : mc.world.getEntities()) {
+        for (Entity entity : mc.level.entitiesForRendering()) {
             if (entity == mc.player || !entity.isAlive()) continue;
             if (!isValidTarget(entity)) continue;
 
@@ -132,14 +132,14 @@ public class ReachDisplay extends AxiomMod implements ColorConfigurable, Keybind
     private boolean isValidTarget(Entity entity) {
         if (!(entity instanceof LivingEntity)) return false;
         String mode = targetMode.getMode();
-        if (mode.equals("Players")) return entity instanceof PlayerEntity;
-        if (mode.equals("Mobs")) return !(entity instanceof PlayerEntity);
+        if (mode.equals("Players")) return entity instanceof Player;
+        if (mode.equals("Mobs")) return !(entity instanceof Player);
         return true;
     }
 
-    private int getPing(PlayerEntity player) {
-        if (mc.getNetworkHandler() == null) return -1;
-        var entry = mc.getNetworkHandler().getPlayerListEntry(player.getUuid());
+    private int getPing(Player player) {
+        if (mc.getConnection() == null) return -1;
+        var entry = mc.getConnection().getPlayerInfo(player.getUUID());
         return entry != null ? entry.getLatency() : -1;
     }
 
@@ -157,8 +157,8 @@ public class ReachDisplay extends AxiomMod implements ColorConfigurable, Keybind
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("reachdisplay_colors", "ReachDisplay Colors", sw, sh, content);
     }

@@ -1,8 +1,8 @@
 package silversword.axiom.mixin.client.accessors;
 
-import net.minecraft.client.render.Camera;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Camera;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
@@ -10,16 +10,16 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(Camera.class)
 public interface CameraAccessor {
 
-    @Accessor("pos")
-    Vec3d axiom$getPos();
+    @Accessor("position")
+    Vec3 axiom$getPosition();
 
-    @Accessor("pos")
-    void axiom$setPos(Vec3d pos);
+    @Accessor("position")
+    void axiom$setPosition(Vec3 pos);
 
     @Invoker("setRotation")
     void axiom$setRotation(float yaw, float pitch);
 
-    @Accessor("focusedEntity")
-    void setFocusedEntity(Entity entity);
+    @Accessor("entity")
+    void setEntity(Entity entity);
 
 }

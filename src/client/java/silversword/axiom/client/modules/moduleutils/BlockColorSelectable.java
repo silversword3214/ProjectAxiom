@@ -1,6 +1,6 @@
 package silversword.axiom.client.modules.moduleutils;
 
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 
 public interface BlockColorSelectable extends BlockSelectable {

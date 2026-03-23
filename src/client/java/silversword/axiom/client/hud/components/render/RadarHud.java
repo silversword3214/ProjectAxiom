@@ -1,9 +1,9 @@
 package silversword.axiom.client.hud.components.render;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.modules.moduleutils.TargetGroup;
@@ -94,12 +94,12 @@ public final class RadarHud extends BaseHudElement {
     public void setBossColor(int c) { bossColor = c; }
 
     @Override public boolean isModuleControlled() { return true; }
-    @Override public int width(MinecraftClient mc) { return (int) (size * radarScale); }
-    @Override public int height(MinecraftClient mc) { return (int) (size * radarScale); }
+    @Override public int width(Minecraft mc) { return (int) (size * radarScale); }
+    @Override public int height(Minecraft mc) { return (int) (size * radarScale); }
 
     @Override
-    public void render(HudContext ctx, RenderTickCounter tickCounter) {
-        if (mc.player == null || mc.world == null) return;
+    public void render(HudContext ctx, DeltaTracker tickCounter) {
+        if (mc.player == null || mc.level == null) return;
 
         float scaledSize = size * radarScale;
         int centerX = (int) (x + scaledSize / 2);
@@ -124,10 +124,10 @@ public final class RadarHud extends BaseHudElement {
         Renderer2D.COLOR.line(centerX, y, centerX, y + scaledSize, axisCol);
 
         // Suuntavektorit
-        Vec3d playerPos = mc.player.getEntityPos();
-        Vec3d forward = mc.player.getRotationVec(1.0f);
-        forward = new Vec3d(forward.x, 0, forward.z).normalize();
-        Vec3d right = forward.crossProduct(new Vec3d(0, 1, 0)).normalize();
+        Vec3 playerPos = mc.player.position();
+        Vec3 forward = mc.player.getViewVector(1.0f);
+        forward = new Vec3(forward.x, 0, forward.z).normalize();
+        Vec3 right = forward.cross(new Vec3(0, 1, 0)).normalize();
 
         // Kompassi (vain jos päällä)
         if (showCompass) {
@@ -135,7 +135,7 @@ public final class RadarHud extends BaseHudElement {
         }
 
         // Entiteetit
-        for (Entity entity : mc.world.getEntities()) {
+        for (Entity entity : mc.level.entitiesForRendering()) {
             if (entity == mc.player || !entity.isAlive()) continue;
             TargetGroup group = TargetGroup.getGroup(entity);
             if (!shouldDrawGroup(group)) continue;
@@ -192,23 +192,23 @@ public final class RadarHud extends BaseHudElement {
         }
     }
 
-    private void drawCompass(HudContext ctx, int centerX, int centerY, int radius, float textScale, Vec3d forward, Vec3d right) {
-        Vec3d north = new Vec3d(0, 0, -1);
-        Vec3d south = new Vec3d(0, 0, 1);
-        Vec3d west = new Vec3d(-1, 0, 0);
-        Vec3d east = new Vec3d(1, 0, 0);
+    private void drawCompass(HudContext ctx, int centerX, int centerY, int radius, float textScale, Vec3 forward, Vec3 right) {
+        Vec3 north = new Vec3(0, 0, -1);
+        Vec3 south = new Vec3(0, 0, 1);
+        Vec3 west = new Vec3(-1, 0, 0);
+        Vec3 east = new Vec3(1, 0, 0);
 
         int offset = (int) (10 * textScale);
         int r = radius - offset;
 
-        int northX = centerX + (int) (north.dotProduct(right) * r);
-        int northY = centerY - (int) (north.dotProduct(forward) * r);
-        int southX = centerX + (int) (south.dotProduct(right) * r);
-        int southY = centerY - (int) (south.dotProduct(forward) * r);
-        int westX = centerX + (int) (west.dotProduct(right) * r);
-        int westY = centerY - (int) (west.dotProduct(forward) * r);
-        int eastX = centerX + (int) (east.dotProduct(right) * r);
-        int eastY = centerY - (int) (east.dotProduct(forward) * r);
+        int northX = centerX + (int) (north.dot(right) * r);
+        int northY = centerY - (int) (north.dot(forward) * r);
+        int southX = centerX + (int) (south.dot(right) * r);
+        int southY = centerY - (int) (south.dot(forward) * r);
+        int westX = centerX + (int) (west.dot(right) * r);
+        int westY = centerY - (int) (west.dot(forward) * r);
+        int eastX = centerX + (int) (east.dot(right) * r);
+        int eastY = centerY - (int) (east.dot(forward) * r);
 
         int color = BASE_BORDER_COLOR;
         ctx.drawScaledText("N", northX - (int) (ctx.textWidth("N") * textScale / 2), northY - (int) (ctx.fontHeight() * textScale / 2), color, true, textScale);

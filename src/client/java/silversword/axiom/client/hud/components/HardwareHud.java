@@ -1,7 +1,7 @@
 package silversword.axiom.client.hud.components;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.DeltaTracker;
 import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
 import oshi.hardware.HardwareAbstractionLayer;
@@ -81,7 +81,7 @@ public final class HardwareHud extends BaseHudElement {
     }
 
     @Override
-    public int width(MinecraftClient mc) {
+    public int width(Minecraft mc) {
         float scale = (float) textScale.getValue();
         int maxW = 0;
         for (String line : getDisplayLines()) {
@@ -91,7 +91,7 @@ public final class HardwareHud extends BaseHudElement {
     }
 
     @Override
-    public int height(MinecraftClient mc) {
+    public int height(Minecraft mc) {
         float scale = (float) textScale.getValue();
         int lines = getDisplayLines().size();
         int lineH = (int) (TextRenderer.get().getHeight() * scale);
@@ -99,7 +99,7 @@ public final class HardwareHud extends BaseHudElement {
     }
 
     @Override
-    public void render(HudContext ctx, RenderTickCounter tickCounter) {
+    public void render(HudContext ctx, DeltaTracker tickCounter) {
         Color bgCol = backgroundColor.getCurrentColor();
         Color borderCol = borderColor.getCurrentColor();
         Color txtCol = textColor.getCurrentColor();

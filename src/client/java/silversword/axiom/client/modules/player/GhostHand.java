@@ -1,21 +1,21 @@
 package silversword.axiom.client.modules.player;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
-import net.minecraft.text.Text;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.RaycastContext;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.Direction;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.level.ClipContext;
 import org.joml.Vector3d;
 import silversword.axiom.client.event.player.UseBlockEvent;
 import silversword.axiom.client.event.render.Render2DEvent;
@@ -44,7 +44,7 @@ import java.util.List;
 public final class GhostHand extends AxiomMod implements KeybindConfigurable {
     public static GhostHand INSTANCE;
 
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
     private final SettingNumber range;
@@ -108,10 +108,10 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
     }
 
     private boolean isInteractiveBlock(BlockPos pos) {
-        if (mc.world == null) return false;
+        if (mc.level == null) return false;
 
-        BlockState state = mc.world.getBlockState(pos);
-        BlockEntity entity = mc.world.getBlockEntity(pos);
+        BlockState state = mc.level.getBlockState(pos);
+        BlockEntity entity = mc.level.getBlockEntity(pos);
 
         if (entity != null) {
             return true;
@@ -143,11 +143,11 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
 
     private void scanInteractiveBlocks() {
         interactiveBlocks.clear();
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
         int r = (int) Math.ceil(range.getValue());
-        BlockPos center = mc.player.getBlockPos();
-        Vec3d eyePos = mc.player.getEyePos();
+        BlockPos center = mc.player.blockPosition();
+        Vec3 eyePos = mc.player.getEyePosition();
         double maxDist = range.getValue();
         int max = (int) maxBlocks.getValue();
 
@@ -156,8 +156,8 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
                 for (int z = -r; z <= r; z++) {
                     if (interactiveBlocks.size() >= max) return;
 
-                    BlockPos pos = center.add(x, y, z);
-                    double dist = eyePos.distanceTo(Vec3d.ofCenter(pos));
+                    BlockPos pos = center.offset(x, y, z);
+                    double dist = eyePos.distanceTo(Vec3.atCenterOf(pos));
                     if (dist <= maxDist && isInteractiveBlock(pos)) {
                         interactiveBlocks.add(pos);
                     }
@@ -167,31 +167,31 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
     }
 
     private BlockHitResult raycastForInteractiveBlockHit(double maxDist) {
-        if (mc.player == null || mc.world == null) return null;
+        if (mc.player == null || mc.level == null) return null;
 
-        Vec3d start = mc.player.getEyePos();
-        Vec3d direction = mc.player.getRotationVec(1.0F);
-        Vec3d end = start.add(direction.multiply(maxDist));
+        Vec3 start = mc.player.getEyePosition();
+        Vec3 direction = mc.player.getViewVector(1.0F);
+        Vec3 end = start.add(direction.scale(maxDist));
 
         double step = 0.1;
         BlockPos lastPos = null;
         for (double d = 0; d < maxDist; d += step) {
-            Vec3d point = start.add(direction.multiply(d));
-            BlockPos pos = BlockPos.ofFloored(point);
+            Vec3 point = start.add(direction.scale(d));
+            BlockPos pos = BlockPos.containing(point);
             if (pos.equals(lastPos)) continue;
             lastPos = pos;
 
             if (isInteractiveBlock(pos)) {
-                BlockState state = mc.world.getBlockState(pos);
-                VoxelShape shape = state.getOutlineShape(mc.world, pos);
-                if (shape.isEmpty()) shape = state.getCollisionShape(mc.world, pos);
+                BlockState state = mc.level.getBlockState(pos);
+                VoxelShape shape = state.getShape(mc.level, pos);
+                if (shape.isEmpty()) shape = state.getCollisionShape(mc.level, pos);
                 if (!shape.isEmpty()) {
-                    BlockHitResult hit = shape.raycast(start, end, pos);
+                    BlockHitResult hit = shape.clip(start, end, pos);
                     if (hit != null) {
                         return hit;
                     }
                 }
-                return new BlockHitResult(point, Direction.getFacing(direction.x, direction.y, direction.z), pos, false);
+                return new BlockHitResult(point, Direction.getApproximateNearest(direction.x, direction.y, direction.z), pos, false);
             }
         }
         return null;
@@ -199,25 +199,25 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
 
     @AxiomEvent
     private void onUseBlock(UseBlockEvent event) {
-        if (!isEnabled() || mc.player == null || mc.world == null) return;
+        if (!isEnabled() || mc.player == null || mc.level == null) return;
 
         BlockHitResult targetHit = raycastForInteractiveBlockHit(range.getValue());
         if (targetHit == null) return;
 
         BlockPos pos = targetHit.getBlockPos();
-        double dist = mc.player.getEyePos().distanceTo(Vec3d.ofCenter(pos));
+        double dist = mc.player.getEyePosition().distanceTo(Vec3.atCenterOf(pos));
         if (dist > range.getValue()) return;
 
         if (onlyThroughWalls.get()) {
-            Vec3d start = mc.player.getEyePos();
-            Vec3d end = Vec3d.ofCenter(pos);
-            RaycastContext context = new RaycastContext(
+            Vec3 start = mc.player.getEyePosition();
+            Vec3 end = Vec3.atCenterOf(pos);
+            ClipContext context = new ClipContext(
                     start, end,
-                    RaycastContext.ShapeType.COLLIDER,
-                    RaycastContext.FluidHandling.NONE,
+                    ClipContext.Block.COLLIDER,
+                    ClipContext.Fluid.NONE,
                     mc.player
             );
-            BlockHitResult normalHit = (BlockHitResult) mc.world.raycast(context);
+            BlockHitResult normalHit = (BlockHitResult) mc.level.clip(context);
             if (normalHit != null && normalHit.getType() == HitResult.Type.BLOCK && normalHit.getBlockPos().equals(pos)) {
                 return;
             }
@@ -225,12 +225,12 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
 
         event.setCancelled(true);
 
-        PlayerInteractBlockC2SPacket packet = new PlayerInteractBlockC2SPacket(
-                Hand.MAIN_HAND,
+        ServerboundUseItemOnPacket packet = new ServerboundUseItemOnPacket(
+                InteractionHand.MAIN_HAND,
                 targetHit,
                 0
         );
-        mc.getNetworkHandler().sendPacket(packet);
+        mc.getConnection().send(packet);
     }
 
     @AxiomEvent
@@ -241,7 +241,7 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
 
     @AxiomEvent
     private void onRender(Render3DEvent event) {
-        if (!isEnabled() || !renderBlocks.get() || mc.player == null || mc.world == null) return;
+        if (!isEnabled() || !renderBlocks.get() || mc.player == null || mc.level == null) return;
 
         scanInteractiveBlocks();
 
@@ -249,8 +249,8 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
         currentTarget = hit != null ? hit.getBlockPos() : null;
 
         for (BlockPos pos : interactiveBlocks) {
-            BlockState state = mc.world.getBlockState(pos);
-            Box box = state.getOutlineShape(mc.world, pos).getBoundingBox();
+            BlockState state = mc.level.getBlockState(pos);
+            AABB box = state.getShape(mc.level, pos).bounds();
             double x1 = pos.getX() + box.minX;
             double y1 = pos.getY() + box.minY;
             double z1 = pos.getZ() + box.minZ;
@@ -283,23 +283,23 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
     @AxiomEvent
     private void onRender2D(Render2DEvent event) {
         if (event.drawContext == null) return;
-        if (!isEnabled() || !nametagEnabled.get() || mc.player == null || mc.world == null) return;
+        if (!isEnabled() || !nametagEnabled.get() || mc.player == null || mc.level == null) return;
         if (currentTarget == null) return;
 
         renderBlockNametag(event, currentTarget);
     }
 
     private void renderBlockNametag(Render2DEvent event, BlockPos pos) {
-        if (mc.world == null) return;
+        if (mc.level == null) return;
 
-        BlockState state = mc.world.getBlockState(pos);
+        BlockState state = mc.level.getBlockState(pos);
         if (state.isAir()) return;
 
         // Haetaan blokin nimi
-        String blockName = Text.translatable(state.getBlock().getTranslationKey()).getString();
+        String blockName = Component.translatable(state.getBlock().getDescriptionId()).getString();
 
         // Lasketaan blokin yläpinnan korkeus
-        Box box = state.getOutlineShape(mc.world, pos).getBoundingBox();
+        AABB box = state.getShape(mc.level, pos).bounds();
         double topY = pos.getY() + box.maxY;
 
         // Keskipiste ja offsetin verran yläpuolelle
@@ -309,9 +309,9 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
         nametagPos.set(x, y, z);
 
         // Etäisyyspohjainen skaalaus (sama kuin NameTagsissa)
-        Vec3d cameraPos = mc.gameRenderer.getCamera().getCameraPos();
-        double dist = Math.sqrt(cameraPos.squaredDistanceTo(x, y, z));
-        double distanceScale = MathHelper.clamp(1.0 - dist * 0.005, 0.8, 3.0);
+        Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
+        double dist = Math.sqrt(cameraPos.distanceToSqr(x, y, z));
+        double distanceScale = Mth.clamp(1.0 - dist * 0.005, 0.8, 3.0);
         double finalScale = nametagScale.getValue() * distanceScale;
 
         // Muunnetaan 2D:ksi

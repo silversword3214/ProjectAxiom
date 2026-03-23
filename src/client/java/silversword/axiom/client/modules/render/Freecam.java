@@ -1,13 +1,13 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.client.option.Perspective;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.entity.Entity;
-import net.minecraft.network.packet.s2c.play.DeathMessageS2CPacket;
-import net.minecraft.network.packet.s2c.play.HealthUpdateS2CPacket;
-import net.minecraft.network.packet.s2c.play.PlayerRespawnS2CPacket;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.CameraType;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.network.protocol.game.ClientboundPlayerCombatKillPacket;
+import net.minecraft.network.protocol.game.ClientboundSetHealthPacket;
+import net.minecraft.network.protocol.game.ClientboundRespawnPacket;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
 import silversword.axiom.client.event.*;
 import silversword.axiom.client.main.AxiomMod;
@@ -18,7 +18,7 @@ import silversword.axiom.client.eventbus.Priority;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingNumber;
-import silversword.axiom.mixin.client.accessors.KeyBindingAccessor;
+import silversword.axiom.mixin.client.accessors.KeyMappingAccessor;
 
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
@@ -44,7 +44,7 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
     public final Vector3d prevPos = new Vector3d();
     public float yaw, pitch;
     public float lastYaw, lastPitch;
-    private Perspective prevPerspective;
+    private CameraType prevPerspective;
     private double fovScale;
     private boolean bobView;
     private boolean forward, backward, right, left, up, down, isSneaking;
@@ -75,31 +75,31 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onEnable() {
-        if (mc.world == null || mc.player == null) {
+        if (mc.level == null || mc.player == null) {
             toggle();
             return;
         }
 
-        fovScale = mc.options.getFovEffectScale().getValue();
-        bobView = mc.options.getBobView().getValue();
+        fovScale = mc.options.fovEffectScale().get();
+        bobView = mc.options.bobView().get();
         if (staticView.get()) {
-            mc.options.getFovEffectScale().setValue(0.0);
-            mc.options.getBobView().setValue(false);
+            mc.options.fovEffectScale().set(0.0);
+            mc.options.bobView().set(false);
         }
 
-        yaw = mc.player.getYaw();
-        pitch = mc.player.getPitch();
+        yaw = mc.player.getYRot();
+        pitch = mc.player.getXRot();
 
-        prevPerspective = mc.options.getPerspective();
+        prevPerspective = mc.options.getCameraType();
         if (!prevPerspective.isFirstPerson()) {
-            mc.options.setPerspective(Perspective.FIRST_PERSON);
+            mc.options.setCameraType(CameraType.FIRST_PERSON);
         }
 
-        Vec3d camPos = mc.gameRenderer.getCamera().getCameraPos();
+        Vec3 camPos = mc.gameRenderer.getMainCamera().position();
         pos.set(camPos.x, camPos.y, camPos.z);
         prevPos.set(camPos.x, camPos.y, camPos.z);
 
-        if (prevPerspective == Perspective.THIRD_PERSON_FRONT) {
+        if (prevPerspective == CameraType.THIRD_PERSON_FRONT) {
             yaw += 180;
             pitch *= -1;
         }
@@ -107,27 +107,27 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
         lastYaw = yaw;
         lastPitch = pitch;
 
-        isSneaking = mc.options.sneakKey.isPressed();
+        isSneaking = mc.options.keyShift.isDown();
 
         // Reset movement flags
         forward = backward = right = left = up = down = false;
 
         unpress();
 
-        if (reloadChunks.get()) mc.worldRenderer.reload();
+        if (reloadChunks.get()) mc.levelRenderer.allChanged();
     }
 
     @Override
     protected void onDisable() {
         if (reloadChunks.get()) {
-            mc.execute(() -> mc.worldRenderer.reload());
+            mc.execute(() -> mc.levelRenderer.allChanged());
         }
 
-        mc.options.setPerspective(prevPerspective);
+        mc.options.setCameraType(prevPerspective);
 
         if (staticView.get()) {
-            mc.options.getFovEffectScale().setValue(fovScale);
-            mc.options.getBobView().setValue(bobView);
+            mc.options.fovEffectScale().set(fovScale);
+            mc.options.bobView().set(bobView);
         }
 
         isSneaking = false;
@@ -138,29 +138,29 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
         if (!isEnabled() || mc.player == null) return;
 
         // Hardware key detection – bypasses game's key binding system
-        long handle = mc.getWindow().getHandle();
-        forward = InputUtil.isKeyPressed(mc.getWindow(), ((KeyBindingAccessor) mc.options.forwardKey).getBoundKey().getCode());
-        backward = InputUtil.isKeyPressed(mc.getWindow(), ((KeyBindingAccessor) mc.options.backKey).getBoundKey().getCode());
-        right = InputUtil.isKeyPressed(mc.getWindow(), ((KeyBindingAccessor) mc.options.rightKey).getBoundKey().getCode());
-        left = InputUtil.isKeyPressed(mc.getWindow(), ((KeyBindingAccessor) mc.options.leftKey).getBoundKey().getCode());
-        up = InputUtil.isKeyPressed(mc.getWindow(), ((KeyBindingAccessor) mc.options.jumpKey).getBoundKey().getCode());
-        down = InputUtil.isKeyPressed(mc.getWindow(), ((KeyBindingAccessor) mc.options.sneakKey).getBoundKey().getCode());
+        long handle = mc.getWindow().handle();
+        forward = InputConstants.isKeyDown(mc.getWindow(), ((KeyMappingAccessor) mc.options.keyUp).getKey().getValue());
+        backward = InputConstants.isKeyDown(mc.getWindow(), ((KeyMappingAccessor) mc.options.keyDown).getKey().getValue());
+        right = InputConstants.isKeyDown(mc.getWindow(), ((KeyMappingAccessor) mc.options.keyRight).getKey().getValue());
+        left = InputConstants.isKeyDown(mc.getWindow(), ((KeyMappingAccessor) mc.options.keyLeft).getKey().getValue());
+        up = InputConstants.isKeyDown(mc.getWindow(), ((KeyMappingAccessor) mc.options.keyJump).getKey().getValue());
+        down = InputConstants.isKeyDown(mc.getWindow(), ((KeyMappingAccessor) mc.options.keyShift).getKey().getValue());
 
         // Unpress the actual keys so the player doesn't move
-        mc.options.forwardKey.setPressed(false);
-        mc.options.backKey.setPressed(false);
-        mc.options.leftKey.setPressed(false);
-        mc.options.rightKey.setPressed(false);
-        mc.options.jumpKey.setPressed(false);
-        mc.options.sneakKey.setPressed(false);
+        mc.options.keyUp.setDown(false);
+        mc.options.keyDown.setDown(false);
+        mc.options.keyLeft.setDown(false);
+        mc.options.keyRight.setDown(false);
+        mc.options.keyJump.setDown(false);
+        mc.options.keyShift.setDown(false);
 
-        if (mc.getCameraEntity().isInsideWall()) mc.getCameraEntity().noClip = true;
+        if (mc.getCameraEntity().isInWall()) mc.getCameraEntity().noPhysics = true;
         if (prevPerspective != null && !prevPerspective.isFirstPerson()) {
-            mc.options.setPerspective(Perspective.FIRST_PERSON);
+            mc.options.setCameraType(CameraType.FIRST_PERSON);
         }
 
-        Vec3d forwardVec = Vec3d.fromPolar(0, yaw);
-        Vec3d rightVec = Vec3d.fromPolar(0, yaw + 90);
+        Vec3 forwardVec = Vec3.directionFromRotation(0, yaw);
+        Vec3 rightVec = Vec3.directionFromRotation(0, yaw + 90);
         double spd = speed.getValue() * 0.5; // base speed factor
 
         double velX = 0, velY = 0, velZ = 0;
@@ -199,7 +199,7 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
     @AxiomEvent(priority = Priority.LOW)
     private void onMouseScroll(MouseScrollEvent event) {
         if (!isEnabled()) return;
-        if (speedScrollSensitivity.getValue() > 0 && mc.currentScreen == null) {
+        if (speedScrollSensitivity.getValue() > 0 && mc.screen == null) {
             double newSpeed = speed.getValue() + event.value * 0.25 * speedScrollSensitivity.getValue() * speed.getValue();
             if (newSpeed < 0.1) newSpeed = 0.1;
             speed.setValue(newSpeed);
@@ -217,18 +217,18 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
     @AxiomEvent
     private void onPacketReceive(PacketEvent.Receive event) {
         if (!isEnabled()) return;
-        if (event.packet instanceof DeathMessageS2CPacket pkt) {
-            Entity e = mc.world.getEntityById(pkt.playerId());
+        if (event.packet instanceof ClientboundPlayerCombatKillPacket pkt) {
+            Entity e = mc.level.getEntity(pkt.playerId());
             if (e == mc.player && toggleOnDeath.get()) {
                 toggle();
                 System.out.println("Toggled off because you died.");
             }
-        } else if (event.packet instanceof HealthUpdateS2CPacket pkt) {
+        } else if (event.packet instanceof ClientboundSetHealthPacket pkt) {
             if (mc.player.getHealth() - pkt.getHealth() > 0 && toggleOnDamage.get()) {
                 toggle();
                 System.out.println("Toggled off because you took damage.");
             }
-        } else if (event.packet instanceof PlayerRespawnS2CPacket) {
+        } else if (event.packet instanceof ClientboundRespawnPacket) {
             if (isEnabled()) {
                 toggle();
                 System.out.println("Toggled off because you changed dimensions.");
@@ -241,25 +241,25 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
         lastPitch = pitch;
         yaw += (float) deltaX;
         pitch += (float) deltaY;
-        pitch = MathHelper.clamp(pitch, -90, 90);
+        pitch = Mth.clamp(pitch, -90, 90);
     }
 
     // For CameraMixin
-    public double getX(float tickDelta) { return MathHelper.lerp(tickDelta, prevPos.x, pos.x); }
-    public double getY(float tickDelta) { return MathHelper.lerp(tickDelta, prevPos.y, pos.y); }
-    public double getZ(float tickDelta) { return MathHelper.lerp(tickDelta, prevPos.z, pos.z); }
-    public double getYaw(float tickDelta) { return MathHelper.lerp(tickDelta, lastYaw, yaw); }
-    public double getPitch(float tickDelta) { return MathHelper.lerp(tickDelta, lastPitch, pitch); }
+    public double getX(float tickDelta) { return Mth.lerp(tickDelta, prevPos.x, pos.x); }
+    public double getY(float tickDelta) { return Mth.lerp(tickDelta, prevPos.y, pos.y); }
+    public double getZ(float tickDelta) { return Mth.lerp(tickDelta, prevPos.z, pos.z); }
+    public double getYaw(float tickDelta) { return Mth.lerp(tickDelta, lastYaw, yaw); }
+    public double getPitch(float tickDelta) { return Mth.lerp(tickDelta, lastPitch, pitch); }
 
     public boolean renderHands() { return !isEnabled() || renderHands.get(); }
     public boolean staySneaking() { return isEnabled() && staySneaking.get() && isSneaking; }
 
     private void unpress() {
-        mc.options.forwardKey.setPressed(false);
-        mc.options.backKey.setPressed(false);
-        mc.options.rightKey.setPressed(false);
-        mc.options.leftKey.setPressed(false);
-        mc.options.jumpKey.setPressed(false);
-        mc.options.sneakKey.setPressed(false);
+        mc.options.keyUp.setDown(false);
+        mc.options.keyDown.setDown(false);
+        mc.options.keyRight.setDown(false);
+        mc.options.keyLeft.setDown(false);
+        mc.options.keyJump.setDown(false);
+        mc.options.keyShift.setDown(false);
     }
 }

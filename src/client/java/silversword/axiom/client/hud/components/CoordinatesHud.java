@@ -1,8 +1,8 @@
 package silversword.axiom.client.hud.components;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.util.math.Direction;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.core.Direction;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.modules.NamedColor;
@@ -46,7 +46,7 @@ public final class CoordinatesHud extends BaseHudElement {
     }
 
     @Override
-    public int width(MinecraftClient mc) {
+    public int width(Minecraft mc) {
         if (mc.player == null) return 0;
         float scale = (float) textScale.getValue();
         String text = getDisplayText(mc);
@@ -54,7 +54,7 @@ public final class CoordinatesHud extends BaseHudElement {
     }
 
     @Override
-    public int height(MinecraftClient mc) {
+    public int height(Minecraft mc) {
         if (mc.player == null) return 0;
         float scale = (float) textScale.getValue();
         int textH = (int) (TextRenderer.get().getHeight() * scale);
@@ -62,8 +62,8 @@ public final class CoordinatesHud extends BaseHudElement {
     }
 
     @Override
-    public void render(HudContext ctx, RenderTickCounter tickCounter) {
-        MinecraftClient mc = MinecraftClient.getInstance();
+    public void render(HudContext ctx, DeltaTracker tickCounter) {
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
         // Haetaan nykyiset värit (rainbow-tuki)
@@ -103,13 +103,13 @@ public final class CoordinatesHud extends BaseHudElement {
         ctx.drawScaledText(text, textX, textY, txtCol.getPacked(), true, scale);
     }
 
-    private String getDisplayText(MinecraftClient mc) {
+    private String getDisplayText(Minecraft mc) {
         int x = mc.player.getBlockX();
         int y = mc.player.getBlockY();
         int z = mc.player.getBlockZ();
         String facing = "";
         if (showFacing.get()) {
-            Direction dir = mc.player.getHorizontalFacing();
+            Direction dir = mc.player.getDirection();
             facing = " " + dir.name().substring(0, 1).toUpperCase(); // N, S, W, E
         }
         return String.format("X: %d Y: %d Z: %d%s", x, y, z, facing);

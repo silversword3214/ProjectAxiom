@@ -1,12 +1,12 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
 import silversword.axiom.client.event.render.Render2DEvent;
 import silversword.axiom.client.event.render.Render3DEvent;
@@ -36,7 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class BlockNametag extends AxiomMod implements ColorConfigurable, KeybindConfigurable {
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     // --- Settings -------------------------------------------------
     private final SettingNumber scale;
@@ -90,13 +90,13 @@ public final class BlockNametag extends AxiomMod implements ColorConfigurable, K
     // --------------------------- Tick ------------------------------
     @Override
     protected void onTick() {
-        if (!isEnabled() || mc.world == null || mc.player == null) {
+        if (!isEnabled() || mc.level == null || mc.player == null) {
             currentBlockPos = null;
             currentBlockName = null;
             return;
         }
 
-        HitResult hit = mc.crosshairTarget;
+        HitResult hit = mc.hitResult;
         if (!(hit instanceof BlockHitResult blockHit)) {
             currentBlockPos = null;
             currentBlockName = null;
@@ -104,14 +104,14 @@ public final class BlockNametag extends AxiomMod implements ColorConfigurable, K
         }
 
         BlockPos pos = blockHit.getBlockPos();
-        double dist = mc.player.getEyePos().distanceTo(Vec3d.ofCenter(pos));
+        double dist = mc.player.getEyePosition().distanceTo(Vec3.atCenterOf(pos));
         if (dist > renderDistance.getValue()) {
             currentBlockPos = null;
             currentBlockName = null;
             return;
         }
 
-        BlockState state = mc.world.getBlockState(pos);
+        BlockState state = mc.level.getBlockState(pos);
         if (state.isAir()) {
             currentBlockPos = null;
             currentBlockName = null;
@@ -119,7 +119,7 @@ public final class BlockNametag extends AxiomMod implements ColorConfigurable, K
         }
 
         currentBlockPos = pos;
-        currentBlockName = Text.translatable(state.getBlock().getTranslationKey()).getString();
+        currentBlockName = Component.translatable(state.getBlock().getDescriptionId()).getString();
     }
 
     // --------------------------- 3D -> 2D conversion -----------------------
@@ -212,8 +212,8 @@ public final class BlockNametag extends AxiomMod implements ColorConfigurable, K
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("blocknametag_color", "BlockNametag Color Customizer", sw, sh, content);
     }

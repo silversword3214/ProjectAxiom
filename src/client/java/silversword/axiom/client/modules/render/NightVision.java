@@ -1,8 +1,8 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -27,19 +27,19 @@ public class NightVision extends AxiomMod implements KeybindConfigurable {
     public void onTick() {
         if (!isEnabled()) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
         // Night Vision kestoksi pitkä aika (100000 ticks)
-        mc.player.addStatusEffect(new StatusEffectInstance(StatusEffects.NIGHT_VISION, 100000, 0, false, false, false));
+        mc.player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 100000, 0, false, false, false));
     }
 
     @Override
     protected void onDisable() {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
         // Poista Night Vision kun moduuli pois päältä
-        mc.player.removeStatusEffect(StatusEffects.NIGHT_VISION);
+        mc.player.removeEffect(MobEffects.NIGHT_VISION);
     }
 }

@@ -1,8 +1,8 @@
 package silversword.axiom.client.render.rendersystem;
 
 import com.mojang.blaze3d.textures.GpuTextureView;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.GpuSampler;
+import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.textures.GpuSampler;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.misc.PreInit;
 import silversword.axiom.client.render.rendersystem.utils.texture.TextureRegion;
@@ -61,13 +61,13 @@ public class Renderer2D {
         if (triangles.isBuilding()) triangles.end();
 
         BufferRenderer.begin()
-                .attachments(MinecraftClient.getInstance().getFramebuffer())
+                .attachments(Minecraft.getInstance().getMainRenderTarget())
                 .pipeline(CustomRenderingPipelineProvider.UI_COLORED_LINES)
                 .mesh(lines)
                 .end();
 
         BufferRenderer.begin()
-                .attachments(MinecraftClient.getInstance().getFramebuffer())
+                .attachments(Minecraft.getInstance().getMainRenderTarget())
                 .pipeline(textured ? CustomRenderingPipelineProvider.UI_TEXTURED : CustomRenderingPipelineProvider.UI_COLORED)
                 .mesh(triangles)
                 .sampler(samplerName, samplerView, sampler)

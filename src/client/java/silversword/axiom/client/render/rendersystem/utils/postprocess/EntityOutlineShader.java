@@ -1,6 +1,6 @@
 package silversword.axiom.client.render.rendersystem.utils.postprocess;
 
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.render.ShaderESP;
 

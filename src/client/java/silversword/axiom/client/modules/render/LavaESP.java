@@ -1,12 +1,12 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunk;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
@@ -22,7 +22,7 @@ import silversword.axiom.client.setting.SettingSlider;
 import java.util.*;
 
 public final class LavaESP extends AxiomMod implements KeybindConfigurable {
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     private final SettingSlider renderDistance;
     private final SettingSlider minPoolSize;
@@ -60,35 +60,35 @@ public final class LavaESP extends AxiomMod implements KeybindConfigurable {
     @AxiomEvent
     private void onRender(Render3DEvent event) {
         if (!isEnabled()) return;
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
         double maxDistSq = renderDistance.getValue() * renderDistance.getValue();
-        Vec3d playerPos = mc.player.getEntityPos();
+        Vec3 playerPos = mc.player.position();
 
         int chunkRadius = (int) Math.ceil(renderDistance.getValue() / 16.0) + 1;
-        int playerChunkX = mc.player.getChunkPos().x;
-        int playerChunkZ = mc.player.getChunkPos().z;
-        int bottomY = mc.world.getBottomY();
-        int topY = mc.world.getTopYInclusive();
+        int playerChunkX = mc.player.chunkPosition().x;
+        int playerChunkZ = mc.player.chunkPosition().z;
+        int bottomY = mc.level.getMinY();
+        int topY = mc.level.getMaxY();
 
         Set<BlockPos> lavaBlocks = new HashSet<>();
-        BlockPos.Mutable pos = new BlockPos.Mutable();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
         // Kerätään kaikki laavalohkot renderDistance-säteellä
         for (int cx = playerChunkX - chunkRadius; cx <= playerChunkX + chunkRadius; cx++) {
             for (int cz = playerChunkZ - chunkRadius; cz <= playerChunkZ + chunkRadius; cz++) {
-                Chunk chunk = mc.world.getChunk(cx, cz);
-                if (!(chunk instanceof WorldChunk worldChunk) || worldChunk.isEmpty()) continue;
+                ChunkAccess chunk = mc.level.getChunk(cx, cz);
+                if (!(chunk instanceof LevelChunk worldChunk) || worldChunk.isEmpty()) continue;
 
                 for (int dx = 0; dx < 16; dx++) {
                     for (int dz = 0; dz < 16; dz++) {
                         for (int y = bottomY; y < topY; y++) {
                             pos.set(cx * 16 + dx, y, cz * 16 + dz);
-                            if (pos.getSquaredDistance(playerPos) > maxDistSq) continue;
+                            if (pos.distToCenterSqr(playerPos) > maxDistSq) continue;
 
                             Block block = worldChunk.getBlockState(pos).getBlock();
                             if (isLava(block)) {
-                                lavaBlocks.add(pos.toImmutable());
+                                lavaBlocks.add(pos.immutable());
                             }
                         }
                     }
@@ -128,7 +128,7 @@ public final class LavaESP extends AxiomMod implements KeybindConfigurable {
                             if (dx == 0 && dy == 0 && dz == 0) continue;
                             if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) != 1) continue;
 
-                            BlockPos neighbor = current.add(dx, dy, dz);
+                            BlockPos neighbor = current.offset(dx, dy, dz);
                             if (lavaBlocks.contains(neighbor) && !visited.contains(neighbor)) {
                                 queue.add(neighbor);
                             }

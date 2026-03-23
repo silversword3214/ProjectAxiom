@@ -1,7 +1,7 @@
 package silversword.axiom.mixin.client;
 
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.util.BufferAllocator;
+import net.minecraft.client.renderer.MultiBufferSource;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -14,7 +14,7 @@ import java.util.SequencedMap;
  * sietävän null-parametreja. Näin voimme kutsua super(null, null)
  * WrapperImmediateVertexConsumerProvider-luokassa.
  */
-@Mixin(VertexConsumerProvider.Immediate.class)
+@Mixin(MultiBufferSource.BufferSource.class)
 public class VertexConsumerProviderImmediateMixin {
 
     /**
@@ -22,7 +22,7 @@ public class VertexConsumerProviderImmediateMixin {
      * oletusarvoilla.
      */
     @Inject(method = "<init>", at = @At("RETURN"))
-    private void onInit(BufferAllocator allocator, SequencedMap layerBuffers, CallbackInfo ci) {
+    private void onInit(ByteBufferBuilder allocator, SequencedMap layerBuffers, CallbackInfo ci) {
         // Tämä on tyhjä, koska itse konstruktoria ei voi muuttaa suoraan,
         // mutta tämä injectio varmistaa että konstruktori kutsutaan aina,
         // vaikka parametrit olisivat null.

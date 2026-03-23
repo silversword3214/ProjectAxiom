@@ -1,10 +1,10 @@
 package silversword.axiom.client.modules.combat;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import org.joml.Matrix4f;
 import silversword.axiom.client.event.render.Render2DEvent;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
@@ -87,10 +87,10 @@ public class ReachCheck extends AxiomMod implements ColorConfigurable, KeybindCo
     @AxiomEvent
     public void onRender2D(Render2DEvent event) {
         if (!isEnabled()) return;
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         int centerX = sw / 2;
         int centerY = sh / 2;
 
@@ -102,7 +102,7 @@ public class ReachCheck extends AxiomMod implements ColorConfigurable, KeybindCo
 
         boolean inReach = false;
 
-        HitResult hit = mc.crosshairTarget;
+        HitResult hit = mc.hitResult;
         if (hit instanceof EntityHitResult entityHit) {
             Entity target = entityHit.getEntity();
             if (isValidTarget(target)) {
@@ -114,7 +114,7 @@ public class ReachCheck extends AxiomMod implements ColorConfigurable, KeybindCo
         }
 
         if (inReach && requireCooldown.get()) {
-            float cooldown = mc.player.getAttackCooldownProgress(0.5f);
+            float cooldown = mc.player.getAttackStrengthScale(0.5f);
             if (cooldown < 0.99f) {
                 inReach = false;
             }
@@ -152,8 +152,8 @@ public class ReachCheck extends AxiomMod implements ColorConfigurable, KeybindCo
         if (!(entity instanceof LivingEntity)) return false;
 
         String mode = targetMode.getMode();
-        if (mode.equals("Players")) return entity instanceof PlayerEntity;
-        if (mode.equals("Mobs")) return !(entity instanceof PlayerEntity);
+        if (mode.equals("Players")) return entity instanceof Player;
+        if (mode.equals("Mobs")) return !(entity instanceof Player);
         return true;
     }
 
@@ -166,8 +166,8 @@ public class ReachCheck extends AxiomMod implements ColorConfigurable, KeybindCo
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("reachcheck_colors", "ReachCheck Colors", sw, sh, content);
     }

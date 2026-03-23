@@ -1,6 +1,6 @@
 package silversword.axiom.client.render.rendersystem.utils.color;
 
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
 import silversword.axiom.client.setting.Setting;
 
 import java.util.List;
@@ -123,15 +123,15 @@ public class SettingColor extends Color {
     }
 
     @Override
-    public NbtCompound toTag() {
-        NbtCompound tag = super.toTag();
+    public CompoundTag toTag() {
+        CompoundTag tag = super.toTag();
         tag.putBoolean("rainbow", rainbow);
         tag.putFloat("speed", speed);
         return tag;
     }
 
     @Override
-    public Color fromTag(NbtCompound tag) {
+    public Color fromTag(CompoundTag tag) {
         super.fromTag(tag);
         this.rainbow = tag.getBoolean("rainbow").orElse(false);
         this.speed = tag.getFloat("speed").orElse(1.0f);

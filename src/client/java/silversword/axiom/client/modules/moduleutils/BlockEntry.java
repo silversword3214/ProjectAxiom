@@ -1,8 +1,8 @@
 package silversword.axiom.client.modules.moduleutils;
 
-import net.minecraft.block.Block;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.item.ItemStack;
 import silversword.axiom.client.gui.components.HsvColorPicker;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.core.Rect;
@@ -58,9 +58,9 @@ public class BlockEntry implements UiComponent {
         }
         ui.fill(bounds, bg);
 
-        ItemStack stack = block.asItem().getDefaultStack();
+        ItemStack stack = block.asItem().getDefaultInstance();
         if (!stack.isEmpty()) {
-            ui.draw.drawItem(stack, bounds.x + 2, bounds.y + 2);
+            ui.draw.renderItem(stack, bounds.x + 2, bounds.y + 2);
         }
 
         String name = block.getName().getString();
@@ -119,9 +119,9 @@ public class BlockEntry implements UiComponent {
             colorModule.setBlockColor(block, current);
         });
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        Minecraft mc = Minecraft.getInstance();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         factory.openCustomWindow("block_color_picker", "Choose Color for " + block.getName().getString(), sw, sh, picker);
     }
 

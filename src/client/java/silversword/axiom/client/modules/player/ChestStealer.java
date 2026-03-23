@@ -1,10 +1,10 @@
 package silversword.axiom.client.modules.player;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.screen.GenericContainerScreenHandler;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.ShulkerBoxScreenHandler;
-import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ShulkerBoxMenu;
+import net.minecraft.world.inventory.ClickType;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.main.AxiomMod;
@@ -15,7 +15,7 @@ import silversword.axiom.client.setting.SettingBoolean;
 public final class ChestStealer extends AxiomMod implements KeybindConfigurable {
     public static ChestStealer INSTANCE;
 
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
     private final SettingNumber delay; // ms
@@ -43,19 +43,19 @@ public final class ChestStealer extends AxiomMod implements KeybindConfigurable 
         return toggleKey;
     }
 
-    public void stealAll(ScreenHandler handler) {
+    public void stealAll(AbstractContainerMenu handler) {
         if (!isEnabled()) return;
         int containerSize = 0;
-        if (handler instanceof GenericContainerScreenHandler) {
-            containerSize = ((GenericContainerScreenHandler) handler).getRows() * 9;
-        } else if (handler instanceof ShulkerBoxScreenHandler) {
+        if (handler instanceof ChestMenu) {
+            containerSize = ((ChestMenu) handler).getRowCount() * 9;
+        } else if (handler instanceof ShulkerBoxMenu) {
             containerSize = 27; // Shulker on aina 3x9
         } else {
             return;
         }
         for (int i = 0; i < containerSize; i++) {
-            if (!handler.getSlot(i).getStack().isEmpty()) {
-                mc.interactionManager.clickSlot(handler.syncId, i, 0, SlotActionType.QUICK_MOVE, mc.player);
+            if (!handler.getSlot(i).getItem().isEmpty()) {
+                mc.gameMode.handleInventoryMouseClick(handler.containerId, i, 0, ClickType.QUICK_MOVE, mc.player);
             }
         }
     }

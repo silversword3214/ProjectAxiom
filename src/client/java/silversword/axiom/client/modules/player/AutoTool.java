@@ -1,11 +1,11 @@
 package silversword.axiom.client.modules.player;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.tag.ItemTags;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -13,7 +13,7 @@ import silversword.axiom.client.setting.SettingKeybind;
 
 public class AutoTool extends AxiomMod implements KeybindConfigurable {
 
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
     private BlockPos lastBlockPos = null;
 
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
@@ -30,10 +30,10 @@ public class AutoTool extends AxiomMod implements KeybindConfigurable {
 
     @Override
     public void onTick() {
-        if (!isEnabled() || mc.player == null || mc.crosshairTarget == null) return;
+        if (!isEnabled() || mc.player == null || mc.hitResult == null) return;
 
         // Varmistetaan, että kohde on block
-        if (!(mc.crosshairTarget instanceof BlockHitResult blockHit)) return;
+        if (!(mc.hitResult instanceof BlockHitResult blockHit)) return;
 
         BlockPos blockPos = blockHit.getBlockPos();
 
@@ -45,20 +45,20 @@ public class AutoTool extends AxiomMod implements KeybindConfigurable {
     }
 
     private void switchToOptimalTool(BlockPos blockPos) {
-        BlockState blockState = mc.world.getBlockState(blockPos);
+        BlockState blockState = mc.level.getBlockState(blockPos);
 
         int bestSlot = -1;
         float bestSpeed = -1;
 
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (stack.isEmpty()) continue;
 
             // Laskee kuinka nopea työkalu on louhimiseen
-            float speed = stack.getMiningSpeedMultiplier(blockState);
+            float speed = stack.getDestroySpeed(blockState);
 
             // Tarkista onko työkalu sopiva tälle lohkolle
-            if (!stack.isSuitableFor(blockState)) {
+            if (!stack.isCorrectToolForDrops(blockState)) {
                 speed = -1;
             }
 
@@ -75,9 +75,9 @@ public class AutoTool extends AxiomMod implements KeybindConfigurable {
     }
 
     public static boolean isTool(ItemStack itemStack) {
-        return itemStack.isIn(ItemTags.AXES) ||
-                itemStack.isIn(ItemTags.HOES) ||
-                itemStack.isIn(ItemTags.PICKAXES) ||
-                itemStack.isIn(ItemTags.SHOVELS);
+        return itemStack.is(ItemTags.AXES) ||
+                itemStack.is(ItemTags.HOES) ||
+                itemStack.is(ItemTags.PICKAXES) ||
+                itemStack.is(ItemTags.SHOVELS);
     }
 }

@@ -1,6 +1,6 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.window.WindowFactory;
@@ -220,8 +220,8 @@ public class ShaderESP extends AxiomMod implements ColorConfigurable, KeybindCon
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("shaderesp_color", "ShaderESP Color Customizer", sw, sh, content);
     }

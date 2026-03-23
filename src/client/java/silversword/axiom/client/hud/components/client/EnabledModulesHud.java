@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.DeltaTracker;
 import silversword.axiom.client.gui.core.ThemeManager;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
@@ -61,7 +61,7 @@ public final class EnabledModulesHud extends BaseHudElement {
     }
 
     @Override
-    public int width(MinecraftClient mc) {
+    public int width(Minecraft mc) {
         List<String> list = enabledNames();
         if (list.isEmpty()) return 0;
         float scale = (float) textScale.getValue();
@@ -76,7 +76,7 @@ public final class EnabledModulesHud extends BaseHudElement {
     }
 
     @Override
-    public int height(MinecraftClient mc) {
+    public int height(Minecraft mc) {
         int count = enabledNames().size();
         if (count == 0) return 0;
         float scale = (float) textScale.getValue();
@@ -85,7 +85,7 @@ public final class EnabledModulesHud extends BaseHudElement {
     }
 
     @Override
-    public void render(HudContext ctx, RenderTickCounter tickCounter) {
+    public void render(HudContext ctx, DeltaTracker tickCounter) {
         List<String> list = enabledNames();
         if (list.isEmpty()) return;
 
@@ -97,7 +97,7 @@ public final class EnabledModulesHud extends BaseHudElement {
         int radiusScaled = (int) (CORNER_RADIUS * scale);
         int itemHeight = (int) ((FONT_HEIGHT + 2 * PADDING) * scale);
 
-        boolean barOnLeft = x < ctx.mc.getWindow().getScaledWidth() / 2;
+        boolean barOnLeft = x < ctx.mc.getWindow().getGuiScaledWidth() / 2;
 
         int maxLen = 0;
         for (String s : list) {
@@ -115,7 +115,7 @@ public final class EnabledModulesHud extends BaseHudElement {
         // Laske elementin kokonaisleveys (sama kuin width() palauttaa)
         int elementWidth = barWidthScaled + maxBoxWidth;
 
-        int screenWidth = ctx.mc.getWindow().getScaledWidth();
+        int screenWidth = ctx.mc.getWindow().getGuiScaledWidth();
         int renderX = x; // alkuperäinen x, jota käytetään piirrossa
 
         // Jos elementti menee oikealta yli, siirrä vasemmalle

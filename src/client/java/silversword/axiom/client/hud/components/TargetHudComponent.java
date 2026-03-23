@@ -1,11 +1,11 @@
 package silversword.axiom.client.hud.components;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.render.rendersystem.Renderer2D;
@@ -63,13 +63,13 @@ public final class TargetHudComponent extends BaseHudElement {
     public void setTextColor(int v) { textColor = v; }
 
     @Override public boolean isModuleControlled() { return true; }
-    @Override public int width(MinecraftClient mc) { return Math.max(1, lastW); }
-    @Override public int height(MinecraftClient mc) { return Math.max(1, lastH); }
+    @Override public int width(Minecraft mc) { return Math.max(1, lastW); }
+    @Override public int height(Minecraft mc) { return Math.max(1, lastH); }
 
     @Override
-    public void render(HudContext ctx, RenderTickCounter tickCounter) {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.player == null || mc.world == null) return;
+    public void render(HudContext ctx, DeltaTracker tickCounter) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return;
 
         long now = System.currentTimeMillis();
         LivingEntity aimed = currentAimedLiving(mc);
@@ -101,11 +101,11 @@ public final class TargetHudComponent extends BaseHudElement {
 
     @Override
     public void renderEdit(HudContext ctx) {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) drawHud(ctx, mc, mc.player, 1.0f);
     }
 
-    private void drawHud(HudContext ctx, MinecraftClient mc, LivingEntity target, float alphaMul) {
+    private void drawHud(HudContext ctx, Minecraft mc, LivingEntity target, float alphaMul) {
         String name = target.getName().getString();
         float hp = target.getHealth();
         float maxHp = Math.max(1, target.getMaxHealth());
@@ -180,15 +180,15 @@ public final class TargetHudComponent extends BaseHudElement {
         }
     }
 
-    private static LivingEntity currentAimedLiving(MinecraftClient mc) {
-        HitResult hit = mc.crosshairTarget;
+    private static LivingEntity currentAimedLiving(Minecraft mc) {
+        HitResult hit = mc.hitResult;
         if (hit instanceof EntityHitResult ehr && ehr.getEntity() instanceof LivingEntity le) return le;
         return null;
     }
 
-    private LivingEntity getLockedLiving(MinecraftClient mc) {
+    private LivingEntity getLockedLiving(Minecraft mc) {
         if (lockedId < 0) return null;
-        Entity e = mc.world.getEntityById(lockedId);
+        Entity e = mc.level.getEntity(lockedId);
         return (e instanceof LivingEntity le) ? le : null;
     }
 

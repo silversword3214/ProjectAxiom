@@ -1,10 +1,10 @@
 package silversword.axiom.client.modules.combat;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.inventory.ClickType;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -50,19 +50,19 @@ public class AutoTotem extends AxiomMod implements KeybindConfigurable {
     public void onTick() {
         if (!isEnabled()) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc == null || mc.player == null || mc.interactionManager == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.player == null || mc.gameMode == null) return;
 
-        if (stopInInventory.get() && mc.currentScreen != null) return;
+        if (stopInInventory.get() && mc.screen != null) return;
 
         if (cooldown > 0) {
             cooldown--;
             return;
         }
 
-        PlayerEntity player = mc.player;
+        Player player = mc.player;
 
-        if (player.getOffHandStack().getItem() == Items.TOTEM_OF_UNDYING) return;
+        if (player.getOffhandItem().getItem() == Items.TOTEM_OF_UNDYING) return;
 
         float hp = player.getHealth();
         if (countAbsorption.get()) hp += player.getAbsorptionAmount();
@@ -75,18 +75,18 @@ public class AutoTotem extends AxiomMod implements KeybindConfigurable {
         int totemSlotId = invIndexToPlayerScreenSlotId(invIndex);
         int offhandSlotId = 45;
 
-        int syncId = player.playerScreenHandler.syncId;
+        int syncId = player.inventoryMenu.containerId;
 
-        mc.interactionManager.clickSlot(syncId, totemSlotId, 0, SlotActionType.PICKUP, player);
-        mc.interactionManager.clickSlot(syncId, offhandSlotId, 0, SlotActionType.PICKUP, player);
-        mc.interactionManager.clickSlot(syncId, totemSlotId, 0, SlotActionType.PICKUP, player);
+        mc.gameMode.handleInventoryMouseClick(syncId, totemSlotId, 0, ClickType.PICKUP, player);
+        mc.gameMode.handleInventoryMouseClick(syncId, offhandSlotId, 0, ClickType.PICKUP, player);
+        mc.gameMode.handleInventoryMouseClick(syncId, totemSlotId, 0, ClickType.PICKUP, player);
 
         cooldown = (int) cooldownTicks.getValue();
     }
 
-    private int findTotemInInventory(PlayerEntity player) {
+    private int findTotemInInventory(Player player) {
         for (int i = 0; i < 36; i++) {
-            ItemStack s = player.getInventory().getStack(i);
+            ItemStack s = player.getInventory().getItem(i);
             if (!s.isEmpty() && s.getItem() == Items.TOTEM_OF_UNDYING) return i;
         }
         return -1;

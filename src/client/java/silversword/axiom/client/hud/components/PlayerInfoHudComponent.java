@@ -1,15 +1,15 @@
 package silversword.axiom.client.hud.components;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.render.rendersystem.Renderer2D;
@@ -87,15 +87,15 @@ public final class PlayerInfoHudComponent extends BaseHudElement {
     public void setTextColor(int c) { textColor = c; }
 
     @Override public boolean isModuleControlled() { return true; }
-    @Override public int width(MinecraftClient mc) { return Math.max(1, lastW); }
-    @Override public int height(MinecraftClient mc) { return Math.max(1, lastH); }
+    @Override public int width(Minecraft mc) { return Math.max(1, lastW); }
+    @Override public int height(Minecraft mc) { return Math.max(1, lastH); }
 
     @Override
-    public void render(HudContext ctx, RenderTickCounter tickCounter) {
+    public void render(HudContext ctx, DeltaTracker tickCounter) {
         if (!enabled) return;
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.player == null || mc.world == null) return;
-        PlayerEntity target = resolveTarget(mc);
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return;
+        Player target = resolveTarget(mc);
         if (target == null) return;
         if (maxRange > 0 && mc.player.distanceTo(target) > maxRange) {
             if (isTargetMode()) lockedId = -1;
@@ -106,14 +106,14 @@ public final class PlayerInfoHudComponent extends BaseHudElement {
 
     @Override
     public void renderEdit(HudContext ctx) {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) drawHud(ctx, mc, mc.player, 1.0f);
     }
 
     // ---------- piirto ----------
-    private void drawHud(HudContext ctx, MinecraftClient mc, PlayerEntity p, float alphaMul) {
+    private void drawHud(HudContext ctx, Minecraft mc, Player p, float alphaMul) {
         if (isTargetMode()) {
-            PlayerEntity aimed = currentAimedPlayer(mc);
+            Player aimed = currentAimedPlayer(mc);
             if (aimed == null && fadeOut && fadeMs > 0 && lingerMs > 0) {
                 long now = System.currentTimeMillis();
                 long elapsed = now - lastSeenAtMs;
@@ -153,7 +153,7 @@ public final class PlayerInfoHudComponent extends BaseHudElement {
         String pingText = (ping >= 0) ? ("Ping: " + ping + " ms") : "Ping: ?";
 
         // Kerätään efektit
-        List<StatusEffectInstance> effects = null;
+        List<MobEffectInstance> effects = null;
         boolean showEffectsRow = !compact && showEffects;
         if (showEffectsRow) {
             effects = collectEffects(p, maxEffects);
@@ -238,7 +238,7 @@ public final class PlayerInfoHudComponent extends BaseHudElement {
         if (showEffectsRow && effects != null) {
             int ix = tx;
             int iy = ty + 2;
-            for (StatusEffectInstance inst : effects) {
+            for (MobEffectInstance inst : effects) {
                 ctx.drawVanillaEffectIcon(inst, ix, iy, slotSize, alphaMul);
                 int seconds = inst.getDuration() / 20;
                 String t = Integer.toString(seconds);
@@ -256,19 +256,19 @@ public final class PlayerInfoHudComponent extends BaseHudElement {
             int ix = tx;
             int iy = ty + 2;
             if (showArmor) {
-                ix = drawArmorSlot(ctx, p.getEquippedStack(EquipmentSlot.HEAD), ix, iy, alphaMul, slotSize);
+                ix = drawArmorSlot(ctx, p.getItemBySlot(EquipmentSlot.HEAD), ix, iy, alphaMul, slotSize);
                 ix += armorGap;
-                ix = drawArmorSlot(ctx, p.getEquippedStack(EquipmentSlot.CHEST), ix, iy, alphaMul, slotSize);
+                ix = drawArmorSlot(ctx, p.getItemBySlot(EquipmentSlot.CHEST), ix, iy, alphaMul, slotSize);
                 ix += armorGap;
-                ix = drawArmorSlot(ctx, p.getEquippedStack(EquipmentSlot.LEGS), ix, iy, alphaMul, slotSize);
+                ix = drawArmorSlot(ctx, p.getItemBySlot(EquipmentSlot.LEGS), ix, iy, alphaMul, slotSize);
                 ix += armorGap;
-                ix = drawArmorSlot(ctx, p.getEquippedStack(EquipmentSlot.FEET), ix, iy, alphaMul, slotSize);
+                ix = drawArmorSlot(ctx, p.getItemBySlot(EquipmentSlot.FEET), ix, iy, alphaMul, slotSize);
                 ix += groupGap;
             }
             if (showHands) {
-                drawStack(ctx, p.getMainHandStack(), ix, iy, slotSize);
+                drawStack(ctx, p.getMainHandItem(), ix, iy, slotSize);
                 ix += slotSize + handsGap;
-                drawStack(ctx, p.getOffHandStack(), ix, iy, slotSize);
+                drawStack(ctx, p.getOffhandItem(), ix, iy, slotSize);
             }
         }
     }
@@ -276,7 +276,7 @@ public final class PlayerInfoHudComponent extends BaseHudElement {
     private int drawArmorSlot(HudContext ctx, ItemStack stack, int x, int y, float alphaMul, int slotSize) {
         if (stack.isEmpty()) return x + slotSize;
         ctx.drawItem(stack, x, y); // vanilla item
-        if (showDurability && stack.isDamageable()) {
+        if (showDurability && stack.isDamageableItem()) {
             int pct = durabilityPct(stack);
             int color = getDurabilityColor(pct);
             color = applyAlpha(color, alphaMul);
@@ -296,17 +296,17 @@ public final class PlayerInfoHudComponent extends BaseHudElement {
     }
 
     // ---------- apumetodit (ennallaan) ----------
-    private static int getPing(MinecraftClient mc, PlayerEntity p) {
-        if (mc.getNetworkHandler() == null) return -1;
-        PlayerListEntry e = mc.getNetworkHandler().getPlayerListEntry(p.getUuid());
+    private static int getPing(Minecraft mc, Player p) {
+        if (mc.getConnection() == null) return -1;
+        PlayerInfo e = mc.getConnection().getPlayerInfo(p.getUUID());
         return (e != null) ? e.getLatency() : -1;
     }
 
     private int durabilityPct(ItemStack stack) {
-        if (stack.isEmpty() || !stack.isDamageable()) return 0;
+        if (stack.isEmpty() || !stack.isDamageableItem()) return 0;
         int max = stack.getMaxDamage();
         if (max <= 0) return 0;
-        int left = max - stack.getDamage();
+        int left = max - stack.getDamageValue();
         return (int) Math.round(left * 100.0 / max);
     }
 
@@ -316,39 +316,39 @@ public final class PlayerInfoHudComponent extends BaseHudElement {
         return 0xFF55FF55;
     }
 
-    private List<StatusEffectInstance> collectEffects(PlayerEntity p, int max) {
-        List<StatusEffectInstance> list = new ArrayList<>();
-        for (StatusEffectInstance inst : p.getStatusEffects()) {
-            if (inst != null && inst.getDuration() > 0 && inst.shouldShowIcon()) {
+    private List<MobEffectInstance> collectEffects(Player p, int max) {
+        List<MobEffectInstance> list = new ArrayList<>();
+        for (MobEffectInstance inst : p.getActiveEffects()) {
+            if (inst != null && inst.getDuration() > 0 && inst.showIcon()) {
                 list.add(inst);
             }
         }
-        list.sort(Comparator.comparingInt(StatusEffectInstance::getDuration).reversed()
-                .thenComparingInt(StatusEffectInstance::getAmplifier).reversed());
+        list.sort(Comparator.comparingInt(MobEffectInstance::getDuration).reversed()
+                .thenComparingInt(MobEffectInstance::getAmplifier).reversed());
         return list.size() > max ? list.subList(0, max) : list;
     }
 
-    private static PlayerEntity currentAimedPlayer(MinecraftClient mc) {
-        HitResult hit = mc.crosshairTarget;
-        if (hit instanceof EntityHitResult ehr && ehr.getEntity() instanceof PlayerEntity p) return p;
+    private static Player currentAimedPlayer(Minecraft mc) {
+        HitResult hit = mc.hitResult;
+        if (hit instanceof EntityHitResult ehr && ehr.getEntity() instanceof Player p) return p;
         return null;
     }
 
-    private PlayerEntity getLockedPlayer(MinecraftClient mc) {
+    private Player getLockedPlayer(Minecraft mc) {
         if (lockedId < 0) return null;
-        Entity e = mc.world.getEntityById(lockedId);
-        return (e instanceof PlayerEntity p) ? p : null;
+        Entity e = mc.level.getEntity(lockedId);
+        return (e instanceof Player p) ? p : null;
     }
 
-    private PlayerEntity resolveTarget(MinecraftClient mc) {
+    private Player resolveTarget(Minecraft mc) {
         if (!isTargetMode()) return mc.player;
         long now = System.currentTimeMillis();
-        PlayerEntity aimed = currentAimedPlayer(mc);
+        Player aimed = currentAimedPlayer(mc);
         if (aimed != null && aimed.isAlive()) {
             lockedId = aimed.getId();
             lastSeenAtMs = now;
         }
-        PlayerEntity locked = getLockedPlayer(mc);
+        Player locked = getLockedPlayer(mc);
         if (locked == null || !locked.isAlive()) {
             lockedId = -1;
             return null;

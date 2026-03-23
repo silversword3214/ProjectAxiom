@@ -1,9 +1,9 @@
 package silversword.axiom.client.modules.moduleutils.SmartKillAura;
 
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 public class RotationManager {
 
@@ -15,13 +15,13 @@ public class RotationManager {
         }
     }
 
-    public Rotation calculateRotation(PlayerEntity player, LivingEntity target, boolean predict) {
-        Vec3d targetPos = target.getEntityPos();
+    public Rotation calculateRotation(Player player, LivingEntity target, boolean predict) {
+        Vec3 targetPos = target.position();
         if (predict) {
-            targetPos = targetPos.add(target.getVelocity());
+            targetPos = targetPos.add(target.getDeltaMovement());
         }
 
-        Vec3d vec = targetPos.add(0, target.getHeight() / 2, 0).subtract(player.getEyePos());
+        Vec3 vec = targetPos.add(0, target.getBbHeight() / 2, 0).subtract(player.getEyePosition());
         double diffX = vec.x;
         double diffY = vec.y;
         double diffZ = vec.z;
@@ -33,16 +33,16 @@ public class RotationManager {
         return new Rotation(yaw, pitch);
     }
 
-    public void rotateSmoothly(PlayerEntity player, Rotation target, float maxTurnSpeed, float jitter) {
-        float currentYaw = player.getYaw();
-        float currentPitch = player.getPitch();
+    public void rotateSmoothly(Player player, Rotation target, float maxTurnSpeed, float jitter) {
+        float currentYaw = player.getYRot();
+        float currentPitch = player.getXRot();
 
-        float yawDiff = MathHelper.wrapDegrees(target.yaw - currentYaw);
+        float yawDiff = Mth.wrapDegrees(target.yaw - currentYaw);
         float pitchDiff = target.pitch - currentPitch;
 
         // Rajoitetaan kääntymisnopeutta
-        float yawChange = MathHelper.clamp(yawDiff, -maxTurnSpeed, maxTurnSpeed);
-        float pitchChange = MathHelper.clamp(pitchDiff, -maxTurnSpeed, maxTurnSpeed);
+        float yawChange = Mth.clamp(yawDiff, -maxTurnSpeed, maxTurnSpeed);
+        float pitchChange = Mth.clamp(pitchDiff, -maxTurnSpeed, maxTurnSpeed);
 
         float newYaw = currentYaw + yawChange;
         float newPitch = currentPitch + pitchChange;
@@ -54,11 +54,11 @@ public class RotationManager {
         }
 
         // Normalisoidaan
-        newYaw = MathHelper.wrapDegrees(newYaw);
-        newPitch = MathHelper.clamp(newPitch, -90f, 90f);
+        newYaw = Mth.wrapDegrees(newYaw);
+        newPitch = Mth.clamp(newPitch, -90f, 90f);
 
-        player.setYaw(newYaw);
-        player.setPitch(newPitch);
+        player.setYRot(newYaw);
+        player.setXRot(newPitch);
     }
 
     public void reset() {

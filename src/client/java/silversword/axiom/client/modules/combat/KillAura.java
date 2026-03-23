@@ -1,11 +1,11 @@
 package silversword.axiom.client.modules.combat;
 
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.ClipContext;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
@@ -118,11 +118,11 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onTick() {
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
         LivingEntity target = targetManager.selectTarget(
                 mc.player,
-                mc.world,
+                mc.level,
                 priorityMode.getMode(),
                 ignoreBots.get(),
                 targetMode.getMode()
@@ -143,8 +143,8 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
             double pitch = getPitchToTarget(target);
 
             // Asetetaan pää kääntymään (vain client-puoli, ei vaikuta serveriin)
-            mc.player.setHeadYaw((float) yaw);
-            mc.player.lastHeadYaw = (float) yaw;
+            mc.player.setYHeadRot((float) yaw);
+            mc.player.yHeadRotO = (float) yaw;
 
             // Lähetetään rotaatiopaketit VAIN jos hyökätään
             if (attackController.canAttack(mc.player, minCps.getValue(), maxCps.getValue())) {
@@ -162,8 +162,8 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
 
         // Hyökkäys (tapahtuu vain kun cooldown sallii)
         if (attackController.canAttack(mc.player, minCps.getValue(), maxCps.getValue())) {
-            mc.interactionManager.attackEntity(mc.player, target);
-            mc.player.swingHand(mc.player.getActiveHand());
+            mc.gameMode.attack(mc.player, target);
+            mc.player.swing(mc.player.getUsedItemHand());
             attackController.recordAttack();
         }
     }
@@ -177,17 +177,17 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
 
     private double getPitchToTarget(LivingEntity target) {
         double diffX = target.getX() - mc.player.getX();
-        double diffY = target.getY() + target.getHeight() / 2 - (mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()));
+        double diffY = target.getY() + target.getBbHeight() / 2 - (mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()));
         double diffZ = target.getZ() - mc.player.getZ();
         double distance = Math.sqrt(diffX * diffX + diffZ * diffZ);
         return -Math.toDegrees(Math.atan2(diffY, distance));
     }
 
     private boolean isTargetVisible(LivingEntity target) {
-        Vec3d start = mc.player.getEyePos();
-        Vec3d end = target.getBoundingBox().getCenter();
-        HitResult result = mc.world.raycast(new RaycastContext(
-                start, end, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, mc.player
+        Vec3 start = mc.player.getEyePosition();
+        Vec3 end = target.getBoundingBox().getCenter();
+        HitResult result = mc.level.clip(new ClipContext(
+                start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mc.player
         ));
         if (result.getType() == HitResult.Type.MISS) return true;
         if (result instanceof EntityHitResult entityHit) {
@@ -201,7 +201,7 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
         if (!isEnabled() || currentTarget == null || !renderTargetBox.get()) return;
 
         Renderer3D renderer = event.render;
-        Box box = currentTarget.getBoundingBox();
+        AABB box = currentTarget.getBoundingBox();
         Color color = boxColor.getCurrentColor().copy().a(255);
         renderer.boxOutline(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, color, 0);
     }

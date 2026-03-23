@@ -1,19 +1,19 @@
 package silversword.axiom.client.modules.player;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.client.render.Camera;
-import net.minecraft.item.BlockItem;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.RaycastContext;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.Camera;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.level.ClipContext;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -43,70 +43,70 @@ public class ClickTP extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onTick() {
-        if (mc.player == null || mc.world == null) return;
-        if (!mc.options.useKey.isPressed()) return;
+        if (mc.player == null || mc.level == null) return;
+        if (!mc.options.keyUse.isDown()) return;
 
         // Jos osoitetaan entityyn ja interaktio onnistuu, älä teleporttaa
-        if (mc.crosshairTarget != null) {
-            if (mc.crosshairTarget.getType() == HitResult.Type.ENTITY &&
-                    mc.player.interact(((EntityHitResult) mc.crosshairTarget).getEntity(), Hand.MAIN_HAND) != ActionResult.PASS) {
+        if (mc.hitResult != null) {
+            if (mc.hitResult.getType() == HitResult.Type.ENTITY &&
+                    mc.player.interactOn(((EntityHitResult) mc.hitResult).getEntity(), InteractionHand.MAIN_HAND) != InteractionResult.PASS) {
                 return;
             }
             // Jos osoitetaan blockiin ja kädessä on BlockItem, älä teleporttaa (anna sijoittaa blocki)
-            if (mc.crosshairTarget.getType() == HitResult.Type.BLOCK &&
-                    mc.player.getMainHandStack().getItem() instanceof BlockItem) {
+            if (mc.hitResult.getType() == HitResult.Type.BLOCK &&
+                    mc.player.getMainHandItem().getItem() instanceof BlockItem) {
                 return;
             }
         }
 
         // Kamera ja raycast
-        Camera camera = mc.gameRenderer.getCamera();
-        Vec3d cameraPos = camera.getCameraPos();
+        Camera camera = mc.gameRenderer.getMainCamera();
+        Vec3 cameraPos = camera.position();
 
         // Lasketaan katsesuunta ja kerrotaan 210:llä (max kantama)
-        Vec3d direction = Vec3d.fromPolar(camera.getPitch(), camera.getYaw()).multiply(210);
-        Vec3d targetPos = cameraPos.add(direction);
+        Vec3 direction = Vec3.directionFromRotation(camera.xRot(), camera.yRot()).scale(210);
+        Vec3 targetPos = cameraPos.add(direction);
 
-        RaycastContext context = new RaycastContext(
+        ClipContext context = new ClipContext(
                 cameraPos,
                 targetPos,
-                RaycastContext.ShapeType.OUTLINE,
-                RaycastContext.FluidHandling.NONE,
+                ClipContext.Block.OUTLINE,
+                ClipContext.Fluid.NONE,
                 mc.player
         );
 
-        BlockHitResult hitResult = mc.world.raycast(context);
+        BlockHitResult hitResult = mc.level.clip(context);
 
         if (hitResult.getType() == HitResult.Type.BLOCK) {
             BlockPos pos = hitResult.getBlockPos();
-            Direction side = hitResult.getSide();
+            Direction side = hitResult.getDirection();
 
-            if (mc.world.getBlockState(pos).onUse(mc.world, mc.player, hitResult) != ActionResult.PASS) return;
+            if (mc.level.getBlockState(pos).useWithoutItem(mc.level, mc.player, hitResult) != InteractionResult.PASS) return;
 
-            BlockState state = mc.world.getBlockState(pos);
-            VoxelShape shape = state.getCollisionShape(mc.world, pos);
-            if (shape.isEmpty()) shape = state.getOutlineShape(mc.world, pos);
+            BlockState state = mc.level.getBlockState(pos);
+            VoxelShape shape = state.getCollisionShape(mc.level, pos);
+            if (shape.isEmpty()) shape = state.getShape(mc.level, pos);
 
-            double height = shape.isEmpty() ? 1 : shape.getMax(Direction.Axis.Y);
+            double height = shape.isEmpty() ? 1 : shape.max(Direction.Axis.Y);
 
-            Vec3d newPos = new Vec3d(
-                    pos.getX() + 0.5 + side.getOffsetX(),
+            Vec3 newPos = new Vec3(
+                    pos.getX() + 0.5 + side.getStepX(),
                     pos.getY() + height,
-                    pos.getZ() + 0.5 + side.getOffsetZ()
+                    pos.getZ() + 0.5 + side.getStepZ()
             );
 
 
-            double distance = mc.player.getEntityPos().distanceTo(newPos);
+            double distance = mc.player.position().distanceTo(newPos);
             int packetsRequired = (int) Math.ceil(distance / 10) - 1;
             if (packetsRequired > 19) packetsRequired = 0;
 
             for (int i = 0; i < packetsRequired; i++) {
-                mc.player.networkHandler.sendPacket(new PlayerMoveC2SPacket.OnGroundOnly(true, true));
+                mc.player.connection.send(new ServerboundMovePlayerPacket.StatusOnly(true, true));
             }
 
             // Lähetetään varsinainen liikepaketti
-            mc.player.networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(newPos.x, newPos.y, newPos.z, true, true));
-            mc.player.setPosition(newPos);
+            mc.player.connection.send(new ServerboundMovePlayerPacket.Pos(newPos.x, newPos.y, newPos.z, true, true));
+            mc.player.setPos(newPos);
         }
     }
 }

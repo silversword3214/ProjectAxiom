@@ -1,7 +1,7 @@
 package silversword.axiom.client.render.rendersystem.utils.texture;
 
 import com.mojang.blaze3d.textures.FilterMode;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

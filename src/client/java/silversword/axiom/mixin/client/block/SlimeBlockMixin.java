@@ -1,11 +1,11 @@
 package silversword.axiom.mixin.client.block;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.SlimeBlock;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.SlimeBlock;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,24 +16,24 @@ import silversword.axiom.client.modules.movement.NoSlow;
 @Mixin(SlimeBlock.class)
 public class SlimeBlockMixin {
 
-    @Inject(method = "onSteppedOn", at = @At("HEAD"), cancellable = true)
-    private void onSteppedOn(World world, BlockPos pos, BlockState state, Entity entity, CallbackInfo ci) {
+    @Inject(method = "stepOn", at = @At("HEAD"), cancellable = true)
+    private void onSteppedOn(Level world, BlockPos pos, BlockState state, Entity entity, CallbackInfo ci) {
         NoSlow noSlow = ModuleManager.getInstance().getModule(NoSlow.class);
         if (noSlow != null && noSlow.isEnabled() && noSlow.noSlimeBlockSlow.get()) {
             ci.cancel(); // Estetään hidastus
         }
     }
 
-    @Inject(method = "onEntityLand", at = @At("HEAD"), cancellable = true)
-    private void onEntityLand(BlockView world, Entity entity, CallbackInfo ci) {
+    @Inject(method = "updateEntityMovementAfterFallOn", at = @At("HEAD"), cancellable = true)
+    private void onEntityLand(BlockGetter world, Entity entity, CallbackInfo ci) {
         NoSlow noSlow = ModuleManager.getInstance().getModule(NoSlow.class);
         if (noSlow != null && noSlow.isEnabled() && noSlow.noSlimeBlockSlow.get()) {
             ci.cancel(); // Estetään pomppiminen
         }
     }
 
-    @Inject(method = "onLandedUpon", at = @At("HEAD"), cancellable = true)
-    private void onLandedUpon(World world, BlockState state, BlockPos pos, Entity entity, double fallDistance, CallbackInfo ci) {
+    @Inject(method = "fallOn", at = @At("HEAD"), cancellable = true)
+    private void onLandedUpon(Level world, BlockState state, BlockPos pos, Entity entity, double fallDistance, CallbackInfo ci) {
         NoSlow noSlow = ModuleManager.getInstance().getModule(NoSlow.class);
         if (noSlow != null && noSlow.isEnabled() && noSlow.noSlimeBlockSlow.get()) {
             ci.cancel();

@@ -6,11 +6,11 @@ import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.UniformType;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.shaders.UniformType;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.resources.Identifier;
 import org.apache.commons.io.IOUtils;
 import silversword.axiom.ProjectAxiom;
 
@@ -49,7 +49,7 @@ public abstract class CustomRenderingPipelineProvider {
         // Initialize builders in the same order as the fields above
         BUILDERS.add(new PipelineBuilder(MESH_UNIFORMS)
                 .withLocation(ProjectAxiom.identifier("pipeline/world_colored"))
-                .withVertexFormat(VertexFormats.POSITION_COLOR, VertexFormat.DrawMode.TRIANGLES)
+                .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES)
                 .withVertexShader(ProjectAxiom.identifier("shaders/pos_color.vert"))
                 .withFragmentShader(ProjectAxiom.identifier("shaders/pos_color.frag"))
                 .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
@@ -60,7 +60,7 @@ public abstract class CustomRenderingPipelineProvider {
         BUILDERS.add(new PipelineBuilder(MESH_UNIFORMS)
                 .withLineSmooth()
                 .withLocation(ProjectAxiom.identifier("pipeline/world_colored_lines"))
-                .withVertexFormat(VertexFormats.POSITION_COLOR, VertexFormat.DrawMode.DEBUG_LINES)
+                .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.DEBUG_LINES)
                 .withVertexShader(ProjectAxiom.identifier("shaders/pos_color.vert"))
                 .withFragmentShader(ProjectAxiom.identifier("shaders/pos_color.frag"))
                 .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
@@ -70,7 +70,7 @@ public abstract class CustomRenderingPipelineProvider {
 
         BUILDERS.add(new PipelineBuilder(MESH_UNIFORMS)
                 .withLocation(ProjectAxiom.identifier("pipeline/world_colored_depth"))
-                .withVertexFormat(VertexFormats.POSITION_COLOR, VertexFormat.DrawMode.TRIANGLES)
+                .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES)
                 .withVertexShader(ProjectAxiom.identifier("shaders/pos_color.vert"))
                 .withFragmentShader(ProjectAxiom.identifier("shaders/pos_color.frag"))
                 .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
@@ -81,7 +81,7 @@ public abstract class CustomRenderingPipelineProvider {
         BUILDERS.add(new PipelineBuilder(MESH_UNIFORMS)
                 .withLineSmooth()
                 .withLocation(ProjectAxiom.identifier("pipeline/world_colored_lines_depth"))
-                .withVertexFormat(VertexFormats.POSITION_COLOR, VertexFormat.DrawMode.DEBUG_LINES)
+                .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.DEBUG_LINES)
                 .withVertexShader(ProjectAxiom.identifier("shaders/pos_color.vert"))
                 .withFragmentShader(ProjectAxiom.identifier("shaders/pos_color.frag"))
                 .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
@@ -91,7 +91,7 @@ public abstract class CustomRenderingPipelineProvider {
 
         BUILDERS.add(new PipelineBuilder(MESH_UNIFORMS)
                 .withLocation(ProjectAxiom.identifier("pipeline/ui_colored"))
-                .withVertexFormat(CustomVertexFormats.POS2_COLOR, VertexFormat.DrawMode.TRIANGLES)
+                .withVertexFormat(CustomVertexFormats.POS2_COLOR, VertexFormat.Mode.TRIANGLES)
                 .withVertexShader(ProjectAxiom.identifier("shaders/pos_color_2d.vert"))
                 .withFragmentShader(ProjectAxiom.identifier("shaders/pos_color.frag"))
                 .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
@@ -101,7 +101,7 @@ public abstract class CustomRenderingPipelineProvider {
 
         BUILDERS.add(new PipelineBuilder(MESH_UNIFORMS)
                 .withLocation(ProjectAxiom.identifier("pipeline/ui_colored_lines"))
-                .withVertexFormat(CustomVertexFormats.POS2_COLOR, VertexFormat.DrawMode.DEBUG_LINES)
+                .withVertexFormat(CustomVertexFormats.POS2_COLOR, VertexFormat.Mode.DEBUG_LINES)
                 .withVertexShader(ProjectAxiom.identifier("shaders/pos_color.vert"))
                 .withFragmentShader(ProjectAxiom.identifier("shaders/pos_color.frag"))
                 .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
@@ -111,7 +111,7 @@ public abstract class CustomRenderingPipelineProvider {
 
         BUILDERS.add(new PipelineBuilder(MESH_UNIFORMS)
                 .withLocation(ProjectAxiom.identifier("pipeline/ui_textured"))
-                .withVertexFormat(CustomVertexFormats.POS2_UV_COLOR, VertexFormat.DrawMode.TRIANGLES)
+                .withVertexFormat(CustomVertexFormats.POS2_UV_COLOR, VertexFormat.Mode.TRIANGLES)
                 .withVertexShader(ProjectAxiom.identifier("shaders/pos_tex_color.vert"))
                 .withFragmentShader(ProjectAxiom.identifier("shaders/pos_tex_color.frag"))
                 .withSampler("u_Texture")
@@ -122,7 +122,7 @@ public abstract class CustomRenderingPipelineProvider {
 
         BUILDERS.add(new PipelineBuilder(MESH_UNIFORMS)
                 .withLocation(ProjectAxiom.identifier("pipeline/ui_text"))
-                .withVertexFormat(CustomVertexFormats.POS2_UV_COLOR, VertexFormat.DrawMode.TRIANGLES)
+                .withVertexFormat(CustomVertexFormats.POS2_UV_COLOR, VertexFormat.Mode.TRIANGLES)
                 .withVertexShader(ProjectAxiom.identifier("shaders/text.vert"))
                 .withFragmentShader(ProjectAxiom.identifier("shaders/text.frag"))
                 .withSampler("u_Texture")
@@ -133,7 +133,7 @@ public abstract class CustomRenderingPipelineProvider {
 
         BUILDERS.add(new PipelineBuilder()
                 .withLocation(ProjectAxiom.identifier("pipeline/post/outline"))
-                .withVertexFormat(CustomVertexFormats.POS2, VertexFormat.DrawMode.TRIANGLES)
+                .withVertexFormat(CustomVertexFormats.POS2, VertexFormat.Mode.TRIANGLES)
                 .withVertexShader(ProjectAxiom.identifier("shaders/post-process/base.vert"))
                 .withFragmentShader(ProjectAxiom.identifier("shaders/post-process/outline.frag"))
                 .withSampler("u_Texture")
@@ -146,7 +146,7 @@ public abstract class CustomRenderingPipelineProvider {
 
         BUILDERS.add(new PipelineBuilder()
                 .withLocation(ProjectAxiom.identifier("pipeline/post/chams"))
-                .withVertexFormat(CustomVertexFormats.POS2, VertexFormat.DrawMode.TRIANGLES)
+                .withVertexFormat(CustomVertexFormats.POS2, VertexFormat.Mode.TRIANGLES)
                 .withVertexShader(ProjectAxiom.identifier("shaders/post-process/base.vert"))
                 .withFragmentShader(ProjectAxiom.identifier("shaders/post-process/image.frag"))
                 .withSampler("u_Texture")
@@ -164,7 +164,7 @@ public abstract class CustomRenderingPipelineProvider {
 
     public static void rebuildAll() {
         GpuDevice device = RenderSystem.getDevice();
-        ResourceManager resources = MinecraftClient.getInstance().getResourceManager();
+        ResourceManager resources = Minecraft.getInstance().getResourceManager();
 
         // Build each pipeline and assign to the corresponding field
         int index = 0;
@@ -184,7 +184,7 @@ public abstract class CustomRenderingPipelineProvider {
                 }
                 var resource = optional.get();
 
-                try (InputStream in = resource.getInputStream()) {
+                try (InputStream in = resource.open()) {
                     String source = IOUtils.toString(in, StandardCharsets.UTF_8);
                     SHADER_SOURCE_CACHE.put(identifier, source);
                     return source;
@@ -215,7 +215,7 @@ public abstract class CustomRenderingPipelineProvider {
     // Optional: keep a precompile method that just forces compilation of current pipelines
     public static void precompile() {
         GpuDevice device = RenderSystem.getDevice();
-        ResourceManager resources = MinecraftClient.getInstance().getResourceManager();
+        ResourceManager resources = Minecraft.getInstance().getResourceManager();
 
         RenderPipeline[] pipelines = {
                 WORLD_COLORED, WORLD_COLORED_LINES, WORLD_COLORED_DEPTH, WORLD_COLORED_LINES_DEPTH,
@@ -228,7 +228,7 @@ public abstract class CustomRenderingPipelineProvider {
                 String cached = SHADER_SOURCE_CACHE.get(identifier);
                 if (cached != null) return cached;
                 var resource = resources.getResource(identifier).get();
-                try (InputStream in = resource.getInputStream()) {
+                try (InputStream in = resource.open()) {
                     String source = IOUtils.toString(in, StandardCharsets.UTF_8);
                     SHADER_SOURCE_CACHE.put(identifier, source);
                     return source;

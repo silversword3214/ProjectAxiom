@@ -1,8 +1,8 @@
 package silversword.axiom.client.hud.components.render;
 
-import net.minecraft.client.render.Camera;
-import net.minecraft.entity.Entity;
-import net.minecraft.world.World;
+import net.minecraft.client.Camera;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
 
 import java.lang.reflect.Field;
 
@@ -24,16 +24,16 @@ public class PlayerCamera extends Camera {
         }
     }
 
-    public void setPos(double x, double y, double z) {
-        super.setPos(x, y, z);
+    public void setPosition(double x, double y, double z) {
+        super.setPosition(x, y, z);
     }
 
     public void setRotation(float yaw, float pitch) {
         super.setRotation(yaw, pitch);
     }
 
-    public void moveBy(float surge, float heave, float sway) {
-        super.moveBy(surge, heave, sway);
+    public void move(float surge, float heave, float sway) {
+        super.move(surge, heave, sway);
     }
 
     public void setFocusedEntity(Entity entity) {
@@ -44,7 +44,7 @@ public class PlayerCamera extends Camera {
         }
     }
 
-    public void setArea(World world) {
+    public void setArea(Level world) {
         try {
             AREA_FIELD.set(this, world);
         } catch (IllegalAccessException e) {

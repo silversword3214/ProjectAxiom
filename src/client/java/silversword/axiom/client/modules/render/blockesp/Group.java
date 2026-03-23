@@ -1,6 +1,6 @@
 package silversword.axiom.client.modules.render.blockesp;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 import silversword.axiom.client.render.rendersystem.Renderer3D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
@@ -9,10 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Group {
-    public final net.minecraft.block.Block block;
+    public final net.minecraft.world.level.block.Block block;
     private final List<Block> blocks = new ArrayList<>();
 
-    public Group(net.minecraft.block.Block block) {
+    public Group(net.minecraft.world.level.block.Block block) {
         this.block = block;
     }
 

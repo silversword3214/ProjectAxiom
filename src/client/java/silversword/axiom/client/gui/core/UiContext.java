@@ -1,19 +1,19 @@
 package silversword.axiom.client.gui.core;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import silversword.axiom.client.render.rendersystem.Renderer2D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.font.TextRenderer;
 
 public class UiContext {
-    public final MinecraftClient mc;
-    public final DrawContext draw;
+    public final Minecraft mc;
+    public final GuiGraphics draw;
     public final Theme theme;
     public final float delta;
     private final TextRenderer uiText;
 
-    public UiContext(MinecraftClient mc, DrawContext draw, Theme theme, float delta) {
+    public UiContext(Minecraft mc, GuiGraphics draw, Theme theme, float delta) {
         this.mc = mc;
         this.draw = draw;
         this.theme = theme;

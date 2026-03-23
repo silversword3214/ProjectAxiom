@@ -3,9 +3,9 @@ package silversword.axiom.client.hud;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.texture.SpriteAtlasTexture;
-import net.minecraft.client.render.TexturedRenderLayers;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.renderer.Sheets;
 import silversword.axiom.client.render.font.TextRenderer;
 import silversword.axiom.client.render.rendersystem.Renderer2D;
 
@@ -24,11 +24,11 @@ public final class HudText {
         if (!drawing) throw new IllegalStateException("HudText.end() without begin()");
         Renderer2D.COLOR.render();
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        SpriteAtlasTexture guiAtlas = (SpriteAtlasTexture) mc.getTextureManager()
-                .getTexture(TexturedRenderLayers.GUI_ATLAS_TEXTURE);
+        Minecraft mc = Minecraft.getInstance();
+        TextureAtlas guiAtlas = (TextureAtlas) mc.getTextureManager()
+                .getTexture(Sheets.GUI_SHEET);
         if (guiAtlas != null) {
-            GpuTexture texture = guiAtlas.getGlTexture();
+            GpuTexture texture = guiAtlas.getTexture();
             GpuTextureView view = RenderSystem.getDevice().createTextureView(texture);
             Renderer2D.TEXTURE.render(view, guiAtlas.getSampler());
         } else {

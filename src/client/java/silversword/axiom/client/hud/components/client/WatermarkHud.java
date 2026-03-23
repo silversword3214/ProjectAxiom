@@ -1,8 +1,8 @@
 package silversword.axiom.client.hud.components.client;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.resources.Identifier;
 import silversword.axiom.ProjectAxiom;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
@@ -16,7 +16,7 @@ import silversword.axiom.client.render.rendersystem.utils.texture.TextureManager
 import silversword.axiom.client.setting.SettingNumber;
 
 public final class WatermarkHud extends BaseHudElement {
-    private static final Identifier LOGO_ID = Identifier.of("projectaxiom", "textures/logo.png");
+    private static final Identifier LOGO_ID = Identifier.fromNamespaceAndPath("projectaxiom", "textures/logo.png");
     private static final String VERSION_TEXT = "v" + ProjectAxiom.VERSION;
 
     private final SettingNumber logoScale;
@@ -50,7 +50,7 @@ public final class WatermarkHud extends BaseHudElement {
     }
 
     @Override
-    public int width(MinecraftClient mc) {
+    public int width(Minecraft mc) {
         Texture tex = TextureManager.getTexture(LOGO_ID);
         if (tex == null) return 0;
 
@@ -66,7 +66,7 @@ public final class WatermarkHud extends BaseHudElement {
     }
 
     @Override
-    public int height(MinecraftClient mc) {
+    public int height(Minecraft mc) {
         Texture tex = TextureManager.getTexture(LOGO_ID);
         if (tex == null) return 0;
 
@@ -80,7 +80,7 @@ public final class WatermarkHud extends BaseHudElement {
     }
 
     @Override
-    public void render(HudContext ctx, RenderTickCounter tickCounter) {
+    public void render(HudContext ctx, DeltaTracker tickCounter) {
         Texture tex = TextureManager.getTexture(LOGO_ID);
         if (tex == null) {
             System.out.println("Texture is null");

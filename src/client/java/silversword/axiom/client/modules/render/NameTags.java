@@ -1,20 +1,20 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.decoration.ItemFrameEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.TntEntity;
-import net.minecraft.entity.vehicle.TntMinecartEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.GameMode;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.decoration.ItemFrame;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.item.PrimedTnt;
+import net.minecraft.world.entity.vehicle.minecart.MinecartTNT;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.GameType;
 import org.joml.Vector3d;
 import silversword.axiom.client.event.render.Render2DEvent;
 import silversword.axiom.client.event.render.Render3DEvent;
@@ -42,7 +42,7 @@ import silversword.axiom.client.utils.render.TextUtils;
 import java.util.*;
 
 public final class NameTags extends AxiomMod implements ColorConfigurable, KeybindConfigurable {
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     // --- Settings -------------------------------------------------
     private final SettingNumber scale;
@@ -93,7 +93,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
     );
 
     // Heart icon
-    private static final Identifier HEART_TEXTURE = Identifier.of("projectaxiom", "textures/icons/heart.png");
+    private static final Identifier HEART_TEXTURE = Identifier.fromNamespaceAndPath("projectaxiom", "textures/icons/heart.png");
 
     // Armor slots in order
     private static final EquipmentSlot[] ARMOR_SLOTS = {
@@ -173,7 +173,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
     // --------------------------- Tick & Filter ------------------------------
     @Override
     protected void onTick() {
-        if (!isEnabled() || mc.world == null) {
+        if (!isEnabled() || mc.level == null) {
             entityList.clear();
             return;
         }
@@ -181,15 +181,15 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         entityList.clear();
 
         double maxDistSq = renderDistance.getValue() * renderDistance.getValue();
-        Vec3d cameraPos = mc.gameRenderer.getCamera().getCameraPos();
+        Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
 
-        for (Entity entity : mc.world.getEntities()) {
+        for (Entity entity : mc.level.entitiesForRendering()) {
             if (entity == mc.player && ignoreSelf.get()) continue;
             if (!entity.isAlive()) continue;
 
             if (!shouldDrawEntity(entity)) continue;
 
-            double distSq = entity.squaredDistanceTo(cameraPos);
+            double distSq = entity.distanceToSqr(cameraPos);
             if (distSq > maxDistSq) continue;
 
             if (!culling.get() || distSq <= maxCullRange.getValue() * maxCullRange.getValue()) {
@@ -197,7 +197,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
             }
         }
 
-        entityList.sort(Comparator.comparingDouble(e -> -e.squaredDistanceTo(cameraPos)));
+        entityList.sort(Comparator.comparingDouble(e -> -e.distanceToSqr(cameraPos)));
     }
 
     private boolean shouldDrawEntity(Entity entity) {
@@ -236,35 +236,35 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
 
         boolean shadow = false;
         int count = getRenderCount();
-        Vec3d cameraPos = mc.gameRenderer.getCamera().getCameraPos();
+        Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
 
         for (int i = count - 1; i >= 0; i--) {
             Entity entity = entityList.get(i);
 
-            double x = MathHelper.lerp(event.tickDelta, entity.lastRenderX, entity.getX());
-            double y = MathHelper.lerp(event.tickDelta, entity.lastRenderY, entity.getY());
-            double z = MathHelper.lerp(event.tickDelta, entity.lastRenderZ, entity.getZ());
+            double x = Mth.lerp(event.tickDelta, entity.xOld, entity.getX());
+            double y = Mth.lerp(event.tickDelta, entity.yOld, entity.getY());
+            double z = Mth.lerp(event.tickDelta, entity.zOld, entity.getZ());
             pos.set(x, y + getHeight(entity) + nameOffset.getValue(), z);
 
             if (!NametagUtils.worldToScreen(pos, scale.getValue())) continue;
 
-            double dist = Math.sqrt(entity.squaredDistanceTo(cameraPos));
-            double distanceScale = MathHelper.clamp(1.0 - dist * 0.005, 0.8, 3.0);
+            double dist = Math.sqrt(entity.distanceToSqr(cameraPos));
+            double distanceScale = Mth.clamp(1.0 - dist * 0.005, 0.8, 3.0);
             double finalScale = scale.getValue() * distanceScale;
             NametagUtils.scale = finalScale;
 
             NametagUtils.begin(pos, event.drawContext);
 
-            if (entity instanceof PlayerEntity) {
-                renderPlayerNametag(event, (PlayerEntity) entity, shadow);
+            if (entity instanceof Player) {
+                renderPlayerNametag(event, (Player) entity, shadow);
             } else if (entity instanceof ItemEntity) {
-                renderItemNametag(event, ((ItemEntity) entity).getStack(), shadow);
-            } else if (entity instanceof ItemFrameEntity) {
-                renderItemNametag(event, ((ItemFrameEntity) entity).getHeldItemStack(), shadow);
-            } else if (entity instanceof TntEntity) {
-                renderTntNametag(event, ((TntEntity) entity).getFuse(), shadow);
-            } else if (entity instanceof TntMinecartEntity && ((TntMinecartEntity) entity).isPrimed()) {
-                renderTntNametag(event, ((TntMinecartEntity) entity).getFuseTicks(), shadow);
+                renderItemNametag(event, ((ItemEntity) entity).getItem(), shadow);
+            } else if (entity instanceof ItemFrame) {
+                renderItemNametag(event, ((ItemFrame) entity).getItem(), shadow);
+            } else if (entity instanceof PrimedTnt) {
+                renderTntNametag(event, ((PrimedTnt) entity).getFuse(), shadow);
+            } else if (entity instanceof MinecartTNT && ((MinecartTNT) entity).isPrimed()) {
+                renderTntNametag(event, ((MinecartTNT) entity).getFuse(), shadow);
             } else if (entity instanceof LivingEntity) {
                 renderLivingNametag(event, (LivingEntity) entity, shadow);
             } else {
@@ -292,7 +292,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
     }
 
     // --------------------------- Player nametag with health (top) ----------
-    private void renderPlayerNametag(Render2DEvent event, PlayerEntity player, boolean shadow) {
+    private void renderPlayerNametag(Render2DEvent event, Player player, boolean shadow) {
         TextRenderer text = TextRenderer.get();
 
         // ---- Line 0: Health (heart + number) ----
@@ -314,7 +314,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         // ---- Line 1: Name with extras ----
         StringBuilder nameBuilder = new StringBuilder();
         if (showGamemode.get()) {
-            GameMode gm = getGameMode(player);
+            GameType gm = getGameMode(player);
             String gmText = (gm == null) ? "BOT" : switch (gm) {
                 case SPECTATOR -> "Sp";
                 case SURVIVAL -> "S";
@@ -341,7 +341,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         List<ItemStack> armorStacks = new ArrayList<>();
         if (showArmor.get()) {
             for (EquipmentSlot slot : ARMOR_SLOTS) {
-                ItemStack stack = player.getEquippedStack(slot);
+                ItemStack stack = player.getItemBySlot(slot);
                 if (!stack.isEmpty()) armorStacks.add(stack);
             }
         }
@@ -417,12 +417,12 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
                 double iconX = startX + i * (iconSize + gapBetween);
 
                 // Draw item icon
-                event.drawContext.drawItem(stack, (int) iconX, (int) armorY);
+                event.drawContext.renderItem(stack, (int) iconX, (int) armorY);
 
                 // Draw durability bar below icon
-                if (stack.isDamageable()) {
+                if (stack.isDamageableItem()) {
                     int maxDurability = stack.getMaxDamage();
-                    int currentDurability = maxDurability - stack.getDamage();
+                    int currentDurability = maxDurability - stack.getDamageValue();
                     float percent = (float) currentDurability / maxDurability;
 
                     Color barColor;
@@ -452,7 +452,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         }
     }
 
-    private Color getHealthColor(PlayerEntity player) {
+    private Color getHealthColor(Player player) {
         float health = player.getHealth();
         float maxHealth = player.getMaxHealth();
         float percent = health / maxHealth;
@@ -466,7 +466,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         if (stack.isEmpty()) return;
 
         TextRenderer text = TextRenderer.get();
-        String name = stack.getName().getString();
+        String name = stack.getHoverName().getString();
         String count = " x" + stack.getCount();
 
         double nameWidth = name.length() * TextUtils.CHAR_UNIT;
@@ -490,7 +490,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
 
     private void renderLivingNametag(Render2DEvent event, LivingEntity entity, boolean shadow) {
         TextRenderer text = TextRenderer.get();
-        String name = entity.getType().getName().getString();
+        String name = entity.getType().getDescription().getString();
         float health = entity.getHealth();
         String healthText = " " + Math.round(health);
 
@@ -521,7 +521,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
 
     private void renderGenericNametag(Render2DEvent event, Entity entity, boolean shadow) {
         TextRenderer text = TextRenderer.get();
-        String name = entity.getType().getName().getString();
+        String name = entity.getType().getDescription().getString();
 
         double textWidth = name.length() * TextUtils.CHAR_UNIT;
         double textHeight = TextUtils.FONT_HEIGHT;
@@ -594,10 +594,10 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
     }
 
     // Placeholder methods – replace with your actual implementations
-    private GameMode getGameMode(PlayerEntity player) { return null; }
-    private int getPing(PlayerEntity player) { return 0; }
+    private GameType getGameMode(Player player) { return null; }
+    private int getPing(Player player) { return 0; }
     private double distanceToCamera(Entity entity) {
-        return mc.gameRenderer.getCamera().getCameraPos().distanceTo(entity.getEntityPos());
+        return mc.gameRenderer.getMainCamera().position().distanceTo(entity.position());
     }
 
     // --------------------------- Color Config ------------------------------
@@ -613,8 +613,8 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("nametags_color", "NameTags Color Customizer", sw, sh, content);
     }

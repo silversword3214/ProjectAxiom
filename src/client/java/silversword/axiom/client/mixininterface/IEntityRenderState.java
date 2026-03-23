@@ -1,6 +1,6 @@
 package silversword.axiom.client.mixininterface;
 
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
 
 public interface IEntityRenderState {
     Entity axiom$getEntity();

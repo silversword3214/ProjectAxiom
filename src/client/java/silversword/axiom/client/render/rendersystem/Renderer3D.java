@@ -1,10 +1,9 @@
-
 package silversword.axiom.client.render.rendersystem;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.vertex.PoseStack;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
 import silversword.axiom.client.render.rendersystem.world.Dir;
@@ -27,7 +26,7 @@ public class Renderer3D {
         triangles.begin();
     }
 
-    public void render(MatrixStack matrices) {
+    public void render(PoseStack matrices) {
         // Asetetaan view-matriisi modelview-stäkkiin
         RenderSystem.getModelViewStack().pushMatrix();
         RenderSystem.getModelViewStack().identity();
@@ -35,7 +34,7 @@ public class Renderer3D {
 
         if (lines.getIndicesCount() > 0) {
             BufferRenderer.begin()
-                    .attachments(MinecraftClient.getInstance().getFramebuffer())
+                    .attachments(Minecraft.getInstance().getMainRenderTarget())
                     .pipeline(linesPipeline)
                     .mesh(lines)
                     .end();
@@ -43,7 +42,7 @@ public class Renderer3D {
 
         if (triangles.getIndicesCount() > 0) {
             BufferRenderer.begin()
-                    .attachments(MinecraftClient.getInstance().getFramebuffer())
+                    .attachments(Minecraft.getInstance().getMainRenderTarget())
                     .pipeline(trianglesPipeline)
                     .mesh(triangles)
                     .end();

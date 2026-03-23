@@ -1,7 +1,7 @@
 package silversword.axiom.client.gui.components;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
 
@@ -45,12 +45,12 @@ public final class CategoryTabs implements UiComponent {
         if (usable <= 0) return 1;
 
         // Käytetään vanilla tekstin leveyttä? Tässä lasketaan vain rivien määrää, joten vanilla riittää
-        TextRenderer tr = MinecraftClient.getInstance().textRenderer;
+        Font tr = Minecraft.getInstance().font;
         int x = 0;
         int rows = 1;
 
         for (String t : tabs) {
-            int w = Math.max(30, tr.getWidth(t) + 10);
+            int w = Math.max(30, tr.width(t) + 10);
             if (x > 0 && x + w > usable) {
                 rows++;
                 x = 0;

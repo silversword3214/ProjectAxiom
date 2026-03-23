@@ -1,7 +1,7 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
 import silversword.axiom.client.event.render.Render2DEvent;
 import silversword.axiom.client.event.render.Render3DEvent;
@@ -25,7 +25,7 @@ import silversword.axiom.client.setting.SettingNumber;
 import silversword.axiom.client.utils.render.TextUtils;
 
 public final class WaypointModule extends AxiomMod {
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     // Global settings that affect rendering
     public final SettingBoolean showWaypoints = new SettingBoolean("Show Waypoints", true);
@@ -56,8 +56,8 @@ public final class WaypointModule extends AxiomMod {
 
     // Called when the gear button in ModuleRow is clicked
     public void openManager() {
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
         // Avataan leveämpi ikkuna (600x400)
@@ -81,14 +81,14 @@ public final class WaypointModule extends AxiomMod {
     @AxiomEvent
     private void onRender2D(Render2DEvent event) {
         if (event.drawContext == null) return;
-        if (!isEnabled() || !showWaypoints.get() || mc.world == null || mc.player == null) return;
+        if (!isEnabled() || !showWaypoints.get() || mc.level == null || mc.player == null) return;
 
         double maxDist = maxRenderDistance.getValue();
         boolean showDist = showDistance.get();
 
         for (Waypoint wp : WaypointManager.getInstance().getAll()) {
             if (!wp.enabled) continue;
-            double dist = mc.player.getEntityPos().distanceTo(new Vec3d(wp.x, wp.y, wp.z));
+            double dist = mc.player.position().distanceTo(new Vec3(wp.x, wp.y, wp.z));
             if (dist > maxDist) continue;
 
             pos.set(wp.x, wp.y + 0.5, wp.z);
@@ -182,8 +182,8 @@ public final class WaypointModule extends AxiomMod {
 
     private void renderEdgeIndicator(Waypoint wp, double dist, boolean showDist, float scale) {
         // Compute direction from player to waypoint
-        Vec3d player = mc.player.getEntityPos();
-        Vec3d to = new Vec3d(wp.x, wp.y, wp.z).subtract(player).normalize();
+        Vec3 player = mc.player.position();
+        Vec3 to = new Vec3(wp.x, wp.y, wp.z).subtract(player).normalize();
         // Project onto screen edges? This is more complex. For simplicity, we can just not render edge indicators for now.
         // You can implement a screen edge arrow later.
     }

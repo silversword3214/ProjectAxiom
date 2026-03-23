@@ -1,6 +1,6 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.Mth;
 import silversword.axiom.client.event.GetFovEvent;
 import silversword.axiom.client.event.MouseScrollEvent;
 import silversword.axiom.client.event.render.Render3DEvent;
@@ -57,27 +57,27 @@ public class Zoom extends AxiomMod implements KeybindConfigurable {
             return;
         }
 
-        preCinematic = mc.options.smoothCameraEnabled;
-        preMouseSensitivity = mc.options.getMouseSensitivity().getValue();
+        preCinematic = mc.options.smoothCamera;
+        preMouseSensitivity = mc.options.sensitivity().get();
         targetZoom = zoom.getValue();
         currentZoom = 1.0; // start from 1x zoom
-        lastFov = mc.options.getFov().getValue();
+        lastFov = mc.options.fov().get();
 
         if (hideHud.get()) {
-            mc.options.hudHidden = true;
+            mc.options.hideGui = true;
         }
     }
 
     @Override
     protected void onDisable() {
-        mc.options.smoothCameraEnabled = preCinematic;
-        mc.options.getMouseSensitivity().setValue(preMouseSensitivity);
+        mc.options.smoothCamera = preCinematic;
+        mc.options.sensitivity().set(preMouseSensitivity);
         if (hideHud.get()) {
-            mc.options.hudHidden = false;
+            mc.options.hideGui = false;
         }
         // Force terrain update to reset FOV
-        if (mc.worldRenderer != null) {
-            mc.worldRenderer.scheduleTerrainUpdate();
+        if (mc.levelRenderer != null) {
+            mc.levelRenderer.needsUpdate();
         }
     }
 
@@ -86,12 +86,12 @@ public class Zoom extends AxiomMod implements KeybindConfigurable {
         if (mc.player == null) return;
 
         // Cinematic mode
-        mc.options.smoothCameraEnabled = cinematic.get();
+        mc.options.smoothCamera = cinematic.get();
 
         // Adjust mouse sensitivity when not cinematic
         if (!cinematic.get()) {
             double scaling = getCurrentScaling();
-            mc.options.getMouseSensitivity().setValue(preMouseSensitivity / Math.max(scaling * 0.5, 1));
+            mc.options.sensitivity().set(preMouseSensitivity / Math.max(scaling * 0.5, 1));
         }
     }
 
@@ -116,11 +116,11 @@ public class Zoom extends AxiomMod implements KeybindConfigurable {
         if (!isEnabled()) return;
         if (scrollSensitivity.getValue() <= 0) return;
         // Älä zoomaa jos ruudulla on jokin näyttö (menu, ClickGUI)
-        if (mc.currentScreen != null) return;
+        if (mc.screen != null) return;
 
         double delta = event.value * 0.25 * scrollSensitivity.getValue() * targetZoom;
         targetZoom += delta;
-        targetZoom = MathHelper.clamp(targetZoom, 1, 50);
+        targetZoom = Mth.clamp(targetZoom, 1, 50);
         event.cancel();
         System.out.println("Mouse scroll, targetZoom=" + targetZoom);
     }
@@ -128,22 +128,22 @@ public class Zoom extends AxiomMod implements KeybindConfigurable {
     @AxiomEvent
     private void onGetFov(GetFovEvent event) {
         if (!isEnabled()) return;
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
         // Älä zoomaa jos ruudulla on jokin näyttö (menu, ClickGUI)
-        if (mc.currentScreen != null) return;
+        if (mc.screen != null) return;
 
         double scaling = getCurrentScaling();
         event.fov /= scaling;
 
-        if (lastFov != event.fov && mc.worldRenderer != null) {
-            mc.worldRenderer.scheduleTerrainUpdate();
+        if (lastFov != event.fov && mc.levelRenderer != null) {
+            mc.levelRenderer.needsUpdate();
             lastFov = event.fov;
         }
     }
 
     public double getScaling() {
         double delta = time < 0.5 ? 4 * time * time * time : 1 - Math.pow(-2 * time + 2, 3) / 2; // Ease in out cubic
-        return MathHelper.lerp(delta, 1, value);
+        return Mth.lerp(delta, 1, value);
     }
 
     private double getCurrentScaling() {

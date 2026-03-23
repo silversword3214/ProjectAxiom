@@ -1,6 +1,6 @@
 package silversword.axiom.client.gui.components;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
 import silversword.axiom.client.render.rendersystem.Renderer2D;
@@ -96,7 +96,7 @@ public final class Slider implements UiComponent {
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
         if (dragging && !(org.lwjgl.glfw.GLFW.glfwGetMouseButton(
-                MinecraftClient.getInstance().getWindow().getHandle(),
+                Minecraft.getInstance().getWindow().handle(),
                 org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT) == org.lwjgl.glfw.GLFW.GLFW_PRESS)) {
             dragging = false;
             dragSliderArea = null;

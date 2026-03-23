@@ -1,13 +1,13 @@
 package silversword.axiom.client.event.world;
 
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 public class ChunkDataEvent {
     private static final ChunkDataEvent INSTANCE = new ChunkDataEvent();
 
-    public WorldChunk chunk;
+    public LevelChunk chunk;
 
-    public static ChunkDataEvent get(WorldChunk chunk) {
+    public static ChunkDataEvent get(LevelChunk chunk) {
         INSTANCE.chunk = chunk;
         return INSTANCE;
     }

@@ -1,9 +1,9 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.Camera;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.Camera;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class Tracers extends AxiomMod implements ColorConfigurable, KeybindConfigurable {
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     // Värit (SettingColor)
     final SettingColor playerColor;
@@ -110,37 +110,37 @@ public final class Tracers extends AxiomMod implements ColorConfigurable, Keybin
     @AxiomEvent
     private void onRender(Render3DEvent event) {
         if (!isEnabled()) return;
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
-        Camera camera = mc.gameRenderer.getCamera();
-        Vec3d cameraPos = camera.getCameraPos();
-        Vec3d cameraDir = mc.player.getRotationVec(event.tickDelta);
+        Camera camera = mc.gameRenderer.getMainCamera();
+        Vec3 cameraPos = camera.position();
+        Vec3 cameraDir = mc.player.getViewVector(event.tickDelta);
         double maxDistSq = renderDistance.getValue() * renderDistance.getValue();
 
-        for (Entity entity : mc.world.getEntities()) {
+        for (Entity entity : mc.level.entitiesForRendering()) {
             if (entity == mc.player || !entity.isAlive()) continue;
 
             TargetGroup group = TargetGroup.getGroup(entity);
             if (!shouldDrawGroup(group)) continue;
 
-            Vec3d entityPos = new Vec3d(entity.getX(), entity.getY(), entity.getZ());
+            Vec3 entityPos = new Vec3(entity.getX(), entity.getY(), entity.getZ());
 
-            if (entityPos.squaredDistanceTo(cameraPos) > maxDistSq) continue;
+            if (entityPos.distanceToSqr(cameraPos) > maxDistSq) continue;
 
             // Tarkista katsesuunta vain, jos drawBehind on false
             if (!drawBehind.get()) {
-                Vec3d toEntity = entityPos.subtract(cameraPos).normalize();
-                if (toEntity.dotProduct(cameraDir) <= 0) continue;
+                Vec3 toEntity = entityPos.subtract(cameraPos).normalize();
+                if (toEntity.dot(cameraDir) <= 0) continue;
             }
 
-            double x = entity.lastRenderX + (entity.getX() - entity.lastRenderX) * event.tickDelta;
-            double y = entity.lastRenderY + (entity.getY() - entity.lastRenderY) * event.tickDelta;
-            double z = entity.lastRenderZ + (entity.getZ() - entity.lastRenderZ) * event.tickDelta;
+            double x = entity.xOld + (entity.getX() - entity.xOld) * event.tickDelta;
+            double y = entity.yOld + (entity.getY() - entity.yOld) * event.tickDelta;
+            double z = entity.zOld + (entity.getZ() - entity.zOld) * event.tickDelta;
 
             if ("Head".equals(targetPoint.getMode())) {
-                y += entity.getHeight() * 0.9;
+                y += entity.getBbHeight() * 0.9;
             } else {
-                y += entity.getHeight() * 0.5;
+                y += entity.getBbHeight() * 0.5;
             }
 
             // Haetaan väri ja käytetään getCurrentColor() rainbow-tukea varten
@@ -154,7 +154,7 @@ public final class Tracers extends AxiomMod implements ColorConfigurable, Keybin
 
             if (drawPillar.get()) {
                 double groundY = entity.getY();
-                double topY = groundY + entity.getHeight();
+                double topY = groundY + entity.getBbHeight();
                 event.render.drawLine(x, groundY, z, x, topY, z, color);
             }
         }
@@ -201,8 +201,8 @@ public final class Tracers extends AxiomMod implements ColorConfigurable, Keybin
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
 
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
 
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("tracers_color", "Tracers Color Customizer", sw, sh, content);

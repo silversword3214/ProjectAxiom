@@ -4,7 +4,7 @@ import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.phys.Vec3;
 import org.lwjgl.BufferUtils;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
@@ -38,7 +38,7 @@ public class VertexBufferBuilder {
         allocateBuffers(256 * 4, 512 * 4);
     }
 
-    public VertexBufferBuilder(VertexFormat format, VertexFormat.DrawMode drawMode, int maxVertices, int maxIndices) {
+    public VertexBufferBuilder(VertexFormat format, VertexFormat.Mode drawMode, int maxVertices, int maxIndices) {
         this.format = format;
         this.primitiveVerticesSize = format.getVertexSize();
         allocateBuffers(maxVertices, maxIndices);
@@ -51,7 +51,7 @@ public class VertexBufferBuilder {
         indicesCount = 0;
 
         if (RenderUtils.rendering3D) {
-            Vec3d camera = mc.gameRenderer.getCamera().getCameraPos();
+            Vec3 camera = mc.gameRenderer.getMainCamera().position();
             cameraX = camera.x;
             cameraY = camera.y;
             cameraZ = camera.z;

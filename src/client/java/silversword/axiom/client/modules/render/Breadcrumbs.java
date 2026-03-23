@@ -1,7 +1,7 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
@@ -22,7 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public final class Breadcrumbs extends AxiomMod implements ColorConfigurable, KeybindConfigurable {
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
 
     // Väri
     final SettingColor trailColor;
@@ -62,7 +62,7 @@ public final class Breadcrumbs extends AxiomMod implements ColorConfigurable, Ke
 
     @Override
     protected void onTick() {
-        if (!isEnabled() || mc.player == null || mc.world == null) return;
+        if (!isEnabled() || mc.player == null || mc.level == null) return;
 
         long now = System.currentTimeMillis();
         long intervalMs = (long) (interval.getValue() * 1000);
@@ -71,7 +71,7 @@ public final class Breadcrumbs extends AxiomMod implements ColorConfigurable, Ke
             lastRecordTime = now;
 
             // Tallennetaan pelaajan nykyinen sijainti
-            Vec3d pos = mc.player.getEntityPos();
+            Vec3 pos = mc.player.position();
             points.add(new BreadcrumbPoint(pos.x, pos.y, pos.z, now));
 
             // Rajoitetaan maksimimäärä
@@ -123,8 +123,8 @@ public final class Breadcrumbs extends AxiomMod implements ColorConfigurable, Ke
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         UiComponent content = new ColorCustomizerView(this);
         factory.openCustomWindow("breadcrumbs_color", "Breadcrumbs Color Customizer", sw, sh, content);
     }

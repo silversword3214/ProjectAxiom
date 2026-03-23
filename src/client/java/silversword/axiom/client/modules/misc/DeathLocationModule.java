@@ -1,7 +1,7 @@
 package silversword.axiom.client.modules.misc;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import silversword.axiom.client.gui.window.WindowFactory;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -12,7 +12,7 @@ import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
 
 public class DeathLocationModule extends AxiomMod {
-    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private final Minecraft mc = Minecraft.getInstance();
     private boolean wasAlive = true;
 
     public final SettingBoolean enabled = new SettingBoolean("Enabled", true);
@@ -38,12 +38,12 @@ public class DeathLocationModule extends AxiomMod {
     }
 
     private void onPlayerDeath() {
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
         double x = mc.player.getX();
         double y = mc.player.getY();
         double z = mc.player.getZ();
-        String world = mc.world.getRegistryKey().getValue().toString();
+        String world = mc.level.dimension().identifier().toString();
 
         DeathEntry entry = new DeathEntry(x, y, z, world);
         DeathLocationManager.getInstance().addEntry(entry);
@@ -51,14 +51,14 @@ public class DeathLocationModule extends AxiomMod {
         if (showMessage.get()) {
             String msg = String.format("§c[DeathLocation] §fYou died at §e%d %d %d §fin §e%s",
                     (int)x, (int)y, (int)z, world);
-            mc.player.sendMessage(Text.literal(msg), false);
+            mc.player.displayClientMessage(Component.literal(msg), false);
         }
     }
 
     // Kutsutaan asetusnapista
     public void openListWindow() {
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
         factory.openPopupWindow("deathlocation_list", "Death Locations",

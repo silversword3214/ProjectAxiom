@@ -1,10 +1,10 @@
 package silversword.axiom.client.gui.screen;
 
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.CyclingButtonWidget;
-import net.minecraft.client.gui.widget.SliderWidget;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.CycleButton;
+import net.minecraft.client.gui.components.AbstractSliderButton;
+import net.minecraft.network.chat.Component;
 import silversword.axiom.client.config.ClickGuiConfigManager;
 import silversword.axiom.client.gui.core.ThemeManager;
 
@@ -12,7 +12,7 @@ public class ThemeSettingsScreen extends Screen {
     private final Screen parent;
 
     public ThemeSettingsScreen(Screen parent) {
-        super(Text.literal("Theme Settings"));
+        super(Component.literal("Theme Settings"));
         this.parent = parent;
     }
 
@@ -24,25 +24,25 @@ public class ThemeSettingsScreen extends Screen {
         String currentTheme = ClickGuiConfigManager.getThemeName();
 
         // Teeman valinta -painike
-        CyclingButtonWidget<String> themeButton = CyclingButtonWidget.builder(
-                        (String value) -> Text.literal(value),
+        CycleButton<String> themeButton = CycleButton.builder(
+                        (String value) -> Component.literal(value),
                         currentTheme
                 )
-                .values(ThemeManager.getThemeNames())
-                .build(
+                .withValues(ThemeManager.getThemeNames())
+                .create(
                         centerX - 100, y, 200, 20,
-                        Text.literal("Theme: "),
+                        Component.literal("Theme: "),
                         (button, value) -> {
                             ClickGuiConfigManager.setThemeName(value);
                         }
                 );
 
         // Alpha-slider
-        SliderWidget alphaSlider = new SliderWidget(centerX - 100, y + 40, 200, 20, Text.literal("Alpha: " + ClickGuiConfigManager.getGlobalAlpha() + "%"), ClickGuiConfigManager.getGlobalAlpha() / 100.0) {
+        AbstractSliderButton alphaSlider = new AbstractSliderButton(centerX - 100, y + 40, 200, 20, Component.literal("Alpha: " + ClickGuiConfigManager.getGlobalAlpha() + "%"), ClickGuiConfigManager.getGlobalAlpha() / 100.0) {
             @Override
             protected void updateMessage() {
                 int value = (int) Math.round(this.value * 100);
-                this.setMessage(Text.literal("Alpha: " + value + "%"));
+                this.setMessage(Component.literal("Alpha: " + value + "%"));
             }
 
             @Override
@@ -51,21 +51,21 @@ public class ThemeSettingsScreen extends Screen {
                 ClickGuiConfigManager.setGlobalAlpha(value);
             }
         };
-        this.addDrawableChild(alphaSlider);
-        this.addDrawableChild(themeButton);
+        this.addRenderableWidget(alphaSlider);
+        this.addRenderableWidget(themeButton);
 
         // Back-button – käyttää accent-väriä
         int accentColor = ThemeManager.getCurrentTheme().accent;
-        this.addDrawableChild(ButtonWidget.builder(
-                Text.literal("Back").styled(style -> style.withColor(accentColor)),
-                button -> this.close()
-        ).dimensions(centerX - 50, this.height - 30, 100, 20).build());
+        this.addRenderableWidget(Button.builder(
+                Component.literal("Back").withStyle(style -> style.withColor(accentColor)),
+                button -> this.onClose()
+        ).bounds(centerX - 50, this.height - 30, 100, 20).build());
     }
 
     @Override
-    public void close() {
-        if (this.client != null) {
-            this.client.setScreen(parent);
+    public void onClose() {
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(parent);
         }
     }
 }

@@ -1,15 +1,15 @@
 package silversword.axiom.client.hud.core;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.hud.InGameHud;
-import net.minecraft.entity.effect.StatusEffect;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.ColorHelper;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import silversword.axiom.client.gui.core.Theme;
 import silversword.axiom.client.render.font.TextRenderer;
 import silversword.axiom.client.render.rendersystem.Renderer2D;
@@ -19,8 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class HudContext {
-    public final MinecraftClient mc;
-    public final DrawContext draw;
+    public final Minecraft mc;
+    public final GuiGraphics draw;
     public final Theme theme;
     public final float delta;
 
@@ -28,7 +28,7 @@ public final class HudContext {
     // Lista teksteistä, jotka piirretään fillien jälkeen
     private final List<TextEntry> textEntries = new ArrayList<>();
 
-    public HudContext(MinecraftClient mc, DrawContext draw, Theme theme, float delta) {
+    public HudContext(Minecraft mc, GuiGraphics draw, Theme theme, float delta) {
         this.mc = mc;
         this.draw = draw;
         this.theme = theme;
@@ -58,23 +58,23 @@ public final class HudContext {
         Renderer2D.COLOR.drawCircle(cx, cy, radius, new Color(argb));
     }
 
-    public void drawVanillaEffectIcon(StatusEffectInstance effect, int x, int y, int size, float alpha) {
+    public void drawVanillaEffectIcon(MobEffectInstance effect, int x, int y, int size, float alpha) {
         if (effect == null) return;
-        RegistryEntry<StatusEffect> entry = effect.getEffectType();
+        Holder<MobEffect> entry = effect.getEffect();
         Identifier tex;
         try {
-            tex = InGameHud.getEffectTexture(entry);
+            tex = Gui.getMobEffectSprite(entry);
         } catch (Throwable t) {
             return;
         }
         float a = clamp01(alpha);
-        int color = ColorHelper.getWhite(a);
-        draw.drawGuiTexture(RenderPipelines.GUI_TEXTURED, tex, x, y, size, size, color);
+        int color = ARGB.white(a);
+        draw.blitSprite(RenderPipelines.GUI_TEXTURED, tex, x, y, size, size, color);
     }
 
     public void drawItem(ItemStack stack, int x, int y) {
         if (!stack.isEmpty()) {
-            draw.drawItem(stack, x, y);
+            draw.renderItem(stack, x, y);
         }
     }
 
@@ -141,9 +141,9 @@ public final class HudContext {
     // --- Vanilla-tekstinpiirto (vain hätätapauksissa) ---
     public void drawVanillaText(String s, int x, int y, int argb, boolean shadow) {
         if (shadow) {
-            draw.drawTextWithShadow(mc.textRenderer, s, x, y, argb);
+            draw.drawString(mc.font, s, x, y, argb);
         } else {
-            draw.drawText(mc.textRenderer, s, x, y, argb, false);
+            draw.drawString(mc.font, s, x, y, argb, false);
         }
     }
 
@@ -156,14 +156,14 @@ public final class HudContext {
     }
 
     public int getVanillaTextWidth(String s) {
-        return mc.textRenderer.getWidth(s);
+        return mc.font.width(s);
     }
 
     public int getVanillaFontHeight() {
-        return mc.textRenderer.fontHeight;
+        return mc.font.lineHeight;
     }
 
-    public DrawContext getVanillaContext() {
+    public GuiGraphics getVanillaContext() {
         return draw;
     }
 

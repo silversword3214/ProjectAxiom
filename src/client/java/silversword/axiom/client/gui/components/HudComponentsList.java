@@ -1,6 +1,6 @@
 package silversword.axiom.client.gui.components;
 
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 import silversword.axiom.client.config.HudConfigManager;
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class HudComponentsList implements UiComponent {
-    private static final Identifier GEAR_TEXTURE = Identifier.of("projectaxiom", "textures/icons/gear.png");
+    private static final Identifier GEAR_TEXTURE = Identifier.fromNamespaceAndPath("projectaxiom", "textures/icons/gear.png");
     private static Texture gearTexture;
 
     private Rect bounds = new Rect(0, 0, 200, 300);
@@ -59,8 +59,8 @@ public class HudComponentsList implements UiComponent {
                     factory.openCustomWindow(
                             "hud_settings_" + e.id(),
                             e.id() + " Settings",
-                            ClickGuiScreen.lastUi.mc.getWindow().getScaledWidth(),
-                            ClickGuiScreen.lastUi.mc.getWindow().getScaledHeight(),
+                            ClickGuiScreen.lastUi.mc.getWindow().getGuiScaledWidth(),
+                            ClickGuiScreen.lastUi.mc.getWindow().getGuiScaledHeight(),
                             panel
                     );
                 }

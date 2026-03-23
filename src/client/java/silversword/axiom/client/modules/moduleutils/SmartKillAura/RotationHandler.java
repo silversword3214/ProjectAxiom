@@ -1,6 +1,6 @@
 package silversword.axiom.client.utils.player;
 
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import silversword.axiom.client.utils.misc.Pool;
 
 import java.util.ArrayList;
@@ -47,10 +47,10 @@ public class RotationHandler {
     }
 
     public static void rotateImmediate(double yaw, double pitch) {
-        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.LookAndOnGround(
+        mc.getConnection().send(new ServerboundMovePlayerPacket.Rot(
                 (float) yaw,
                 (float) pitch,
-                mc.player.isOnGround(),
+                mc.player.onGround(),
                 mc.player.horizontalCollision
         ));
     }
@@ -118,8 +118,8 @@ public class RotationHandler {
 
         // Jos clientSide, muutetaan myös clientin omaa rotaatiota
         if (rotation.clientSide) {
-            mc.player.setYaw((float) rotation.yaw);
-            mc.player.setPitch((float) rotation.pitch);
+            mc.player.setYRot((float) rotation.yaw);
+            mc.player.setXRot((float) rotation.pitch);
         }
 
         // Lähetetään paketti
@@ -127,10 +127,10 @@ public class RotationHandler {
     }
 
     private static void sendRotationPacket(Rotation rotation) {
-        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.LookAndOnGround(
+        mc.getConnection().send(new ServerboundMovePlayerPacket.Rot(
                 (float) rotation.yaw,
                 (float) rotation.pitch,
-                mc.player.isOnGround(),
+                mc.player.onGround(),
                 mc.player.horizontalCollision
         ));
     }

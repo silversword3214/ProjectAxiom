@@ -3,7 +3,7 @@ package silversword.axiom.client.render.rendersystem.utils.postprocess;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.buffers.Std140SizeCalculator;
-import net.minecraft.client.gl.DynamicUniformStorage;
+import net.minecraft.client.renderer.DynamicUniformStorage;
 
 import java.nio.ByteBuffer;
 
@@ -15,14 +15,14 @@ public class ImageUniforms {
     private static final DynamicUniformStorage<Data> STORAGE = new DynamicUniformStorage<>("Obsidian - Image UBO", UNIFORM_SIZE, 16);
 
     public static void flipFrame() {
-        STORAGE.clear();
+        STORAGE.endFrame();
     }
 
     public static GpuBufferSlice write(float r, float g, float b, float a) {
-        return STORAGE.write(new Data(r, g, b, a));
+        return STORAGE.writeUniform(new Data(r, g, b, a));
     }
 
-    private record Data(float r, float g, float b, float a) implements DynamicUniformStorage.Uploadable {
+    private record Data(float r, float g, float b, float a) implements DynamicUniformStorage.DynamicUniform {
         @Override
         public void write(ByteBuffer buffer) {
             Std140Builder.intoBuffer(buffer)

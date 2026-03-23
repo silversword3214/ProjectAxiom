@@ -6,10 +6,10 @@ import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTextureView;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.gl.GpuSampler;
-import net.minecraft.util.Pair;
+import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.textures.GpuSampler;
+import net.minecraft.util.Tuple;
 import org.joml.Matrix4f;
 import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
 
@@ -30,7 +30,7 @@ public class BufferRenderer {
     private GpuBuffer vertexBuffer;
     private GpuBuffer indexBuffer;
     private boolean rendering3D;
-    private final HashMap<String, Pair<GpuTextureView, GpuSampler>> samplers = new HashMap<>();
+    private final HashMap<String, Tuple<GpuTextureView, GpuSampler>> samplers = new HashMap<>();
     private final Map<String, GpuBufferSlice> uniforms = new HashMap<>();
 
     private BufferRenderer() {}
@@ -52,15 +52,15 @@ public class BufferRenderer {
         return this;
     }
 
-    public BufferRenderer attachments(Framebuffer framebuffer) {
-        colorAttachment = framebuffer.getColorAttachmentView();
-        depthAttachment = framebuffer.getDepthAttachmentView();
+    public BufferRenderer attachments(RenderTarget framebuffer) {
+        colorAttachment = framebuffer.getColorTextureView();
+        depthAttachment = framebuffer.getDepthTextureView();
         return this;
     }
 
-    public BufferRenderer mesh(VertexBufferBuilder mesh, net.minecraft.client.util.math.MatrixStack matrices) {
+    public BufferRenderer mesh(VertexBufferBuilder mesh, com.mojang.blaze3d.vertex.PoseStack matrices) {
         this.mesh = mesh;
-        this.matrix = matrices.peek().getPositionMatrix();
+        this.matrix = matrices.last().pose();
         return this;
     }
 
@@ -92,7 +92,7 @@ public class BufferRenderer {
 
     public BufferRenderer sampler(String name, GpuTextureView view, GpuSampler sampler) {
         if (name != null && view != null && sampler != null) {
-            samplers.put(name, new Pair<>(view, sampler));
+            samplers.put(name, new Tuple<>(view, sampler));
         }
         return this;
     }
@@ -130,12 +130,12 @@ public class BufferRenderer {
 
             var device = RenderSystem.getDevice();
             var encoder = device.createCommandEncoder();
-            var fb = MinecraftClient.getInstance().getFramebuffer();
+            var fb = Minecraft.getInstance().getMainRenderTarget();
 
             var pass = encoder.createRenderPass(
                     () -> "Obsidian Mesh Render",
-                    fb.getColorAttachmentView(), java.util.OptionalInt.empty(),
-                    fb.getDepthAttachmentView(), java.util.OptionalDouble.empty()
+                    fb.getColorTextureView(), java.util.OptionalInt.empty(),
+                    fb.getDepthTextureView(), java.util.OptionalDouble.empty()
             );
             pass.setPipeline(pipeline);
             pass.setUniform("MeshData", meshData);
@@ -146,7 +146,7 @@ public class BufferRenderer {
 
             for (var entry : samplers.entrySet()) {
                 var pair = entry.getValue();
-                pass.bindTexture(entry.getKey(), pair.getLeft(), pair.getRight());
+                pass.bindTexture(entry.getKey(), pair.getA(), pair.getB());
             }
 
             pass.setVertexBuffer(0, vertexBuffer);

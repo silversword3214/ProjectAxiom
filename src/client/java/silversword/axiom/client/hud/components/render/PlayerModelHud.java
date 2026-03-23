@@ -1,15 +1,18 @@
 package silversword.axiom.client.hud.components.render;
 
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.systems.ProjectionType;
+import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTextureView;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.gl.SimpleFramebuffer;
-import net.minecraft.client.render.*;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.pipeline.TextureTarget;
+
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
@@ -38,7 +41,7 @@ public final class PlayerModelHud extends BaseHudElement {
     private String cameraMode = "BEHIND";    // BEHIND, FRONT, LEFT, RIGHT
     private String lookAtMode = "PLAYER";    // PLAYER, FORWARD, BACKWARD
 
-    private Framebuffer playerModelFramebuffer;
+    private RenderTarget playerModelFramebuffer;
 
     private static final int BASE_CORNER_RADIUS = 4;
     private static final int BASE_BG_COLOR = 0x80000000;
@@ -72,28 +75,28 @@ public final class PlayerModelHud extends BaseHudElement {
     public void setLookAtMode(String mode) { lookAtMode = mode; }
 
     @Override public boolean isModuleControlled() { return true; }
-    @Override public int width(MinecraftClient mc) { return width; }
-    @Override public int height(MinecraftClient mc) { return height; }
+    @Override public int width(Minecraft mc) { return width; }
+    @Override public int height(Minecraft mc) { return height; }
 
     private void ensureFramebuffer() {
-        if (playerModelFramebuffer == null || playerModelFramebuffer.textureWidth != width || playerModelFramebuffer.textureHeight != height) {
+        if (playerModelFramebuffer == null || playerModelFramebuffer.width != width || playerModelFramebuffer.height != height) {
             if (playerModelFramebuffer != null) {
-                playerModelFramebuffer.delete();
+                playerModelFramebuffer.destroyBuffers();
             }
-            playerModelFramebuffer = new SimpleFramebuffer("PlayerModel", width, height, true);
+            playerModelFramebuffer = new TextureTarget("PlayerModel", width, height, true);
         }
     }
 
-    public void renderWorldToFramebuffer(RenderTickCounter tickCounter) {
-        if (!this.enabled() || mc.world == null || mc.player == null) return;
+    public void renderWorldToFramebuffer(DeltaTracker tickCounter) {
+        if (!this.enabled() || mc.level == null || mc.player == null) return;
 
         ensureFramebuffer();
 
         GameRenderer gameRenderer = mc.gameRenderer;
-        float tickDelta = tickCounter.getTickProgress(true);
+        float tickDelta = tickCounter.getGameTimeDeltaPartialTick(true);
 
         PlayerCamera playerCamera = new PlayerCamera();
-        playerCamera.update(mc.world, mc.player, true, false, tickDelta); // thirdPerson = true
+        playerCamera.setup(mc.level, mc.player, true, false, tickDelta); // thirdPerson = true
 
         // Määritä offset kameran moodin mukaan
         float surge, heave, sway;
@@ -125,24 +128,24 @@ public final class PlayerModelHud extends BaseHudElement {
         }
 
         // Siirrä kameraa moveBy:llä
-        playerCamera.moveBy(surge, heave, sway);
+        playerCamera.move(surge, heave, sway);
 
         // Määritä mihin kamera katsoo ja aseta rotaatio
-        Vec3d cameraPos = playerCamera.getCameraPos();
-        Vec3d lookTarget;
+        Vec3 cameraPos = playerCamera.position();
+        Vec3 lookTarget;
 
         switch (lookAtMode) {
             case "PLAYER":
-                lookTarget = mc.player.getEyePos();
+                lookTarget = mc.player.getEyePosition();
                 break;
             case "FORWARD":
-                lookTarget = mc.player.getEyePos().add(mc.player.getRotationVec(1.0f).multiply(10));
+                lookTarget = mc.player.getEyePosition().add(mc.player.getViewVector(1.0f).scale(10));
                 break;
             case "BACKWARD":
-                lookTarget = mc.player.getEyePos().subtract(mc.player.getRotationVec(1.0f).multiply(10));
+                lookTarget = mc.player.getEyePosition().subtract(mc.player.getViewVector(1.0f).scale(10));
                 break;
             default:
-                lookTarget = mc.player.getEyePos();
+                lookTarget = mc.player.getEyePosition();
         }
 
         double dx = lookTarget.x - cameraPos.x;
@@ -165,27 +168,27 @@ public final class PlayerModelHud extends BaseHudElement {
         // Aseta projektiomatriisi
         float aspect = (float) width / (float) height;
         Matrix4f projMatrix = new Matrix4f().perspective((float) Math.toRadians(fov), aspect, 0.05f, renderDistance * 2);
-        GpuBufferSlice projSlice = gameRenderer.worldProjectionMatrix.set(projMatrix);
+        GpuBufferSlice projSlice = gameRenderer.levelProjectionMatrixBuffer.getBuffer(projMatrix);
         RenderSystem.setProjectionMatrix(projSlice, ProjectionType.PERSPECTIVE);
 
         // Tallenna ja aseta overridet
         GpuTextureView originalColorOverride = RenderSystem.outputColorTextureOverride;
         GpuTextureView originalDepthOverride = RenderSystem.outputDepthTextureOverride;
-        RenderSystem.outputColorTextureOverride = playerModelFramebuffer.getColorAttachmentView();
-        RenderSystem.outputDepthTextureOverride = playerModelFramebuffer.getDepthAttachmentView();
+        RenderSystem.outputColorTextureOverride = playerModelFramebuffer.getColorTextureView();
+        RenderSystem.outputDepthTextureOverride = playerModelFramebuffer.getDepthTextureView();
 
         // Tyhjennä framebuffer
         var device = RenderSystem.getDevice();
         var encoder = device.createCommandEncoder();
         encoder.clearColorAndDepthTextures(
-                playerModelFramebuffer.getColorAttachment(),
+                playerModelFramebuffer.getColorTexture(),
                 0,
-                playerModelFramebuffer.getDepthAttachment(),
+                playerModelFramebuffer.getDepthTexture(),
                 1.0
         );
 
         // Renderöi maailma
-        gameRenderer.renderWorld(tickCounter);
+        gameRenderer.renderLevel(tickCounter);
 
         // Palauta
         RenderSystem.outputColorTextureOverride = originalColorOverride;
@@ -199,13 +202,13 @@ public final class PlayerModelHud extends BaseHudElement {
     }
 
     @Override
-    public void render(HudContext ctx, RenderTickCounter tickCounter) {
-        if (mc.player == null || mc.world == null) return;
+    public void render(HudContext ctx, DeltaTracker tickCounter) {
+        if (mc.player == null || mc.level == null) return;
 
         Color bgColor = new Color(BASE_BG_COLOR);
         Renderer2D.COLOR.drawRoundedRect(x, y, width, height, BASE_CORNER_RADIUS, bgColor);
 
-        if (playerModelFramebuffer != null && playerModelFramebuffer.getColorAttachmentView() != null) {
+        if (playerModelFramebuffer != null && playerModelFramebuffer.getColorTextureView() != null) {
             TextureRegion region = new TextureRegion(1.0, 1.0);
             region.x1 = 1.0f;
             region.y1 = 1.0f;
@@ -214,8 +217,8 @@ public final class PlayerModelHud extends BaseHudElement {
 
             Renderer2D.TEXTURE.texQuad(x, y, width, height, region, Color.WHITE);
 
-            var sampler = RenderSystem.getSamplerCache().get(FilterMode.LINEAR);
-            Renderer2D.TEXTURE.render(playerModelFramebuffer.getColorAttachmentView(), sampler);
+            var sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
+            Renderer2D.TEXTURE.render(playerModelFramebuffer.getColorTextureView(), sampler);
         }
 
         if (showBorder) {

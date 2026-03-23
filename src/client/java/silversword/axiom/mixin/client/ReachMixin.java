@@ -1,16 +1,16 @@
 package silversword.axiom.mixin.client;
 
-import net.minecraft.client.network.ClientPlayerInteractionManager;
-import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.client.multiplayer.MultiPlayerGameMode;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import silversword.axiom.client.modules.combat.Reach;
 import silversword.axiom.client.managers.ModuleManager;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
-@Mixin(ClientPlayerInteractionManager.class)
+@Mixin(MultiPlayerGameMode.class)
 public class ReachMixin {
 
     // Muisti edellisestä reach-arvosta
@@ -18,7 +18,7 @@ public class ReachMixin {
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void onTick(CallbackInfo ci) {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
         Reach reach = ModuleManager.getInstance().getModule(Reach.class);
@@ -31,9 +31,9 @@ public class ReachMixin {
         // Tarkistetaan onko arvo muuttunut
         if (lastReachValue != targetValue) {
             try {
-                mc.player.getAttributeInstance(EntityAttributes.BLOCK_INTERACTION_RANGE)
+                mc.player.getAttribute(Attributes.BLOCK_INTERACTION_RANGE)
                         .setBaseValue(targetValue);
-                mc.player.getAttributeInstance(EntityAttributes.ENTITY_INTERACTION_RANGE)
+                mc.player.getAttribute(Attributes.ENTITY_INTERACTION_RANGE)
                         .setBaseValue(targetValue);
 
                 if (reach != null && reach.isEnabled()) {

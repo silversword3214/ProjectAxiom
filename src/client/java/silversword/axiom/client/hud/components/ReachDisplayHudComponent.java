@@ -1,8 +1,8 @@
 package silversword.axiom.client.hud.components;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.entity.LivingEntity;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.world.entity.LivingEntity;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.render.font.TextRenderer;
@@ -33,7 +33,7 @@ public final class ReachDisplayHudComponent extends BaseHudElement {
     public void setBorderColor(int c) { borderColor = c; }
 
     @Override public boolean isModuleControlled() { return true; }
-    @Override public int width(MinecraftClient mc) {
+    @Override public int width(Minecraft mc) {
         if (target == null) return 60;
         String name = target.getName().getString();
         String distStr = String.format("%.2f m", distance);
@@ -41,14 +41,14 @@ public final class ReachDisplayHudComponent extends BaseHudElement {
         if (ping >= 0) w = Math.max(w, (int) TextRenderer.get().getWidth("Ping: " + ping + " ms"));
         return w + padding * 2;
     }
-    @Override public int height(MinecraftClient mc) {
+    @Override public int height(Minecraft mc) {
         if (target == null) return (int) TextRenderer.get().getHeight() + padding * 2;
         int lines = ping >= 0 ? 3 : 2;
         return padding * 2 + lines * ((int) TextRenderer.get().getHeight() + 2);
     }
 
     @Override
-    public void render(HudContext ctx, RenderTickCounter tickCounter) {
+    public void render(HudContext ctx, DeltaTracker tickCounter) {
         if (!enabled || target == null) return;
         int w = width(null);
         int h = height(null);

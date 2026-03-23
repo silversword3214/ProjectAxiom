@@ -1,6 +1,6 @@
 package silversword.axiom.client.render.rendersystem.world;
 
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.Direction;
 
 public class Dir {
     public static final byte UP = 1 << 1;

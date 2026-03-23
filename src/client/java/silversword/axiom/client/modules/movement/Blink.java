@@ -1,9 +1,9 @@
 package silversword.axiom.client.modules.movement;
 
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.event.packets.PacketEvent;
 import silversword.axiom.client.event.render.Render2DEvent;
 import silversword.axiom.client.main.AxiomMod;
@@ -31,7 +31,7 @@ public class Blink extends AxiomMod implements KeybindConfigurable {
     private List<Packet<?>> packetQueue = new ArrayList<>();
     private long startTime = 0;
     private boolean active = false;
-    private Vec3d startPos;
+    private Vec3 startPos;
     private float startYaw;
     private float startPitch;
 
@@ -60,9 +60,9 @@ public class Blink extends AxiomMod implements KeybindConfigurable {
         packetQueue.clear();
 
         if (mc.player != null) {
-            startPos = mc.player.getEntityPos();
-            startYaw = mc.player.getYaw();
-            startPitch = mc.player.getPitch();
+            startPos = mc.player.position();
+            startYaw = mc.player.getYRot();
+            startPitch = mc.player.getXRot();
         }
     }
 
@@ -72,8 +72,8 @@ public class Blink extends AxiomMod implements KeybindConfigurable {
 
         // Undo: palautetaan alkuperäiseen paikkaan
         if (startPos != null && mc.player != null) {
-            mc.player.refreshPositionAndAngles(startPos.x, startPos.y, startPos.z, startYaw, startPitch);
-            mc.player.sendMessage(Text.literal("§aBlink: Undone movement"), true);
+            mc.player.snapTo(startPos.x, startPos.y, startPos.z, startYaw, startPitch);
+            mc.player.displayClientMessage(Component.literal("§aBlink: Undone movement"), true);
         }
 
         packetQueue.clear();
@@ -90,14 +90,14 @@ public class Blink extends AxiomMod implements KeybindConfigurable {
         if (!active) return;
 
         Packet<?> packet = event.getPacket();
-        if (packet instanceof PlayerMoveC2SPacket) {
+        if (packet instanceof ServerboundMovePlayerPacket) {
             packetQueue.add(packet);
             event.setCancelled(true);
 
             int limitVal = (int) limit.getValue();
             if (limitVal > 0 && packetQueue.size() >= limitVal) {
                 // Lähetetään ilmoitus, mutta ei tehdä mitään muuta (paketit jäävät jonoon)
-                mc.player.sendMessage(Text.literal("§eBlink: Packet limit reached (" + limitVal + ")"), true);
+                mc.player.displayClientMessage(Component.literal("§eBlink: Packet limit reached (" + limitVal + ")"), true);
             }
         }
     }

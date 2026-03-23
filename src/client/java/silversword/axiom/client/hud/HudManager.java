@@ -1,8 +1,8 @@
 package silversword.axiom.client.hud;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.DeltaTracker;
 import silversword.axiom.client.gui.core.Theme;
 import silversword.axiom.client.gui.core.ThemeManager;
 import silversword.axiom.client.gui.screen.ClickGuiScreen;
@@ -62,13 +62,13 @@ public final class HudManager {
         return Collections.unmodifiableList(elements);
     }
 
-    public void renderAll(DrawContext draw, RenderTickCounter tickCounter) {
-        MinecraftClient mc = MinecraftClient.getInstance();
+    public void renderAll(GuiGraphics draw, DeltaTracker tickCounter) {
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.player == null) return;
-        if (mc.currentScreen instanceof ClickGuiScreen) return;
+        if (mc.screen instanceof ClickGuiScreen) return;
 
         Theme theme = ThemeManager.getCurrentTheme();
-        float delta = tickCounter.getDynamicDeltaTicks();
+        float delta = tickCounter.getGameTimeDeltaTicks();
         HudContext ctx = new HudContext(mc, draw, theme, delta);
 
         // Aloita fillien keräys
@@ -88,7 +88,7 @@ public final class HudManager {
     }
 
     public HudElement hitTest(int mouseX, int mouseY) {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null) return null;
 
         for (int i = elements.size() - 1; i >= 0; i--) {

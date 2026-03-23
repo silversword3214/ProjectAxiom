@@ -1,6 +1,6 @@
 package silversword.axiom.client.gui.components;
 
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 import silversword.axiom.client.gui.core.*;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.misc.DeathLocationModule;
@@ -13,7 +13,7 @@ import silversword.axiom.client.utils.render.DrawTexture;
 import java.util.function.Consumer;
 
 public final class ModuleRow implements UiComponent {
-    private static final Identifier GEAR_TEXTURE = Identifier.of("projectaxiom", "textures/icons/gear.png");
+    private static final Identifier GEAR_TEXTURE = Identifier.fromNamespaceAndPath("projectaxiom", "textures/icons/gear.png");
     private static Texture gearTexture;
 
     private Rect bounds = new Rect(0, 0, 10, 10);

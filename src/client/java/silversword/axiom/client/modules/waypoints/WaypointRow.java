@@ -1,6 +1,6 @@
 package silversword.axiom.client.modules.waypoints;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import silversword.axiom.client.gui.components.*;
 import silversword.axiom.client.gui.core.*;
 import silversword.axiom.client.gui.window.WindowFactory;
@@ -47,8 +47,8 @@ public class WaypointRow implements UiComponent {
     private void openEditWindow() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        int sw = MinecraftClient.getInstance().getWindow().getScaledWidth();
-        int sh = MinecraftClient.getInstance().getWindow().getScaledHeight();
+        int sw = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+        int sh = Minecraft.getInstance().getWindow().getGuiScaledHeight();
         WaypointEditWindow editWin = new WaypointEditWindow(waypoint, () -> {
             factory.getWindowManager().closeOverlay();
             onUpdate.accept(waypoint); // päivitetään manager

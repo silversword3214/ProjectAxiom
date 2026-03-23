@@ -1,6 +1,6 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;

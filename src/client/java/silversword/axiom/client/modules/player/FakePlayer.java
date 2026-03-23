@@ -1,6 +1,6 @@
 package silversword.axiom.client.modules.player;
 
-import net.minecraft.client.network.OtherClientPlayerEntity;
+import net.minecraft.client.player.RemotePlayer;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -11,7 +11,7 @@ import static silversword.axiom.client.main.AxiomInitialize.mc;
 
 public class FakePlayer extends AxiomMod implements KeybindConfigurable {
     private final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", GLFW.GLFW_KEY_UNKNOWN);
-    private OtherClientPlayerEntity fakePlayer;
+    private RemotePlayer fakePlayer;
     private int spawnDelay = 0;
 
     public FakePlayer() {
@@ -30,21 +30,21 @@ public class FakePlayer extends AxiomMod implements KeybindConfigurable {
     }
 
     private void spawnFakePlayer() {
-        if (mc.world == null || mc.player == null) {
+        if (mc.level == null || mc.player == null) {
             toggle(); // Jos maailma ei ole valmis, sammutetaan
             return;
         }
 
-        fakePlayer = new OtherClientPlayerEntity(mc.world, mc.player.getGameProfile());
-        fakePlayer.copyPositionAndRotation(mc.player);
+        fakePlayer = new RemotePlayer(mc.level, mc.player.getGameProfile());
+        fakePlayer.copyPosition(mc.player);
         fakePlayer.setHealth(mc.player.getHealth());
         fakePlayer.setPose(mc.player.getPose());
-        fakePlayer.setHeadYaw(mc.player.headYaw);
-        fakePlayer.setBodyYaw(mc.player.bodyYaw);
-        fakePlayer.getInventory().clone(mc.player.getInventory());
+        fakePlayer.setYHeadRot(mc.player.yHeadRot);
+        fakePlayer.setYBodyRot(mc.player.yBodyRot);
+        fakePlayer.getInventory().replaceWith(mc.player.getInventory());
         fakePlayer.setInvulnerable(true);
 
-        mc.world.addEntity(fakePlayer);
+        mc.level.addEntity(fakePlayer);
     }
 
     @Override
