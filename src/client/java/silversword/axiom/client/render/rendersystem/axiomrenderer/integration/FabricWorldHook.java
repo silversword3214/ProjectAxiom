@@ -1,5 +1,6 @@
 package silversword.axiom.client.render.rendersystem.axiomrenderer.integration;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -12,10 +13,12 @@ import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
 
 public class FabricWorldHook {
     public static void register() {
-        WorldRenderEvents.AFTER_ENTITIES.register(context -> {
+        // END_MAIN on oikea tapahtuma – tässä vaiheessa matriisipino on kameran muunnoksessa
+        WorldRenderEvents.END_MAIN.register(context -> {
             Minecraft mc = Minecraft.getInstance();
             float tickDelta = RenderUtils.getTickDelta();
             Camera camera = mc.gameRenderer.getMainCamera();
+
             Matrix4f projection = RenderUtils.getProjectionMatrix(tickDelta);
             Matrix4f view = RenderUtils.getViewMatrix(camera);
 
@@ -25,7 +28,7 @@ public class FabricWorldHook {
             Render3DEvent event = new Render3DEvent(
                     renderer,
                     tickDelta,
-                    camera.position(),
+                    mc.gameRenderer.getMainCamera().position(),
                     projection,
                     view
             );

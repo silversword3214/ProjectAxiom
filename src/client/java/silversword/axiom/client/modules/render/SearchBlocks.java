@@ -65,7 +65,7 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
     public SearchBlocks() {
         super("Search", "Highlight specific blocks", ModuleCategory.RENDER);
 
-        renderDistance = new SettingSlider("Render Distance", new double[]{16, 32, 64, 96, 128, 256}, 64);
+        renderDistance = new SettingSlider("Render Distance", new double[]{16, 32, 64, 96, 128, 256, 512, 1024}, 128);
         boxMode = new SettingMode("Box Mode", new String[]{"Lines", "Sides", "Both"}, "Lines");
         tracerEnabled = new SettingBoolean("Tracers", false);
 

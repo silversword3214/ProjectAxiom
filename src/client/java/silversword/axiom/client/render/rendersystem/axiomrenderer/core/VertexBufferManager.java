@@ -6,17 +6,21 @@ import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.nio.ByteBuffer;
 
+import static com.mojang.text2speech.Narrator.LOGGER;
+
 /**
  * Hallinnoi pyöreää puskuria (ring buffer) vertex-datalle.
  * Useat puskurit ja aitaus (fence) estävät GPU:n ja CPU:n törmäyksen.
  * Koko skaalautuu automaattisesti tarvittaessa.
  */
 public class VertexBufferManager implements AutoCloseable {
-    private static final int BUFFER_COUNT = 2;
+    private static final int BUFFER_COUNT = 4;
     private static final String[] BUFFER_NAMES = {
             "axiomrenderer_vertex_buffer_0",
             "axiomrenderer_vertex_buffer_1",
-            "axiomrenderer_vertex_buffer_3"
+            "axiomrenderer_vertex_buffer_3",
+            "axiomrenderer_vertex_buffer_4",
+            "axiomrenderer_vertex_buffer_5",
     };
 
     private final GpuBuffer[] buffers = new GpuBuffer[BUFFER_COUNT];
@@ -39,9 +43,10 @@ public class VertexBufferManager implements AutoCloseable {
     public void ensureCapacity(int requiredSize) {
         // Odota, että edellinen käyttökerta on valmis (blokkaa)
         if (fences[currentIndex] != null) {
-            // Odota ikuisesti, kunnes GPU on valmis
-            while (!fences[currentIndex].awaitCompletion(Long.MAX_VALUE)) {
-                // odota, kunnes fence saavutetaan (ei pitäisi palauttaa false koska timeout on maksimi)
+            // Try to wait up to 16 milliseconds (1 frame at 60 fps)
+            boolean completed = fences[currentIndex].awaitCompletion(16_000_000L); // 16 ms in nanoseconds
+            if (!completed) {
+                LOGGER.warn("Fence timeout for buffer {}. Proceeding anyway.", currentIndex);
             }
             fences[currentIndex].close();
             fences[currentIndex] = null;
@@ -65,8 +70,8 @@ public class VertexBufferManager implements AutoCloseable {
     }
 
     /**
-     * Lataa annetun datan nykyiseen puskuriin.
-     * Oletetaan, että puskurissa on riittävästi tilaa (ensureCapacity kutsuttu).
+     * Loads given data to current buffer
+     * Assumes that buffer got space
      */
     public void upload(ByteBuffer data, int size, CommandEncoder encoder) {
         GpuBuffer currentBuffer = buffers[currentIndex];
@@ -81,28 +86,32 @@ public class VertexBufferManager implements AutoCloseable {
     }
 
     /**
-     * Asettaa aitauksen (fence) nykyiselle puskurille.
-     * Kutsutaan sen jälkeen, kun puskurin käyttö on lähetetty GPU:lle.
+     * Sets a fence for the current buffer
+     * Called after buffer using was sent to GPU
      */
     public void setFence(GpuFence fence) {
         fences[currentIndex] = fence;
     }
 
-    /** Siirtyy seuraavaan puskuriin (ring buffer -kierto). */
+    /** Moves to the next buffer */
     public void rotate() {
         currentIndex = (currentIndex + 1) % BUFFER_COUNT;
     }
 
-    /** Palauttaa nykyisen puskurin (se, johon juuri kirjoitettiin). */
+    /** Returns the current buffer */
     public GpuBuffer getCurrentBuffer() {
         return buffers[currentIndex];
     }
 
     @Override
     public void close() {
+        long timeoutNanos = 1_000_000_000L; // 1 second
         for (int i = 0; i < BUFFER_COUNT; i++) {
             if (fences[i] != null) {
-                fences[i].awaitCompletion(0);
+                boolean completed = fences[i].awaitCompletion(timeoutNanos);
+                if (!completed) {
+                    LOGGER.warn("Fence {} did not complete within 1s – forcing close", i);
+                }
                 fences[i].close();
                 fences[i] = null;
             }

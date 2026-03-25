@@ -144,7 +144,6 @@ public final class ChestESP extends AxiomMod implements ColorConfigurable, Keybi
                     };
 
                     double half = 0.5;
-                    Vec3 cam = cameraPos;
                     event.getRenderer().drawBox(
                             pos.getX() + 0.5 - half, pos.getY(), pos.getZ() + 0.5 - half,
                             pos.getX() + 0.5 + half, pos.getY() + 1.0, pos.getZ() + 0.5 + half,

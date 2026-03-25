@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import silversword.axiom.client.event.GetFovEvent;
 import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.managers.ModuleManager;
+import silversword.axiom.client.modules.render.NoHurtCam;
 import silversword.axiom.client.modules.render.NoViewBobbingTilt;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.FabricWorldHook;
@@ -34,6 +35,11 @@ public abstract class GameRendererMixin {
     private void axiom$cancelHurtTilt(PoseStack matrices, float tickDelta, CallbackInfo ci) {
         NoViewBobbingTilt m = ModuleManager.getInstance().getModule(NoViewBobbingTilt.class);
         if (m != null && m.isEnabled() && m.disableHurtTilt.get()) {
+            ci.cancel();
+        }
+
+        NoHurtCam hurtMod = ModuleManager.getInstance().getModule(NoHurtCam.class);
+        if (hurtMod != null && hurtMod.isEnabled()) {
             ci.cancel();
         }
     }

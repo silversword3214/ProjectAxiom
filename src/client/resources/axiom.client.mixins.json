@@ -9,7 +9,6 @@
     "accessors.MultiPlayerGameModeAccessor",
     "accessors.ServerboundMovePlayerPacketAccessor",
     "MultiPlayerGameModeMixin",
-    "NoDamageShakeMixin",
     "ReachMixin",
     "block.HoneyBlockMixin",
     "block.SlimeBlockMixin",

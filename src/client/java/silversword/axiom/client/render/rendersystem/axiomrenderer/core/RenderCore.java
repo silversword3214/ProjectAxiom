@@ -45,6 +45,7 @@ public class RenderCore {
 
         batches.clear();
         textBatches.clear();
+        allocator.clear();
         this.currentProjectionMatrix = projection;
         this.currentModelViewMatrix = modelView;
     }
@@ -144,9 +145,8 @@ public class RenderCore {
         } catch (Exception e) {
             LOGGER.error("Error during render pass", e);
         }
-
+        
         mesh.close();
-
         GpuFence fence = encoder.createFence();
         vbm.setFence(fence);
         vbm.rotate();
