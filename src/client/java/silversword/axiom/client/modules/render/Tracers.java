@@ -140,24 +140,22 @@ public final class Tracers extends AxiomMod implements ColorConfigurable, Keybin
                 if (toEntity.dot(cameraDir) <= 0) continue;
             }
 
-            double x = entity.xOld + (entity.getX() - entity.xOld) * event.getTickDelta();
-            double y = entity.yOld + (entity.getY() - entity.yOld) * event.getTickDelta();
-            double z = entity.zOld + (entity.getZ() - entity.zOld) * event.getTickDelta();
+            double x = entity.xOld + (entity.getX() - entity.xOld) * event.tickDelta;
+            double y = entity.yOld + (entity.getY() - entity.yOld) * event.tickDelta;
+            double z = entity.zOld + (entity.getZ() - entity.zOld) * event.tickDelta;
+
 
             if ("Head".equals(targetPoint.getMode())) {
                 y += entity.getBbHeight() * 0.9;
             } else {
                 y += entity.getBbHeight() * 0.5;
             }
-
-            // Haetaan väri ARGB-int
             int color = getColorForGroup(group).getCurrentColor().getARGB();
 
-            // Piirrä tracer-viiva (oletuspaksuus 1.0f)
-            renderer.drawLine(start.x, start.y, start.z, x, y, z, color, 1.0f);
+            renderer.drawLine(start.x, start.y, start.z, x, y, z, color, 3.0f);
 
             if (drawPillar.get()) {
-                double groundY = entity.getY();
+                double groundY = entity.yOld + (entity.getY() - entity.yOld) * event.tickDelta;
                 double topY = groundY + entity.getBbHeight();
                 renderer.drawLine(x, groundY, z, x, topY, z, color, 1.0f);
             }

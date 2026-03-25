@@ -26,7 +26,7 @@ import silversword.axiom.client.render.font.Fonts;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderPipelines;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.FabricHudHook;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.FabricWorldHook;
+
 import silversword.axiom.client.sound.CustomSounds;
 
 public final class AxiomInitialize implements ClientModInitializer {
@@ -54,7 +54,6 @@ public final class AxiomInitialize implements ClientModInitializer {
 
         // Rekisteröidään hookit
         FabricHudHook.register();
-        FabricWorldHook.register();
 
         // Rekisteröidään eventbus ja moduulit
         EVENT_BUS.register(this);

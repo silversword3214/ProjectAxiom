@@ -1,12 +1,16 @@
 package silversword.axiom.mixin.client.entity;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.core.Holder;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,11 +22,35 @@ import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.combat.AntiKnockback;
 import silversword.axiom.client.modules.movement.NoSlow;
 import silversword.axiom.client.modules.render.AntiBlind;
+import silversword.axiom.client.modules.render.NoOverlay;
 
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
 
-    // --- AntiKnockback: Knockback removing
+    // Pumpkin overlay
+    private static boolean shouldRemove() {
+        NoOverlay mod = ModuleManager.getInstance().getModule(NoOverlay.class);
+        return mod != null && mod.isEnabled() && mod.noPumpkin.get();
+    }
+
+    private static boolean isSelf(Object self) {
+        Minecraft mc = Minecraft.getInstance();
+        return mc.player != null && self == mc.player;
+    }
+
+    @Inject(method = "getItemBySlot", at = @At("RETURN"), cancellable = true)
+    private void axiom$noOverlay_pumpkin(EquipmentSlot slot, CallbackInfoReturnable<ItemStack> cir) {
+        if (!shouldRemove()) return;
+        if (!isSelf(this)) return;
+        if (slot != EquipmentSlot.HEAD) return;
+
+        ItemStack stack = cir.getReturnValue();
+        if (stack != null && stack.is(Items.CARVED_PUMPKIN)) {
+            cir.setReturnValue(ItemStack.EMPTY);
+        }
+    }
+
+    // AntiKnockback
     @ModifyVariable(method = "knockback", at = @At("HEAD"), argsOnly = true, index = 1)
     private double modifyKnockbackStrength(double strength) {
         AntiKnockback mod = ModuleManager.getInstance().getModule(AntiKnockback.class);
@@ -33,7 +61,7 @@ public abstract class LivingEntityMixin {
         return strength;
     }
 
-    // --- AntiBlind: blindness & darkness ---
+    // AntiBlind
     private boolean shouldRemoveEffect(Holder<MobEffect> effect) {
         if (!((Object) this instanceof LocalPlayer)) return false;
         AntiBlind mod = ModuleManager.getInstance().getModule(AntiBlind.class);
@@ -41,6 +69,7 @@ public abstract class LivingEntityMixin {
         return effect == MobEffects.BLINDNESS || effect == MobEffects.DARKNESS;
     }
 
+    // Potion effects
     @Inject(method = "hasEffect", at = @At("HEAD"), cancellable = true)
     private void onHasStatusEffect(Holder<MobEffect> effect, CallbackInfoReturnable<Boolean> cir) {
         if (shouldRemoveEffect(effect)) {
@@ -55,7 +84,7 @@ public abstract class LivingEntityMixin {
         }
     }
 
-    // --- NoSlow: block slow ---
+    // NoSlow block slow
     @Inject(method = "getBlockSpeedFactor", at = @At("RETURN"), cancellable = true)
     private void onGetVelocityMultiplier(CallbackInfoReturnable<Float> cir) {
         NoSlow noSlow = ModuleManager.getInstance().getModule(NoSlow.class);
@@ -69,7 +98,7 @@ public abstract class LivingEntityMixin {
         }
     }
 
-    // --- NoSlow: water slow ---
+    // NoSlow water slow
     @Inject(method = "getWaterSlowDown", at = @At("RETURN"), cancellable = true)
     private void onGetBaseWaterMovementSpeedMultiplier(CallbackInfoReturnable<Float> cir) {
         NoSlow noSlow = ModuleManager.getInstance().getModule(NoSlow.class);
@@ -81,7 +110,7 @@ public abstract class LivingEntityMixin {
         }
     }
 
-    // --- NoSlow: slowness potion ---
+    // NoSlow slowness potion
     @Inject(method = "hasEffect", at = @At("HEAD"), cancellable = true)
     private void onHasStatusEffectNoSlow(Holder<MobEffect> effect, CallbackInfoReturnable<Boolean> cir) {
         NoSlow noSlow = ModuleManager.getInstance().getModule(NoSlow.class);
@@ -106,7 +135,7 @@ public abstract class LivingEntityMixin {
         }
     }
 
-    // --- NoSlow: lava ---
+    // NoSlow lava
     @Inject(method = "travelInLava", at = @At("RETURN"))
     private void onTravelInLava(Vec3 movementInput, double gravity, boolean falling, double y, CallbackInfo ci) {
         NoSlow noSlow = ModuleManager.getInstance().getModule(NoSlow.class);
@@ -116,5 +145,7 @@ public abstract class LivingEntityMixin {
         // Palautetaan nopeus (kerrotaan 2:lla, koska travelInLava kertoi 0.5:llä)
         self.setDeltaMovement(self.getDeltaMovement().scale(2.0));
     }
+
+
 
 }

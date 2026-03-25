@@ -5,22 +5,15 @@ import com.mojang.blaze3d.buffers.GpuFence;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.nio.ByteBuffer;
-
 import static com.mojang.text2speech.Narrator.LOGGER;
 
-/**
- * Hallinnoi pyöreää puskuria (ring buffer) vertex-datalle.
- * Useat puskurit ja aitaus (fence) estävät GPU:n ja CPU:n törmäyksen.
- * Koko skaalautuu automaattisesti tarvittaessa.
- */
 public class VertexBufferManager implements AutoCloseable {
-    private static final int BUFFER_COUNT = 4;
+    private static final int BUFFER_COUNT = 3;                // plenty of buffers
+    private static final int INITIAL_SIZE = 2 * 1024 * 1024;   // 2 MB per buffer
     private static final String[] BUFFER_NAMES = {
-            "axiomrenderer_vertex_buffer_0",
             "axiomrenderer_vertex_buffer_1",
+            "axiomrenderer_vertex_buffer_2",
             "axiomrenderer_vertex_buffer_3",
-            "axiomrenderer_vertex_buffer_4",
-            "axiomrenderer_vertex_buffer_5",
     };
 
     private final GpuBuffer[] buffers = new GpuBuffer[BUFFER_COUNT];
@@ -29,55 +22,69 @@ public class VertexBufferManager implements AutoCloseable {
     private int currentIndex = 0;
 
     public VertexBufferManager() {
-        // Alustetaan fence-taulukko null-arvoilla
         for (int i = 0; i < BUFFER_COUNT; i++) {
+            buffers[i] = createBuffer(INITIAL_SIZE, i);
+            bufferSizes[i] = INITIAL_SIZE;
             fences[i] = null;
         }
     }
 
-    /**
-     * Varmistaa, että nykyinen puskuri on vähintään requiredSize-tavuinen.
-     * Odottaa tarvittaessa, kunnes edellinen käyttökerta on valmis (fence).
-     * Jos puskuri on liian pieni, luodaan uusi isompi.
-     */
-    public void ensureCapacity(int requiredSize) {
-        // Odota, että edellinen käyttökerta on valmis (blokkaa)
-        if (fences[currentIndex] != null) {
-            // Try to wait up to 16 milliseconds (1 frame at 60 fps)
-            boolean completed = fences[currentIndex].awaitCompletion(16_000_000L); // 16 ms in nanoseconds
-            if (!completed) {
-                LOGGER.warn("Fence timeout for buffer {}. Proceeding anyway.", currentIndex);
-            }
-            fences[currentIndex].close();
-            fences[currentIndex] = null;
-        }
-
-        if (buffers[currentIndex] == null || bufferSizes[currentIndex] < requiredSize) {
-            if (buffers[currentIndex] != null) {
-                buffers[currentIndex].close();
-            }
-            int newSize = Math.max(requiredSize, (int)(bufferSizes[currentIndex] * 1.5));
-            if (newSize < requiredSize) newSize = requiredSize;
-            if (newSize < 1024) newSize = 1024;
-
-            buffers[currentIndex] = RenderSystem.getDevice().createBuffer(
-                    () -> BUFFER_NAMES[currentIndex],
-                    GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_MAP_WRITE,
-                    newSize
-            );
-            bufferSizes[currentIndex] = newSize;
-        }
+    private GpuBuffer createBuffer(int size, int index) {
+        return RenderSystem.getDevice().createBuffer(
+                () -> BUFFER_NAMES[index],
+                GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_MAP_WRITE,
+                size
+        );
     }
 
     /**
-     * Loads given data to current buffer
-     * Assumes that buffer got space
+     * Non‑blocking: finds a free buffer and ensures it's big enough.
+     * Only blocks if every buffer is still busy (extremely rare).
      */
+    public void ensureCapacity(int requiredSize) {
+        // Try all buffers for a free one
+        for (int i = 0; i < BUFFER_COUNT; i++) {
+            int idx = (currentIndex + i) % BUFFER_COUNT;
+            if (fences[idx] == null || fences[idx].awaitCompletion(0)) {
+                if (fences[idx] != null) {
+                    fences[idx].close();
+                    fences[idx] = null;
+                }
+                currentIndex = idx;
+                // Resize if needed
+                if (bufferSizes[currentIndex] < requiredSize) {
+                    int newSize = Math.max(requiredSize, (int)(bufferSizes[currentIndex] * 1.5));
+                    if (newSize < 1024) newSize = 1024;
+                    GpuBuffer old = buffers[currentIndex];
+                    buffers[currentIndex] = createBuffer(newSize, currentIndex);
+                    bufferSizes[currentIndex] = newSize;
+                    if (old != null) old.close();
+                }
+                return;
+            }
+        }
+
+        // All buffers are busy – fallback (should almost never happen)
+        LOGGER.warn("All vertex buffers busy, waiting for index {}", currentIndex);
+        if (fences[currentIndex] != null) {
+            fences[currentIndex].awaitCompletion(16_000_000L); // 16 ms timeout
+            fences[currentIndex].close();
+            fences[currentIndex] = null;
+        }
+        // Resize if needed (same logic)
+        if (bufferSizes[currentIndex] < requiredSize) {
+            int newSize = Math.max(requiredSize, (int)(bufferSizes[currentIndex] * 1.5));
+            if (newSize < 1024) newSize = 1024;
+            GpuBuffer old = buffers[currentIndex];
+            buffers[currentIndex] = createBuffer(newSize, currentIndex);
+            bufferSizes[currentIndex] = newSize;
+            if (old != null) old.close();
+        }
+    }
+
     public void upload(ByteBuffer data, int size, CommandEncoder encoder) {
         GpuBuffer currentBuffer = buffers[currentIndex];
-        if (currentBuffer == null) {
-            throw new IllegalStateException("Buffer not allocated");
-        }
+        if (currentBuffer == null) throw new IllegalStateException("Buffer not allocated");
         try (GpuBuffer.MappedView mapped = encoder.mapBuffer(currentBuffer.slice(0, size), false, true)) {
             ByteBuffer target = mapped.data();
             data.rewind();
@@ -85,20 +92,14 @@ public class VertexBufferManager implements AutoCloseable {
         }
     }
 
-    /**
-     * Sets a fence for the current buffer
-     * Called after buffer using was sent to GPU
-     */
     public void setFence(GpuFence fence) {
         fences[currentIndex] = fence;
     }
 
-    /** Moves to the next buffer */
     public void rotate() {
         currentIndex = (currentIndex + 1) % BUFFER_COUNT;
     }
 
-    /** Returns the current buffer */
     public GpuBuffer getCurrentBuffer() {
         return buffers[currentIndex];
     }
@@ -108,17 +109,10 @@ public class VertexBufferManager implements AutoCloseable {
         long timeoutNanos = 1_000_000_000L; // 1 second
         for (int i = 0; i < BUFFER_COUNT; i++) {
             if (fences[i] != null) {
-                boolean completed = fences[i].awaitCompletion(timeoutNanos);
-                if (!completed) {
-                    LOGGER.warn("Fence {} did not complete within 1s – forcing close", i);
-                }
+                fences[i].awaitCompletion(timeoutNanos);
                 fences[i].close();
-                fences[i] = null;
             }
-            if (buffers[i] != null) {
-                buffers[i].close();
-                buffers[i] = null;
-            }
+            if (buffers[i] != null) buffers[i].close();
         }
     }
 }

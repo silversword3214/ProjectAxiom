@@ -120,9 +120,9 @@ public final class BoxESP extends AxiomMod implements ColorConfigurable, Keybind
             Vec3 entityPos = new Vec3(entity.getX(), entity.getY(), entity.getZ());
             if (entityPos.distanceToSqr(cameraPos) > maxDistSq) continue;
 
-            double x = entity.getX();
-            double y = entity.getY();
-            double z = entity.getZ();
+            double x = entity.xOld + (entity.getX() - entity.xOld) * event.tickDelta;
+            double y = entity.yOld + (entity.getY() - entity.yOld) * event.tickDelta;
+            double z = entity.zOld + (entity.getZ() - entity.zOld) * event.tickDelta;
 
             double halfWidth = entity.getBbWidth() / 2.0;
             double height = entity.getBbHeight();

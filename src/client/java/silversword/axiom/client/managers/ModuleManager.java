@@ -131,12 +131,9 @@ public final class ModuleManager {
         safeAdd(new Breadcrumbs());
         safeAdd(new NoHurtCam());
         safeAdd(new LowerShield());
-        safeAdd(new NoFireOverlay());
+        safeAdd(new NoOverlay());
         safeAdd(new AntiBlind());
         safeAdd(new NoVignette());
-        safeAdd(new NoFreezingOverlay());
-        safeAdd(new NoPumpkinOverlay());
-        safeAdd(new NoTotemOverlay());
         safeAdd(new NoViewBobbingTilt());
 
         // Misc
