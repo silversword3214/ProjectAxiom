@@ -12,6 +12,7 @@ import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.render.NoViewBobbingTilt;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.FabricWorldHook;
 
 @Mixin(GameRenderer.class)
 public abstract class GameRendererMixin {
@@ -20,7 +21,6 @@ public abstract class GameRendererMixin {
     private void onGameRendererClose(CallbackInfo ci) {
         RenderAPI.getInstance().close();
     }
-
 
     @Inject(method = "bobView", at = @At("HEAD"), cancellable = true)
     private void axiom$cancelViewBobbing(PoseStack matrices, float tickDelta, CallbackInfo ci) {

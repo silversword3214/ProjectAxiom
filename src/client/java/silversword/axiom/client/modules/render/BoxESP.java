@@ -1,6 +1,7 @@
 package silversword.axiom.client.modules.render;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.event.render.Render3DEvent;
@@ -109,9 +110,6 @@ public final class BoxESP extends AxiomMod implements ColorConfigurable, Keybind
 
         double maxDistSq = renderDistance.getValue() * renderDistance.getValue();
         Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
-
-        // Käytetään samaa tickDelta-arvoa kuin Minecraftin renderöinti
-        float tickDelta = RenderUtils.getTickDelta();
 
         for (Entity entity : mc.level.entitiesForRendering()) {
             if (entity == mc.player || !entity.isAlive()) continue;

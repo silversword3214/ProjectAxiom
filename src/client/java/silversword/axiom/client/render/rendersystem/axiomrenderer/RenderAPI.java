@@ -39,16 +39,6 @@ public class RenderAPI {
         renderer2D = new Renderer2D(graphics, core, proj);
     }
 
-    public Renderer3D beginWorld(WorldRenderContext context) {
-        Minecraft mc = Minecraft.getInstance();
-        float tickDelta = RenderUtils.getTickDelta();
-        Camera camera = mc.gameRenderer.getMainCamera();
-        Matrix4f projection = RenderUtils.getProjectionMatrix(tickDelta);
-        Matrix4f view = RenderUtils.getViewMatrix(camera);
-        renderer3D = new Renderer3D(core, projection, view, tickDelta);
-        return renderer3D;
-    }
-
     public void end() {
         core.flush();
     }

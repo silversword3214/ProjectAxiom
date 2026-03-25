@@ -37,8 +37,6 @@ public class RenderUtils {
                 .translate(-(float) pos.x, -(float) pos.y, -(float) pos.z);
     }
 
-
-
     public static float getTickDelta() {
         return Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
     }

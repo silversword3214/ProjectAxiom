@@ -57,7 +57,7 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-lifecycle-events-v1:${fabric_version}"
 
-    // GSON vain compile-ajaksi
+    // GSON
     implementation 'com.google.code.gson:gson:2.10.1'
 
     // ASM

@@ -3,7 +3,6 @@ package silversword.axiom.client.render.rendersystem.axiomrenderer.integration;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.main.AxiomInitialize;
