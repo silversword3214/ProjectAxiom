@@ -8,6 +8,7 @@
   "contact": {},
   "license": "All-Rights-Reserved",
   "environment": "client",
+  "accessWidener": "projectaxiom.accesswidener",
   "entrypoints": {
     "client": [
       "silversword.axiom.client.main.AxiomInitialize"

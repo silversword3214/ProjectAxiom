@@ -27,3 +27,4 @@ accessible field net/minecraft/client/renderer/GameRenderer levelProjectionMatri
 accessible method net/minecraft/client/Camera getMaxZoom (F)F
 
 accessible method net/minecraft/client/renderer/GameRenderer getFov (Lnet/minecraft/client/Camera;FZ)F
+accessible field net/minecraft/world/entity/Entity onGround Z

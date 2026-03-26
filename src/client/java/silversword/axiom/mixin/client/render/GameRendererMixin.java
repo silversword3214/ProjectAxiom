@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import silversword.axiom.client.event.GetFovEvent;
 import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.managers.ModuleManager;
+import silversword.axiom.client.modules.movement.Phase;
 import silversword.axiom.client.modules.render.NoHurtCam;
 import silversword.axiom.client.modules.render.NoOverlay;
 import silversword.axiom.client.modules.render.NoViewBobbingTilt;
@@ -45,6 +46,11 @@ public abstract class GameRendererMixin {
 
         NoHurtCam hurtMod = ModuleManager.getInstance().getModule(NoHurtCam.class);
         if (hurtMod != null && hurtMod.isEnabled()) {
+            ci.cancel();
+        }
+
+        Phase phaseMod = ModuleManager.getInstance().getModule(Phase.class);
+        if (phaseMod != null && phaseMod.isEnabled()) {
             ci.cancel();
         }
     }

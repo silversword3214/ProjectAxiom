@@ -15,6 +15,7 @@ import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
+import silversword.axiom.client.modules.moduleutils.FreecamCameraEntity;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingNumber;
@@ -49,6 +50,7 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
     private boolean bobView;
     private boolean forward, backward, right, left, up, down, isSneaking;
     private long clickTs = 0;
+    private FreecamCameraEntity cameraEntity;
 
     public Freecam() {
         super("Freecam", "Move camera freely without moving server-side", ModuleCategory.RENDER);
@@ -80,6 +82,15 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
             return;
         }
 
+        // Create and set the dummy camera
+        cameraEntity = new FreecamCameraEntity(mc.level);
+        Vec3 camPos = mc.gameRenderer.getMainCamera().position();
+        cameraEntity.setPos(camPos.x, camPos.y, camPos.z);
+        cameraEntity.setYRot(yaw);
+        cameraEntity.setXRot(pitch);
+        Entity originalCamera = mc.getCameraEntity();
+        mc.setCameraEntity(cameraEntity);
+
         fovScale = mc.options.fovEffectScale().get();
         bobView = mc.options.bobView().get();
         if (staticView.get()) {
@@ -95,7 +106,7 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
             mc.options.setCameraType(CameraType.FIRST_PERSON);
         }
 
-        Vec3 camPos = mc.gameRenderer.getMainCamera().position();
+
         pos.set(camPos.x, camPos.y, camPos.z);
         prevPos.set(camPos.x, camPos.y, camPos.z);
 
@@ -114,11 +125,25 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
 
         unpress();
 
+        if (mc.level != null) {
+            mc.level.addFreshEntity(cameraEntity);
+        }
+
         if (reloadChunks.get()) mc.levelRenderer.allChanged();
     }
 
     @Override
     protected void onDisable() {
+
+        if (cameraEntity != null) {
+            mc.setCameraEntity(mc.player);
+            // Remove the dummy entity from the level to avoid clutter
+            if (cameraEntity.isAlive()) {
+                cameraEntity.discard();
+            }
+            cameraEntity = null;
+        }
+
         if (reloadChunks.get()) {
             mc.execute(() -> mc.levelRenderer.allChanged());
         }
@@ -137,7 +162,13 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
     public void onTick() {
         if (!isEnabled() || mc.player == null) return;
 
-        // Hardware key detection – bypasses game's key binding system
+        if (cameraEntity != null) {
+            cameraEntity.setPos(pos.x, pos.y, pos.z);
+            cameraEntity.setYRot(yaw);
+            cameraEntity.setXRot(pitch);
+        }
+
+        // Hardware key detection - bypasses game's key binding system
         long handle = mc.getWindow().handle();
         forward = InputConstants.isKeyDown(mc.getWindow(), ((KeyMappingAccessor) mc.options.keyUp).getKey().getValue());
         backward = InputConstants.isKeyDown(mc.getWindow(), ((KeyMappingAccessor) mc.options.keyDown).getKey().getValue());
@@ -207,8 +238,6 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
         }
     }
 
-    // The following event handlers are no longer needed for movement
-// but can be kept for other features (like toggling on damage, etc.)
     @Subscribe
     private void onGameLeft(GameLeftEvent event) {
         if (toggleOnLog.get() && isEnabled()) toggle();

@@ -1,6 +1,9 @@
 package silversword.axiom.mixin.client.entity;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.combat.AntiKnockback;
 import silversword.axiom.client.modules.movement.NoSlow;
+import silversword.axiom.client.modules.movement.Phase;
 import silversword.axiom.client.modules.render.AntiBlind;
 import silversword.axiom.client.modules.render.NoOverlay;
 
@@ -144,6 +148,20 @@ public abstract class LivingEntityMixin {
         LivingEntity self = (LivingEntity)(Object)this;
         // Palautetaan nopeus (kerrotaan 2:lla, koska travelInLava kertoi 0.5:llä)
         self.setDeltaMovement(self.getDeltaMovement().scale(2.0));
+    }
+
+    @Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
+    private void axiom$preventSuffocationDamage(ServerLevel serverLevel, DamageSource damageSource, float amount, CallbackInfoReturnable<Boolean> cir) {
+        Phase mod = ModuleManager.getInstance().getModule(Phase.class);
+        if (mod == null || !mod.isEnabled()) return;
+
+        // Only apply to the local player
+        if ((Object)this != serverLevel.getServer().getPlayerList().getPlayer(Minecraft.getInstance().player.getUUID())) return;
+
+        // Check for suffocation damage (being inside a block)
+        if (damageSource.is(DamageTypes.IN_WALL)) {
+            cir.setReturnValue(false);
+        }
     }
 
 

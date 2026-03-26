@@ -66,6 +66,7 @@ public final class ModuleManager {
      * Add all modules here.
      * This is the ONLY place you should have "new SomeModule()".
      */
+
     private void registerModules() {
         // Combat
         safeAdd(new KillAura());
@@ -84,6 +85,9 @@ public final class ModuleManager {
 
         // Movement
         safeAdd(new Flight());
+        safeAdd(new BoatFly());
+        safeAdd(new BoatPhase());
+        safeAdd(new Phase());
         safeAdd(new Speed());
         safeAdd(new AirJump());
         safeAdd(new AutoSprint());
@@ -93,7 +97,6 @@ public final class ModuleManager {
         safeAdd(new ClickTP());
         safeAdd(new Scaffold());
         safeAdd(new Blink());
-        safeAdd(new RoofPhase());
         safeAdd(new NoSlow());
 
         // Player
@@ -131,6 +134,7 @@ public final class ModuleManager {
         safeAdd(new Breadcrumbs());
         safeAdd(new NoHurtCam());
         safeAdd(new LowerShield());
+        safeAdd(new NoParticleModule());
         safeAdd(new NoOverlay());
         safeAdd(new AntiBlind());
         safeAdd(new NoVignette());

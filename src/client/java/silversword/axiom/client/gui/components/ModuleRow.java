@@ -4,6 +4,7 @@ import net.minecraft.resources.Identifier;
 import silversword.axiom.client.gui.core.*;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.misc.DeathLocationModule;
+import silversword.axiom.client.modules.render.NoParticleModule;
 import silversword.axiom.client.modules.render.WaypointModule;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
@@ -183,15 +184,16 @@ public final class ModuleRow implements UiComponent {
 
             if (gearRect.contains(mouseX, mouseY)) {
                 leftDown = false;
+                // Handle special modules
                 if (module instanceof WaypointModule) {
                     ((WaypointModule) module).openManager();
-
+                } else if (module instanceof NoParticleModule) {
+                    ((NoParticleModule) module).openManager();
+                } else if (module instanceof DeathLocationModule) {
+                    ((DeathLocationModule) module).openListWindow();
                 } else {
-                    if (module instanceof DeathLocationModule) {
-                        ((DeathLocationModule) module).openListWindow();
-                    } else {
-                        onOpenSettings.accept(module);
-                    }
+                    // Normal setting
+                    onOpenSettings.accept(module);
                 }
                 return true;
             }
