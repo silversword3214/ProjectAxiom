@@ -1,100 +1,101 @@
 package silversword.axiom.client.render.rendersystem.utils.render;
 
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
-import silversword.axiom.client.hud.core.HudContext;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
+import silversword.axiom.client.managers.ModuleManager;
+import silversword.axiom.client.modules.render.NoHurtCam;
+import silversword.axiom.client.modules.render.NoViewBobbingTilt;
 
 public final class NametagUtils {
     private static final Minecraft mc = Minecraft.getInstance();
 
-    /**
-     * Converts a 3D world position to 2D screen coordinates.
-     * @param renderer the active 3D renderer (provides projection & view matrices)
-     * @param worldPos world position
-     * @return a new Vec3 containing (screenX, screenY, depth) if in front, otherwise null
-     */
-    public static Vec3 worldToScreen(Renderer3D renderer, Vec3 worldPos) {
-        Matrix4f proj = renderer.getProjectionMatrix();
-        Matrix4f view = renderer.getViewMatrix();
+    public static Vec3 worldToScreen(Vec3 worldPos) {
+        var camera = mc.gameRenderer.getMainCamera();
+        float tickDelta = mc.getDeltaTracker().getGameTimeDeltaPartialTick(true);
 
-        Vector4f clip = new Vector4f((float) worldPos.x, (float) worldPos.y, (float) worldPos.z, 1.0f);
-        clip.mul(view).mul(proj);
+        // 1. Luodaan Bobbing/Hurt -korjausmatriisi
+        Matrix4f bobCorrection = new Matrix4f();
+        applyBobbing(bobCorrection, tickDelta);
 
-        if (clip.w <= 0.0f) return null; // behind camera
+        // 2. Perusnäkymämatriisi (Kameran rotaatio)
+        Matrix4f view = new Matrix4f().rotation(camera.rotation());
 
-        // Perspective division
+        // YHDISTETÄÄN: Korjaus pitää ajaa ENNEN perusrotaatiota nimitagien tapauksessa,
+        // jotta ne seuraavat näytön heiluntaa oikeassa suhteessa.
+        bobCorrection.mul(view);
+
+        // 3. Haetaan projektio
+        Matrix4f proj = RenderUtils.getProjectionMatrix(tickDelta);
+
+        // 4. Lasketaan suhteellinen sijainti (Maailma -> Kamera-avaruus)
+        Vector4f clip = new Vector4f(
+                (float) (worldPos.x - camera.position().x),
+                (float) (worldPos.y - camera.position().y),
+                (float) (worldPos.z - camera.position().z),
+                1.0f
+        );
+
+        // 5. Muunnos: Clip-avaruuteen
+        clip.mul(bobCorrection); // Sisältää nyt sekä heilunnan että kameran suunnan
+        clip.mul(proj);
+
+        if (clip.w <= 0.0f) return null;
+
+        // 6. Normalisointi ja skaalaus ruudulle
         float invW = 1.0f / clip.w;
         float ndcX = clip.x * invW;
         float ndcY = clip.y * invW;
 
-        // Convert to screen coordinates
-        int width = mc.getWindow().getWidth();
-        int height = mc.getWindow().getHeight();
-        float screenX = (ndcX * 0.5f + 0.5f) * width;
-        float screenY = (1.0f - (ndcY * 0.5f + 0.5f)) * height;
-        float depth = clip.z * invW;
+        int scaledWidth = mc.getWindow().getGuiScaledWidth();
+        int scaledHeight = mc.getWindow().getGuiScaledHeight();
 
-        return new Vec3(screenX, screenY, depth);
+        float screenX = (ndcX * 0.5f + 0.5f) * scaledWidth;
+        float screenY = (1.0f - (ndcY * 0.5f + 0.5f)) * scaledHeight;
+
+        return new Vec3(screenX, screenY, clip.w);
     }
 
-    /**
-     * Draws a text nametag at the given screen position (pixel coordinates).
-     * @param ctx HUD context for drawing
-     * @param screenX screen X coordinate
-     * @param screenY screen Y coordinate
-     * @param text the text to draw
-     * @param textColor text color
-     * @param bgColor background color (may be transparent)
-     * @param scale text scale (1.0 = normal size)
-     */
-    public static void drawNametag(HudContext ctx, double screenX, double screenY,
-                                   String text, Color textColor, Color bgColor, float scale) {
-        float padding = 4 * scale;
-        float radius = 3 * scale;
+    private static void applyBobbing(Matrix4f matrix, float tickDelta) {
+        NoViewBobbingTilt bobMod = ModuleManager.getInstance().getModule(NoViewBobbingTilt.class);
+        NoHurtCam hurtMod = ModuleManager.getInstance().getModule(NoHurtCam.class);
 
-        // Text dimensions
-        float textWidth = ctx.textWidth(text) * scale;
-        float textHeight = ctx.fontHeight() * scale;
+        boolean bobbingCancelled = (bobMod != null && bobMod.isEnabled());
+        boolean hurtCancelled = (hurtMod != null && hurtMod.isEnabled()) || (bobMod != null && bobMod.isEnabled() && bobMod.disableHurtTilt.get());
 
-        // Background rectangle
-        float bgX = (float) (screenX - textWidth / 2 - padding);
-        float bgY = (float) (screenY - textHeight - padding * 2);
-        float bgW = textWidth + padding * 2;
-        float bgH = textHeight + padding * 2;
+        if (mc.getCameraEntity() instanceof net.minecraft.client.player.AbstractClientPlayer player) {
+            // VIEW BOBBING
+            if (mc.options.bobView().get() && !bobbingCancelled) {
+                var state = player.avatarState();
+                float g = state.getBackwardsInterpolatedWalkDistance(tickDelta);
+                float h = state.getInterpolatedBob(tickDelta);
 
-        // Draw background
-        if (bgColor.getAlpha() > 0) {
-            ctx.fillRounded((int) bgX, (int) bgY, (int) bgW, (int) bgH, (int) radius, bgColor.getARGB());
+                float translateX = (float) Math.sin(g * (float) Math.PI) * h * 0.5F;
+                float translateY = Math.abs((float) Math.cos(g * (float) Math.PI) * h);
+                float rotateZ = (float) Math.sin(g * (float) Math.PI) * h * 3.0F;
+                float rotateX = Math.abs((float) Math.cos(g * (float) Math.PI - 0.2F) * h) * 5.0F;
+
+                matrix.rotateX(rotateX * 0.017453292F);
+                matrix.rotateZ(rotateZ * 0.017453292F);
+                matrix.translate(translateX, -translateY, 0.0F);
+            }
+
+            // HURT TILT
+            if (mc.options.damageTiltStrength().get() > 0 && !hurtCancelled) {
+                float g = (float) player.hurtTime - tickDelta;
+                if (g >= 0.0F) {
+                    g /= (float) player.hurtDuration;
+                    g = net.minecraft.util.Mth.sin(g * g * g * g * (float) Math.PI);
+                    float h = player.getHurtDir();
+                    float i = (float) ((double) (-g) * 14.0D * mc.options.damageTiltStrength().get());
+
+                    matrix.rotateY(h * 0.017453292F);
+                    matrix.rotateZ(i * 0.017453292F);
+                    matrix.rotateY(h * 0.017453292F);
+                }
+            }
         }
-
-        // Draw text
-        float textX = bgX + padding;
-        float textY = bgY + padding;
-        ctx.drawScaledText(text, (int) textX, (int) textY, textColor.getARGB(), true, scale);
-    }
-
-    /**
-     * Convenience method: converts world position to screen and draws nametag.
-     * @param renderer active 3D renderer
-     * @param ctx HUD context
-     * @param worldPos world position
-     * @param text text to display
-     * @param textColor text color
-     * @param bgColor background color
-     * @param scale text scale
-     * @return true if drawn, false if behind camera
-     */
-    public static boolean renderNametag(Renderer3D renderer, HudContext ctx,
-                                        Vec3 worldPos, String text,
-                                        Color textColor, Color bgColor, float scale) {
-        Vec3 screenPos = worldToScreen(renderer, worldPos);
-        if (screenPos == null) return false;
-
-        drawNametag(ctx, screenPos.x, screenPos.y, text, textColor, bgColor, scale);
-        return true;
     }
 }

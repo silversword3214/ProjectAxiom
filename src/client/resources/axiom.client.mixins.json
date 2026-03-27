@@ -39,7 +39,6 @@
     "gui.TitleScreenMixin",
     "boat.BoatPhaseMixin",
     "boat.BoatPhaseDismountMixin",
-    "movement.PhaseMixin",
     "GuiMixin",
     "gui.PauseScreenMixin",
     "gui.AbstractContainerScreenMixin",

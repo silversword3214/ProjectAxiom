@@ -11,8 +11,10 @@ import silversword.axiom.client.modules.moduleutils.SmartKillAura.RotationHandle
 import silversword.axiom.client.modules.movement.NoSlow;
 
 
+
 @Mixin(LocalPlayer.class)
 public class LocalPlayerMixin {
+
 
     @Inject(method = "sendPosition", at = @At("HEAD"))
     private void onPreSendMovementPackets(CallbackInfo ci) {

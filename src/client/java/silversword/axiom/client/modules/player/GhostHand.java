@@ -300,59 +300,52 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
         BlockState state = mc.level.getBlockState(pos);
         if (state.isAir()) return;
 
-        // Blokin nimi
+        // 1. Haetaan blokin nimi
         String blockName = Component.translatable(state.getBlock().getDescriptionId()).getString();
 
-        // Lasketaan blokin yläpinnan korkeus
+        // 2. Lasketaan maailman koordinaatit (keskellä blockia, yläpinnan päällä + offset)
         AABB box = state.getShape(mc.level, pos).bounds();
-        double topY = pos.getY() + box.maxY;
-
-        // Maailmapiste (keskellä x/z, yläpinnan + offset)
         double worldX = pos.getX() + 0.5;
-        double worldY = topY + nametagOffset.getValue();
+        double worldY = pos.getY() + box.maxY + nametagOffset.getValue();
         double worldZ = pos.getZ() + 0.5;
 
-        // Ruutukoordinaatit
-        Matrix4f proj = mc.gameRenderer.getProjectionMatrix(mc.gameRenderer.getFov(mc.gameRenderer.getMainCamera(), event.getTickDelta(), true));
-        Matrix4f view = new Matrix4f().rotate(mc.gameRenderer.getMainCamera().rotation().conjugate())
-                .translate(-(float) mc.gameRenderer.getMainCamera().position().x,
-                        -(float) mc.gameRenderer.getMainCamera().position().y,
-                        -(float) mc.gameRenderer.getMainCamera().position().z);
+        // 3. Muunnos ruudulle NametagUtilsilla
+        Vec3 screenPos = silversword.axiom.client.render.rendersystem.utils.render.NametagUtils.worldToScreen(new Vec3(worldX, worldY, worldZ));
 
-        Vector4f clip = new Vector4f((float) worldX, (float) worldY, (float) worldZ, 1.0f);
-        clip.mul(view).mul(proj);
-        if (clip.w <= 0.0f) return; // behind camera
+        if (screenPos == null) return;
 
-        float invW = 1.0f / clip.w;
-        float ndcX = clip.x * invW;
-        float ndcY = clip.y * invW;
+        double screenX = screenPos.x;
+        double screenY = screenPos.y;
+        double distance = screenPos.z; // w-arvo eli etäisyys
 
-        int width = mc.getWindow().getWidth();
-        int height = mc.getWindow().getHeight();
-        float screenX = (ndcX * 0.5f + 0.5f) * width;
-        float screenY = (1.0f - (ndcY * 0.5f + 0.5f)) * height;
-
-        // Etäisyyspohjainen skaalaus
-        Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
-        double dist = Math.sqrt(cameraPos.distanceToSqr(worldX, worldY, worldZ));
-        double distanceScale = Mth.clamp(1.0 - dist * 0.005, 0.8, 3.0);
+        // 4. Skaalaus (pienennetään etäisyyden mukaan, mutta pidetään järkevissä rajoissa)
+        double distanceScale = 1.0 / Math.max(1.0, distance * 0.2); // Säädä 0.2 jos haluat pienenemisen olevan hitaampaa
         double finalScale = nametagScale.getValue() * distanceScale;
+        finalScale = Math.max(finalScale, 0.4); // Minimikoko ettei teksti katoa
 
-        double textWidth = blockName.length() * TextUtils.CHAR_UNIT * finalScale;
-        double textHeight = TextUtils.FONT_HEIGHT * finalScale;
-        double padding = 2.0 * finalScale;
-        double bgWidth = textWidth + padding * 2;
-        double bgHeight = textHeight + padding * 2;
-        double bgX = screenX - bgWidth / 2;
-        double bgY = screenY - bgHeight / 2;
+        // 5. Mitat käyttäen sinun TextUtils-luokkaasi
+        // Lasketaan leveys: merkkien määrä * vakioleveys
+        double textWidth = blockName.length() * TextUtils.CHAR_WIDTH;
+        double textHeight = TextUtils.FONT_HEIGHT;
 
-        // Tausta
-        drawBackground(bgX, bgY, bgWidth, bgHeight, finalScale);
+        double padding = 2.0;
+        double bgWidth = (textWidth + padding * 2) * finalScale;
+        double bgHeight = (textHeight + padding * 2) * finalScale;
 
-        // Teksti
+        // Keskitys
+        double renderX = screenX - (bgWidth / 2.0);
+        double renderY = screenY - (bgHeight / 2.0);
+
+        // 6. Piirtäminen
+        // Varmistetaan että käytetään HUD-kerroksen oikeita mittoja matriisissa
+        core.beginFrame(new Matrix4f().setOrtho(0, event.getScreenWidth(), event.getScreenHeight(), 0, -1000, 1000), new Matrix4f().identity());
+
+        drawBackground(renderX, renderY, bgWidth, bgHeight, finalScale);
+
         TextRenderer text = TextRenderer.get();
-        text.begin(1.0, false, true);
-        text.render(blockName, bgX + padding, bgY + padding, textColor.getCurrentColor(), false);
+        // Aloitetaan tekstin piirto finalScalella
+        text.begin(finalScale, true, true); // Ei skaalausta tekstimoottorissa
+        text.render(blockName, (float)(renderX + padding * finalScale), (float)(renderY + padding * finalScale), textColor.getCurrentColor(), false);
         text.end();
     }
 

@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.DeltaTracker;
 import org.joml.Matrix4f;
+import silversword.axiom.client.event.render.Render2DEvent;
 import silversword.axiom.client.gui.core.Theme;
 import silversword.axiom.client.gui.core.ThemeManager;
 import silversword.axiom.client.gui.screen.ClickGuiScreen;
@@ -67,27 +68,30 @@ public final class HudManager {
 
     public void renderAll(GuiGraphics draw, DeltaTracker tickCounter) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc == null || mc.player == null) return;
-        if (mc.screen instanceof ClickGuiScreen) return;
+        if (mc.level == null || mc.player == null) return;
+
+        float delta = tickCounter.getGameTimeDeltaPartialTick(true);
+
+        // 1. Käytetään skaalattua projektiota, jotta kaikki on samassa koossa
+        Matrix4f proj = RenderUtils.getScaledProjection(draw);
+        Renderer2D renderer = new Renderer2D(draw, RenderAPI.getInstance().getCore(), proj);
 
         Theme theme = ThemeManager.getCurrentTheme();
-        float delta = tickCounter.getGameTimeDeltaTicks();
 
-        // Luo projektiomatriisi (pikselikoordinaatit)
-        Matrix4f proj = RenderUtils.getUnscaledProjection();
-        Renderer2D renderer = new Renderer2D(draw, RenderAPI.getInstance().getCore(), proj);
+        // 2. LÄHETÄ EVENT TÄSSÄ (Moduulit kuten NameTags piirtävät nyt tässä)
+        Render2DEvent event = new Render2DEvent(renderer, delta, draw, draw.guiWidth(), draw.guiHeight());
+        silversword.axiom.client.main.AxiomInitialize.EVENT_BUS.post(event);
+
+        // 3. Piirrä HUD-elementit (kuten Watermark, Coordinates)
         HudContext ctx = new HudContext(mc, draw, theme, delta, renderer);
-
-        // Piirrä kaikki elementit
         for (HudElement e : elements) {
             if (!e.enabled()) continue;
             e.render(ctx, tickCounter);
         }
 
-        // Piirrä tallennetut tekstit
         ctx.renderTexts();
 
-        // Lähetä kaikki GPU:lle
+        // 4. VAIN YKSI FLUSH KOKO FRAMELLE
         RenderAPI.getInstance().getCore().flush();
     }
 

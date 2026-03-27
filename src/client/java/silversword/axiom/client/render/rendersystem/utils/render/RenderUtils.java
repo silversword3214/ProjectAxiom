@@ -9,7 +9,7 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector4f;
 import silversword.axiom.client.managers.ModuleManager;
-import silversword.axiom.client.modules.movement.Phase;
+
 import silversword.axiom.client.modules.render.NoHurtCam;
 import silversword.axiom.client.modules.render.NoViewBobbingTilt;
 
@@ -43,13 +43,13 @@ public class RenderUtils {
 
         NoViewBobbingTilt bobMod = ModuleManager.getInstance().getModule(NoViewBobbingTilt.class);
         NoHurtCam hurtMod = ModuleManager.getInstance().getModule(NoHurtCam.class);
-        Phase phaseMod = ModuleManager.getInstance().getModule(Phase.class);
+
 
         boolean bobbingCancelledByMod = (bobMod != null && bobMod.isEnabled());
 
         boolean isHurtTiltCancelled = (hurtMod != null && hurtMod.isEnabled()) ||
-                (bobMod != null && bobMod.isEnabled() && bobMod.disableHurtTilt.get()) ||
-                (phaseMod != null && phaseMod.isEnabled());
+                (bobMod != null && bobMod.isEnabled() && bobMod.disableHurtTilt.get());
+
 
         if (mc.getCameraEntity() instanceof net.minecraft.client.player.AbstractClientPlayer player) {
 

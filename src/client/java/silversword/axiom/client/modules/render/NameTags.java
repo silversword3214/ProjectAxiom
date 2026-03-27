@@ -15,8 +15,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.GameType;
-import org.joml.Matrix4f;
-import org.joml.Vector4f;
 import silversword.axiom.client.event.render.Render2DEvent;
 import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
@@ -33,8 +31,8 @@ import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.render.rendersystem.utils.render.NametagUtils;
 import silversword.axiom.client.setting.*;
-import silversword.axiom.client.utils.render.DrawTexture;
 import silversword.axiom.client.utils.render.TextUtils;
 
 import java.util.*;
@@ -113,15 +111,15 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         background = new SettingColor("Background", new Color(0, 0, 0, 75));
         outline = new SettingColor("Outline", new Color(255, 255, 255, 255));
 
-        drawPlayers = new SettingBoolean("Draw Players", true);
-        drawHostile = new SettingBoolean("Draw Hostile", true);
-        drawPassive = new SettingBoolean("Draw Passive", true);
-        drawNeutral = new SettingBoolean("Draw Neutral", true);
-        drawWater = new SettingBoolean("Draw Water", true);
-        drawBoss = new SettingBoolean("Draw Boss", true);
-        drawItems = new SettingBoolean("Draw Items", true);
-        drawItemFrames = new SettingBoolean("Draw Item Frames", true);
-        drawTNT = new SettingBoolean("Draw TNT", true);
+        drawPlayers = new SettingBoolean("Players", true);
+        drawHostile = new SettingBoolean("Hostile Entities", true);
+        drawPassive = new SettingBoolean("Passive Entities", true);
+        drawNeutral = new SettingBoolean("Neutral Entities", true);
+        drawWater = new SettingBoolean("Water Entities", true);
+        drawBoss = new SettingBoolean("Boss Entities", true);
+        drawItems = new SettingBoolean("Items", true);
+        drawItemFrames = new SettingBoolean("Item Frames", true);
+        drawTNT = new SettingBoolean("TNT timer", true);
 
         bgMode = new SettingMode("Background", new String[]{"None", "Filled", "Outline", "Rounded"}, "Filled");
 
@@ -222,15 +220,9 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
     // --------------------------- 3D -> 2D conversion -----------------------
     @Subscribe
     private void onRender2D(Render2DEvent event) {
+
         if (event.getGuiGraphics() == null) return;
         if (!isEnabled() || entityList.isEmpty()) return;
-
-        // Get current projection and view matrices from the camera
-        Matrix4f proj = mc.gameRenderer.getProjectionMatrix(mc.gameRenderer.getFov(mc.gameRenderer.getMainCamera(), event.tickDelta, true));
-        Matrix4f view = new Matrix4f().rotate(mc.gameRenderer.getMainCamera().rotation().conjugate())
-                .translate(-(float) mc.gameRenderer.getMainCamera().position().x,
-                        -(float) mc.gameRenderer.getMainCamera().position().y,
-                        -(float) mc.gameRenderer.getMainCamera().position().z);
 
         int count = getRenderCount();
         Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
@@ -244,8 +236,8 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
 
             Vec3 worldPos = new Vec3(x, y + getHeight(entity) + nameOffset.getValue(), z);
 
-            // Convert to screen coordinates
-            Vec3 screenPos = worldToScreen(proj, view, worldPos);
+            // Convert to screen coordinates using NametagUtils
+            Vec3 screenPos = NametagUtils.worldToScreen(worldPos);
             if (screenPos == null) continue; // behind camera
 
             double dist = Math.sqrt(entity.distanceToSqr(cameraPos));
@@ -269,23 +261,6 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
                 renderGenericNametag(event, entity, screenPos.x, screenPos.y, finalScale);
             }
         }
-    }
-
-    private Vec3 worldToScreen(Matrix4f proj, Matrix4f view, Vec3 worldPos) {
-        Vector4f clip = new Vector4f((float) worldPos.x, (float) worldPos.y, (float) worldPos.z, 1.0f);
-        clip.mul(view).mul(proj);
-        if (clip.w <= 0.0f) return null; // behind camera
-
-        float invW = 1.0f / clip.w;
-        float ndcX = clip.x * invW;
-        float ndcY = clip.y * invW;
-
-        int width = mc.getWindow().getWidth();
-        int height = mc.getWindow().getHeight();
-        float screenX = (ndcX * 0.5f + 0.5f) * width;
-        float screenY = (1.0f - (ndcY * 0.5f + 0.5f)) * height;
-
-        return new Vec3(screenX, screenY, clip.z * invW);
     }
 
     private int getRenderCount() {
@@ -316,7 +291,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         if (showHealth.get()) {
             float health = player.getHealth();
             healthText = String.valueOf(Math.round(health));
-            text.begin(1.0, false, true);
+            text.begin(finalScale, false, true);
             double healthNumWidth = text.getWidth(healthText, false);
             double healthNumHeight = text.getHeight(false);
             text.end();
@@ -401,7 +376,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
             // Health number
             double numX = healthX + heartSize + 2 * finalScale;
             double numY = yCursor + (healthLineHeight - TextUtils.FONT_HEIGHT * finalScale) / 2;
-            text.begin(1.0, false, true);
+            text.begin(finalScale, false, true);
             text.render(healthText, numX, numY, getHealthColor(player), false);
             text.end();
             yCursor += healthLineHeight + gapBetweenLines;
@@ -410,7 +385,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         // Name line
         double nameX = bgX + padding;
         double nameY = yCursor + (nameLineHeight - TextUtils.FONT_HEIGHT * finalScale) / 2;
-        text.begin(1.0, false, true);
+        text.begin(finalScale, false, true);
         text.render(nameLine, nameX, nameY, textColor.getCurrentColor(), false);
         text.end();
         yCursor += nameLineHeight + gapBetweenLines;
@@ -490,7 +465,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
 
         double textX = bgX + padding;
         double textY = bgY + padding;
-        text.begin(1.0, false, true);
+        text.begin(finalScale, false, true);
         text.render(name, textX, textY, textColor.getCurrentColor(), false);
         text.render(count, textX + nameWidth, textY, new Color(232, 185, 35), false);
         text.end();
@@ -523,7 +498,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
 
         double textX = bgX + padding;
         double textY = bgY + padding;
-        text.begin(1.0, false, true);
+        text.begin(finalScale, false, true);
         text.render(name, textX, textY, textColor.getCurrentColor(), false);
         text.render(healthText, textX + nameWidth, textY, healthColor, false);
         text.end();
@@ -545,7 +520,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
 
         double textX = bgX + padding;
         double textY = bgY + padding;
-        text.begin(1.0, false, true);
+        text.begin(finalScale, false, true);
         text.render(name, textX, textY, textColor.getCurrentColor(), false);
         text.end();
     }
@@ -566,7 +541,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
 
         double textX = bgX + padding;
         double textY = bgY + padding;
-        text.begin(1.0, false, true);
+        text.begin(finalScale, false, true);
         text.render(timeText, textX, textY, new Color(232, 185, 35), false);
         text.end();
     }

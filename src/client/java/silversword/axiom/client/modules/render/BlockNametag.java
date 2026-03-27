@@ -8,7 +8,6 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-import org.joml.Vector4f;
 import silversword.axiom.client.event.render.Render2DEvent;
 import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
@@ -24,6 +23,7 @@ import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.render.rendersystem.utils.render.NametagUtils;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingMode;
 import silversword.axiom.client.setting.SettingNumber;
@@ -126,46 +126,32 @@ public final class BlockNametag extends AxiomMod implements ColorConfigurable, K
         if (event.getGuiGraphics() == null) return;
         if (!isEnabled() || currentBlockPos == null || currentBlockName == null) return;
 
-        // Lasketaan maailmapiste (blokin keskipiste + y-offset)
         double x = currentBlockPos.getX() + 0.5;
         double y = currentBlockPos.getY() + 0.5 + nameOffset.getValue();
         double z = currentBlockPos.getZ() + 0.5;
         Vec3 worldPos = new Vec3(x, y, z);
 
-        // Muunnetaan ruutukoordinaateiksi
-        Matrix4f proj = mc.gameRenderer.getProjectionMatrix(mc.gameRenderer.getFov(mc.gameRenderer.getMainCamera(), event.getTickDelta(), true));
-        Matrix4f view = new Matrix4f().rotate(mc.gameRenderer.getMainCamera().rotation().conjugate())
-                .translate(-(float) mc.gameRenderer.getMainCamera().position().x,
-                        -(float) mc.gameRenderer.getMainCamera().position().y,
-                        -(float) mc.gameRenderer.getMainCamera().position().z);
+        Vec3 screenPos = NametagUtils.worldToScreen(worldPos);
+        if (screenPos == null) return;
 
-        Vector4f clip = new Vector4f((float) worldPos.x, (float) worldPos.y, (float) worldPos.z, 1.0f);
-        clip.mul(view).mul(proj);
-        if (clip.w <= 0.0f) return; // behind camera
-
-        float invW = 1.0f / clip.w;
-        float ndcX = clip.x * invW;
-        float ndcY = clip.y * invW;
-
-        int width = mc.getWindow().getWidth();
-        int height = mc.getWindow().getHeight();
-        float screenX = (ndcX * 0.5f + 0.5f) * width;
-        float screenY = (1.0f - (ndcY * 0.5f + 0.5f)) * height;
-
+        double screenX = screenPos.x;
+        double screenY = screenPos.y;
         double finalScale = scale.getValue();
-        double textWidth = currentBlockName.length() * TextUtils.CHAR_UNIT * finalScale;
-        double textHeight = TextUtils.FONT_HEIGHT * finalScale;
+
+        TextRenderer text = TextRenderer.get();
+        text.begin(1.0, false, true);
+        double textWidth = text.getWidth(currentBlockName, false) * finalScale;
+        double textHeight = text.getHeight(false) * finalScale;
+        text.end();
+
         double padding = 2.0 * finalScale;
         double bgWidth = textWidth + padding * 2;
         double bgHeight = textHeight + padding * 2;
         double bgX = screenX - bgWidth / 2;
         double bgY = screenY - bgHeight / 2;
 
-        // Piirretään tausta
         drawBackground(bgX, bgY, bgWidth, bgHeight, finalScale);
 
-        // Piirretään teksti
-        TextRenderer text = TextRenderer.get();
         text.begin(1.0, false, true);
         text.render(currentBlockName, bgX + padding, bgY + padding, textColor.getCurrentColor(), false);
         text.end();

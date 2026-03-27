@@ -42,6 +42,7 @@ public class Flight extends AxiomMod implements KeybindConfigurable {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.getConnection() == null) return;
 
+
         mc.player.setNoGravity(true);
         mc.player.fallDistance = 0.0f;
         tickCounter++;

@@ -1,14 +1,8 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
-import org.joml.Vector3d;
-import org.joml.Vector4f;
 import silversword.axiom.client.event.render.Render2DEvent;
-import silversword.axiom.client.event.render.Render3DEvent;
-
 import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.window.WindowFactory;
 import silversword.axiom.client.main.AxiomMod;
@@ -17,24 +11,21 @@ import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.waypoints.Waypoint;
 import silversword.axiom.client.modules.waypoints.WaypointManagerWindow;
 import silversword.axiom.client.render.font.TextRenderer;
-
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.render.rendersystem.utils.render.NametagUtils;
-import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingMode;
 import silversword.axiom.client.setting.SettingNumber;
 import silversword.axiom.client.utils.render.TextUtils;
+import org.joml.Matrix4f;
 
 public final class WaypointModule extends AxiomMod {
     private final Minecraft mc = Minecraft.getInstance();
-    private final Vector3d pos = new Vector3d();
 
-    // Global settings that affect rendering
     public final SettingBoolean showWaypoints = new SettingBoolean("Show Waypoints", true);
     public final SettingBoolean showDistance = new SettingBoolean("Show Distance", true);
     public final SettingNumber maxRenderDistance = new SettingNumber("Max Distance", 100, 5000, 10, 1000);
@@ -45,7 +36,6 @@ public final class WaypointModule extends AxiomMod {
     public final SettingBoolean showOutline = new SettingBoolean("Show Outline", true);
     public final SettingColor outlineColor = new SettingColor("Outline Color", new Color(255,255,255,255));
     public final SettingMode shape = new SettingMode("Shape", new String[]{"Circle", "Square", "Rounded"}, "Rounded");
-
 
     public WaypointModule() {
         super("Waypoints", "Manage and display custom waypoints", ModuleCategory.RENDER);
@@ -61,21 +51,14 @@ public final class WaypointModule extends AxiomMod {
         addSetting(shape);
     }
 
-    // Called when the gear button in ModuleRow is clicked
     public void openManager() {
         int sw = mc.getWindow().getGuiScaledWidth();
         int sh = mc.getWindow().getGuiScaledHeight();
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;
-        // Avataan leveämpi ikkuna (600x400)
         factory.openPopupWindow("waypoint_manager", "Waypoint Manager",
                 (sw - 600) / 2, (sh - 400) / 2, 600, 400,
                 new WaypointManagerWindow(this));
-    }
-
-    @Override
-    protected void onTick() {
-
     }
 
     @Subscribe
@@ -83,134 +66,95 @@ public final class WaypointModule extends AxiomMod {
         if (event.getGuiGraphics() == null) return;
         if (!isEnabled() || !showWaypoints.get() || mc.level == null || mc.player == null) return;
 
-        // Haetaan renderöijä ja core
         RenderCore core = RenderAPI.getInstance().getCore();
         double maxDist = maxRenderDistance.getValue();
-        boolean showDist = showDistance.get();
-
-        // Kameran tiedot ruutumuunnokseen
-        Camera camera = mc.gameRenderer.getMainCamera();
-        Matrix4f proj = mc.gameRenderer.getProjectionMatrix(
-                mc.gameRenderer.getFov(camera, event.getTickDelta(), true));
-        Matrix4f view = new Matrix4f()
-                .rotate(camera.rotation().conjugate())
-                .translate(-(float) camera.position().x,
-                        -(float) camera.position().y,
-                        -(float) camera.position().z);
 
         for (Waypoint wp : WaypointManager.getInstance().getAll()) {
             if (!wp.enabled) continue;
+
             double dist = mc.player.position().distanceTo(new Vec3(wp.x, wp.y, wp.z));
             if (dist > maxDist) continue;
 
-            // Muunnetaan maailmapiste ruutukoordinaateiksi
+            // Käytetään NametagUtilsia maailmapisteen muuntamiseen (huomioi North-bugin ja FOV:n)
             Vec3 worldPos = new Vec3(wp.x, wp.y + 0.5, wp.z);
-            Vec3 screenPos = worldToScreen(proj, view, worldPos);
-            if (screenPos == null) continue;
+            Vec3 screenPos = NametagUtils.worldToScreen(worldPos);
 
-            // Piirretään pin ja tekstit käyttäen corea
-            renderWaypointPin(core, wp, screenPos.x, screenPos.y, dist, showDist, wp.scale);
+            if (screenPos == null) continue; // Piste on kameran takana
+
+            // screenPos.z sisältää w-arvon (etäisyyden), jota voidaan käyttää lisäskaalaukseen jos halutaan
+            renderWaypointPin(core, wp, screenPos.x, screenPos.y, dist, wp.scale * scale.getValue());
         }
     }
 
-    private Vec3 worldToScreen(Matrix4f proj, Matrix4f view, Vec3 worldPos) {
-        Vector4f clip = new Vector4f((float) worldPos.x, (float) worldPos.y, (float) worldPos.z, 1.0f);
-        clip.mul(view).mul(proj);
-        if (clip.w <= 0.0f) return null;
-
-        float invW = 1.0f / clip.w;
-        float ndcX = clip.x * invW;
-        float ndcY = clip.y * invW;
-
-        int width = mc.getWindow().getWidth();
-        int height = mc.getWindow().getHeight();
-        float screenX = (ndcX * 0.5f + 0.5f) * width;
-        float screenY = (1.0f - (ndcY * 0.5f + 0.5f)) * height;
-
-        return new Vec3(screenX, screenY, 0);
-    }
-
-    private void renderWaypointPin(RenderCore core, Waypoint wp, double screenX, double screenY,
-                                   double dist, boolean showDist, double scale) {
-        double charWidth = TextUtils.CHAR_UNIT * scale;
-        double charHeight = TextUtils.FONT_HEIGHT * scale;
-        double padding = 2.0 * scale;
-
-        String letter = wp.name.isEmpty() ? "?" : wp.name.substring(0, 1).toUpperCase();
-        double textWidth = charWidth;
-        double textHeight = charHeight;
+    private void renderWaypointPin(RenderCore core, Waypoint wp, double screenX, double screenY, double dist, double finalScale) {
+        // 1. Lasketaan mitat skaalaamattomana
+        double textWidth = TextUtils.CHAR_UNIT;
+        double textHeight = TextUtils.FONT_HEIGHT;
+        double padding = 2.0;
 
         double pinWidth, pinHeight;
         if (wp.shape.equals("Circle")) {
-            double diameter = Math.max(textWidth, textHeight) + 2 * padding;
-            pinWidth = pinHeight = diameter;
+            pinWidth = pinHeight = (Math.max(textWidth, textHeight) + 2 * padding) * finalScale;
         } else {
-            pinWidth = textWidth + 2 * padding;
-            pinHeight = textHeight + 2 * padding;
+            pinWidth = (textWidth + 2 * padding) * finalScale;
+            pinHeight = (textHeight + 2 * padding) * finalScale;
         }
 
         double pinX = screenX - pinWidth / 2;
         double pinY = screenY - pinHeight / 2;
 
-        // Haetaan värit (int ARGB)
-        int bgColor = wp.bgColor;
-        int outlineColor = wp.outlineColor;
-        int textColor = wp.color;
-
-        // Tausta
+        // 2. Tausta ja reunus (käyttäen skaalattuja mittoja)
         if (wp.showBg) {
             if (wp.shape.equals("Circle")) {
-                core.addCircle((float) screenX, (float) screenY, (float) (pinWidth / 2), bgColor);
+                core.addCircle((float) screenX, (float) screenY, (float) (pinWidth / 2), wp.bgColor);
             } else if (wp.shape.equals("Square")) {
-                core.addRect2D((float) pinX, (float) pinY, (float) pinWidth, (float) pinHeight, bgColor);
+                core.addRect2D((float) pinX, (float) pinY, (float) pinWidth, (float) pinHeight, wp.bgColor);
             } else {
-                double radius = 3.0 * scale;
-                core.addRoundedRect((float) pinX, (float) pinY, (float) pinWidth, (float) pinHeight, (float) radius, bgColor);
+                float radius = (float) (3.0 * finalScale);
+                core.addRoundedRect((float) pinX, (float) pinY, (float) pinWidth, (float) pinHeight, radius, wp.bgColor);
             }
         }
 
-        // Reunus
         if (wp.showOutline) {
-            double thickness = Math.max(1.0, scale);
+            float thickness = (float) Math.max(1.0, finalScale);
             if (wp.shape.equals("Circle")) {
-                core.addCircleOutline((float) screenX, (float) screenY, (float) (pinWidth / 2), (float) thickness, outlineColor);
+                core.addCircleOutline((float) screenX, (float) screenY, (float) (pinWidth / 2), thickness, wp.outlineColor);
             } else if (wp.shape.equals("Square")) {
-                core.addRectOutline2D((float) pinX, (float) pinY, (float) pinWidth, (float) pinHeight, (float) thickness, outlineColor);
+                core.addRectOutline2D((float) pinX, (float) pinY, (float) pinWidth, (float) pinHeight, thickness, wp.outlineColor);
             } else {
-                double radius = 3.0 * scale;
-                core.addRoundedRectOutline((float) pinX, (float) pinY, (float) pinWidth, (float) pinHeight, (float) radius, (float) thickness, outlineColor);
+                float radius = (float) (3.0 * finalScale);
+                core.addRoundedRectOutline((float) pinX, (float) pinY, (float) pinWidth, (float) pinHeight, radius, thickness, wp.outlineColor);
             }
         }
 
-        // Pääkirjain
+        // 3. Pääkirjain (skaalattuna oikeaan paikkaan)
+        String letter = wp.name.isEmpty() ? "?" : wp.name.substring(0, 1).toUpperCase();
         TextRenderer text = TextRenderer.get();
-        text.begin(scale, false, true);
-        double letterX = screenX - textWidth / 2;
-        double letterY = screenY - textHeight / 2;
-        text.render(letter, letterX, letterY, new Color(textColor), true);
+        text.begin(finalScale, false, true);
+
+        // Jaetaan koordinaatit scalella, koska text.begin skaalaa ne takaisin
+        float letterX = (float) ((screenX - (textWidth * finalScale) / 2) / finalScale);
+        float letterY = (float) ((screenY - (textHeight * finalScale) / 2) / finalScale);
+
+        text.render(letter, letterX, letterY, new Color(wp.color), true);
         text.end();
 
-        // Etäisyysteksti
-        if (showDist) {
-            int d = (int) Math.round(dist);
-            String distText = d + "m";
-            double distScale = 0.7;
-            double distCharWidth = TextUtils.CHAR_UNIT * distScale;
-            double distWidth = distText.length() * distCharWidth;
-            double distX = screenX - distWidth / 2;
-            double distY = screenY + pinHeight / 2 + 2.0 * scale;
+        // 4. Etäisyysteksti
+        if (showDistance.get()) {
+            String distText = (int) Math.round(dist) + "m";
+            double distScale = finalScale * 0.7; // Suhteellinen skaalaus waypointin kokoon
 
             text.begin(distScale, false, false);
-            text.render(distText, distX, distY, new Color(0xFFFFFFFF), true);
+            // Lasketaan leveys ja paikka
+            float distW = (float) (distText.length() * TextUtils.CHAR_WIDTH);
+            float dX = (float) ((screenX - (distW * distScale) / 2) / distScale);
+            float dY = (float) ((screenY + pinHeight / 2 + 2 * finalScale) / distScale);
+
+            text.render(distText, dX, dY, new Color(0xFFFFFFFF), true);
             text.end();
         }
     }
 
-    private void renderEdgeIndicator(Waypoint wp, double dist, boolean showDist, float scale) {
-        // Compute direction from player to waypoint
-        Vec3 player = mc.player.position();
-        Vec3 to = new Vec3(wp.x, wp.y, wp.z).subtract(player).normalize();
-        // Project onto screen edges? This is more complex. For simplicity, we can just not render edge indicators for now.
-        // You can implement a screen edge arrow later.
-    }
+    @Override
+    protected void onTick() {}
 }

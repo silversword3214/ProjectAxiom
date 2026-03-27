@@ -87,7 +87,7 @@ public final class ModuleManager {
         safeAdd(new Flight());
         safeAdd(new BoatFly());
         safeAdd(new BoatPhase());
-        safeAdd(new Phase());
+        safeAdd(new PhaseWBoat());
         safeAdd(new Speed());
         safeAdd(new AirJump());
         safeAdd(new AutoSprint());
@@ -111,6 +111,7 @@ public final class ModuleManager {
         // Render
         safeAdd(new WaypointModule());
         safeAdd(new BoxESP());
+        safeAdd(new SphereESP());
         safeAdd(new ChestESP());
         safeAdd(new CaveESP());
         safeAdd(new LavaESP());
