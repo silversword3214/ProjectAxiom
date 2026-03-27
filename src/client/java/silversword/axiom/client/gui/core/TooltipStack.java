@@ -1,5 +1,7 @@
 package silversword.axiom.client.gui.core;
 
+import silversword.axiom.client.utils.render.TextUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,14 +39,15 @@ public final class TooltipStack {
         String[] lines = text.split("\n");
         int lineCount = lines.length;
 
+        // Lasketaan maksimileveys käyttäen TextUtils.CHAR_WIDTH:ä
         int maxWidth = 0;
         for (String line : lines) {
-            int lineWidth = ui.textWidth(line);
+            int lineWidth = line.length() * TextUtils.CHAR_UNIT;
             if (lineWidth > maxWidth) maxWidth = lineWidth;
         }
 
-        int boxWidth = maxWidth + 2 * PADDING;
-        int boxHeight = lineCount * ui.fontHeight() + 2 * PADDING;
+        int boxWidth = maxWidth + PADDING;
+        int boxHeight = lineCount * TextUtils.FONT_HEIGHT + 2 * PADDING;
 
         double x = mouseX + 12;
         double y = mouseY - 12;
@@ -64,12 +67,12 @@ public final class TooltipStack {
         ui.fillRounded((int) x, (int) y, boxWidth, boxHeight, ui.theme.panel, RADIUS);
         ui.drawRoundedOutline(new Rect((int) x, (int) y, boxWidth, boxHeight), ui.theme.border, RADIUS, 1.0);
 
-        // Teksti
+        // Teksti – käytetään ui.text(), joka käyttää CHAR_UNIT-mittausta
         int textX = (int) x + PADDING;
         int textY = (int) y + PADDING;
         for (String line : lines) {
             ui.text(line, textX, textY, ui.theme.text);
-            textY += ui.fontHeight();
+            textY += TextUtils.FONT_HEIGHT;
         }
     }
 }

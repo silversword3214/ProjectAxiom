@@ -9,9 +9,11 @@ import silversword.axiom.client.gui.core.Theme;
 import silversword.axiom.client.gui.core.ThemeManager;
 import silversword.axiom.client.gui.screen.ClickGuiScreen;
 import silversword.axiom.client.hud.core.HudContext;
+import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
 import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
+import silversword.axiom.client.utils.render.DrawTexture;
 
 import java.util.*;
 
@@ -80,7 +82,7 @@ public final class HudManager {
 
         // 2. LÄHETÄ EVENT TÄSSÄ (Moduulit kuten NameTags piirtävät nyt tässä)
         Render2DEvent event = new Render2DEvent(renderer, delta, draw, draw.guiWidth(), draw.guiHeight());
-        silversword.axiom.client.main.AxiomInitialize.EVENT_BUS.post(event);
+        AxiomInitialize.EVENT_BUS.post(event);
 
         // 3. Piirrä HUD-elementit (kuten Watermark, Coordinates)
         HudContext ctx = new HudContext(mc, draw, theme, delta, renderer);
@@ -91,7 +93,10 @@ public final class HudManager {
 
         ctx.renderTexts();
 
-        // 4. VAIN YKSI FLUSH KOKO FRAMELLE
+        RenderAPI.getInstance().getCore().flush();
+
+        DrawTexture.renderAll();
+
         RenderAPI.getInstance().getCore().flush();
     }
 

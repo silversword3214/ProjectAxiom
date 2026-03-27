@@ -134,7 +134,7 @@ public class Blink extends AxiomMod implements KeybindConfigurable {
         // Hotbar on yleensä 22px korkea ja sijaitsee 3px pohjasta
         int hotbarY = scaledHeight - 22;
         int x = (int) ((scaledWidth - textWidth) / 2);
-        int y = hotbarY - (int) textHeight - 10;
+        int y = hotbarY - (int) textHeight - 30;
 
         double padding = 4 * scale;
         double bgX = x - padding;

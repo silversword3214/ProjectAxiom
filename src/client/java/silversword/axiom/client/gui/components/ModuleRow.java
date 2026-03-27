@@ -115,14 +115,14 @@ public final class ModuleRow implements UiComponent {
 
 
         if (gearTexture != null) {
-            RenderAPI.getInstance().getCore().addRotatedTexture(
+            ui.addTexture(
                     GEAR_TEXTURE,
                     gearRect.x + 2,
                     gearRect.y + 2,
                     gearRect.w - 4,
                     gearRect.h - 2,
                     gearRotation,
-                    0xFFFFFFFF
+                    new Color(0xFFFFFFFF)
             );
         } else {
             // Fallback to dots

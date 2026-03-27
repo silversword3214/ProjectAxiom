@@ -2,6 +2,7 @@ package silversword.axiom.client.hud.components.render;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.hud.BaseHudElement;
@@ -10,6 +11,8 @@ import silversword.axiom.client.modules.moduleutils.TargetGroup;
 import silversword.axiom.client.modules.render.RadarModule;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
+import silversword.axiom.client.render.rendersystem.utils.color.Color;
+import silversword.axiom.client.utils.render.DrawTexture;
 
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
@@ -32,7 +35,6 @@ public final class RadarHud extends BaseHudElement {
 
     // Muoto
     private String radarShape = "SQUARE";
-    private boolean showEntityCircles = false;
     private double entityCircleSize = 8.0;
 
     // Korkeusindikaattori
@@ -64,7 +66,7 @@ public final class RadarHud extends BaseHudElement {
         this.module = module;
     }
 
-    // Setterit (pysyvät ennallaan)
+    // Setterit
     public void setSize(int size) { this.size = size; }
     public void setRenderDistance(double d) { renderDistance = d; }
     public void setDotSize(double d) { dotSize = d; }
@@ -78,7 +80,6 @@ public final class RadarHud extends BaseHudElement {
     public void setDrawWater(boolean b) { drawWater = b; }
     public void setDrawBoss(boolean b) { drawBoss = b; }
     public void setRadarShape(String s) { radarShape = s; }
-    public void setShowEntityCircles(boolean b) { showEntityCircles = b; }
     public void setEntityCircleSize(double d) { entityCircleSize = Math.max(1, d); }
     public void setHeightIndicator(String s) { heightIndicator = s; }
     public void setHeightRange(double d) { heightRange = Math.max(1, d); }
@@ -96,6 +97,8 @@ public final class RadarHud extends BaseHudElement {
     @Override public boolean isModuleControlled() { return true; }
     @Override public int width(Minecraft mc) { return (int) (size * radarScale); }
     @Override public int height(Minecraft mc) { return (int) (size * radarScale); }
+
+    private static final Identifier NAVIGATOR_TEXTURE = Identifier.fromNamespaceAndPath("projectaxiom", "textures/icons/navigation.png");
 
     @Override
     public void render(HudContext ctx, DeltaTracker tickCounter) {
@@ -136,6 +139,13 @@ public final class RadarHud extends BaseHudElement {
             drawCompass(ctx, (int) centerX, (int) centerY, (int) radius, textScale, forward, right);
         }
 
+        // Navigaattori-ikoni keskellä
+        float iconSize = 12 * radarScale; // koko skaalautuu radarin mukana
+        float iconX = centerX - iconSize / 2;
+        float iconY = centerY - iconSize / 2;
+
+        DrawTexture.add(NAVIGATOR_TEXTURE, iconX, iconY, iconSize, iconSize, new Color(0xFFFFFFFF));
+
         // Entiteetit
         for (Entity entity : mc.level.entitiesForRendering()) {
             if (entity == mc.player || !entity.isAlive()) continue;
@@ -167,28 +177,21 @@ public final class RadarHud extends BaseHudElement {
             float alpha = 1.0f;
             if ("OPACITY".equals(heightIndicator) && heightRange > 0) {
                 float factor = (float) Math.min(1.0, Math.abs(dy) / heightRange);
-                alpha = 1.0f - factor * 0.7f;
+                alpha = 1.0f - factor * 0.9f; // selvempi ero: alhaalla alpha=0.1
             }
             int finalColor = applyAlpha(baseColor, alpha);
 
-            // Ympyrä entiteetin ympärille
-            if (showEntityCircles) {
-                float circleRad = (float) (entityCircleSize * dotScale);
-                int fillColor = (finalColor & 0x00FFFFFF) | (0x80 << 24);
-                core.addCircle(dotX, dotY, circleRad, fillColor);
-            }
-
-            // Piste
-            float finalDotSize = (float) (dotSize * dotScale);
-            core.addRect2D(dotX - finalDotSize/2, dotY - finalDotSize/2, finalDotSize, finalDotSize, finalColor);
+            // Piirretään aina ympyrä (neliötä ei ole)
+            float circleRad = (float) (entityCircleSize * dotScale);
+            core.addCircle(dotX, dotY, circleRad, finalColor);
 
             // Korkeusindikaattori (viiva)
             if ("LINE".equals(heightIndicator) && dy != 0) {
                 int lineLength = (int) Math.min(20, Math.abs(dy) / heightRange * 20);
                 if (dy > 0) {
-                    core.addLine2D(dotX, dotY - finalDotSize/2, dotX, dotY - finalDotSize/2 - lineLength, 1.0f, aboveColor);
+                    core.addLine2D(dotX, dotY - circleRad, dotX, dotY - circleRad - lineLength, 1.0f, aboveColor);
                 } else {
-                    core.addLine2D(dotX, dotY + finalDotSize/2, dotX, dotY + finalDotSize/2 + lineLength, 1.0f, belowColor);
+                    core.addLine2D(dotX, dotY + circleRad, dotX, dotY + circleRad + lineLength, 1.0f, belowColor);
                 }
             }
         }

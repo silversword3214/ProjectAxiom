@@ -53,7 +53,6 @@ public final class RadarModule extends AxiomMod implements ColorConfigurable, Ke
 
     // ------------------- Muoto -------------------
     public final SettingMode radarShape;           // SQUARE / CIRCLE
-    public final SettingBoolean showEntityCircles; // piirretäänkö ympyrä entiteettien ympärille
     public final SettingNumber entityCircleSize;   // ympyrän koko (oletus 8.0)
 
     // ------------------- Korkeusindikaattori -------------------
@@ -100,8 +99,7 @@ public final class RadarModule extends AxiomMod implements ColorConfigurable, Ke
 
         // Muoto
         radarShape    = new SettingMode("Radar Shape", new String[]{"SQUARE", "CIRCLE"}, "SQUARE");
-        showEntityCircles = new SettingBoolean("Show Entity Circles", false);
-        entityCircleSize = new SettingNumber("Entity Circle Size", 3.0, 20.0, 0.5, 8.0); // pienempi oletus
+        entityCircleSize = new SettingNumber("Entity Circle Size", 1, 5, 0.5, 2);
 
         // Korkeusindikaattori
         heightIndicator = new SettingMode("Height Indicator", new String[]{"OFF", "OPACITY", "LINE"}, "OPACITY");
@@ -130,16 +128,14 @@ public final class RadarModule extends AxiomMod implements ColorConfigurable, Ke
         // Näkyvät asetukset
         addSetting(radarSize);
         addSetting(renderDistance);
-        addSetting(dotSize);
         addSetting(radarScale);
         addSetting(textScale);
         addSetting(dotScale);
         addSetting(radarShape);
-        addSetting(showEntityCircles);
         addSetting(entityCircleSize);
         addSetting(heightIndicator);
         addSetting(heightRange);
-        addSetting(showCompass); // UUSI
+        addSetting(showCompass);
         addSetting(drawPlayers);
         addSetting(drawHostile);
         addSetting(drawPassive);
@@ -184,7 +180,6 @@ public final class RadarModule extends AxiomMod implements ColorConfigurable, Ke
 
         // Muoto
         hud.setRadarShape(radarShape.getMode());
-        hud.setShowEntityCircles(showEntityCircles.get());
         hud.setEntityCircleSize(entityCircleSize.getValue());
 
         // Korkeusindikaattori

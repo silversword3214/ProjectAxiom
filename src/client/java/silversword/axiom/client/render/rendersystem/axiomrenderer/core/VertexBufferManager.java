@@ -8,12 +8,13 @@ import java.nio.ByteBuffer;
 import static com.mojang.text2speech.Narrator.LOGGER;
 
 public class VertexBufferManager implements AutoCloseable {
-    private static final int BUFFER_COUNT = 3;                // plenty of buffers
+    private static final int BUFFER_COUNT = 4;                // plenty of buffers
     private static final int INITIAL_SIZE = 2 * 1024 * 1024;   // 2 MB per buffer
     private static final String[] BUFFER_NAMES = {
             "axiomrenderer_vertex_buffer_1",
             "axiomrenderer_vertex_buffer_2",
             "axiomrenderer_vertex_buffer_3",
+            "axiomrenderer_vertex_buffer_4",
     };
 
     private final GpuBuffer[] buffers = new GpuBuffer[BUFFER_COUNT];

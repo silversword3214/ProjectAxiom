@@ -111,14 +111,16 @@ public final class ClickGuiScreen extends Screen {
         // Lopeta tekstirenderöinti
         TextRenderer.get().end();
 
-        // Lähetä kaikki piirto-objektit GPU:lle
         RenderAPI.getInstance().getCore().flush();
 
         super.render(ctx, mouseX, mouseY, delta);
-
         DrawTexture.renderAll();
 
+        RenderAPI.getInstance().getCore().flush();
+
         TooltipStack.renderAll(lastUi);
+
+        RenderAPI.getInstance().getCore().flush();
     }
 
     private void drawRoundedButton(UiContext ui, int x, int y, int w, int h, int bgColor, int borderColor, int radius) {

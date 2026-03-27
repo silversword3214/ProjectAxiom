@@ -29,14 +29,13 @@ public class MixinServerPlayerGameMode {
         BlockState state = world.getBlockState(pos);
 
 
-        // 1. Suoraan screenHandlerFactory (chestit, uunit, työpöydät...)
         MenuProvider factory = state.getMenuProvider(world, pos);
         if (factory != null) {
             player.openMenu(factory);
             cir.setReturnValue(InteractionResult.CONSUME);
             return;
         } else {
-            System.out.println("[GhostHand] No Factor");
+
         }
 
         // 2. Kokeillaan onUseWithItem (blokin oma metodi esineen kanssa)
@@ -65,10 +64,6 @@ public class MixinServerPlayerGameMode {
             }
         }
 
-
-
-
-        System.out.println("[GhostHand] All attempts failed");
     }
 
 

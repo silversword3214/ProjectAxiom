@@ -3,10 +3,6 @@ package silversword.axiom.client.hud.settings;
 import silversword.axiom.client.setting.Setting;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 
-/**
- * Kääreluokka, joka mahdollistaa SettingColor-olion lisäämisen HudComponentSettings-listaan.
- * Toteuttaa Setting-rajapinnan, mutta delegoi kaikki kutsut sisäiselle SettingColor-oliolle.
- */
 public class HudColorSetting extends Setting {
     private final SettingColor color;
 

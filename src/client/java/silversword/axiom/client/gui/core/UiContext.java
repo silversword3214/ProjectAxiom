@@ -2,8 +2,11 @@ package silversword.axiom.client.gui.core;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.resources.Identifier;
 import silversword.axiom.client.render.font.TextRenderer;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
+import silversword.axiom.client.render.rendersystem.utils.color.Color;
+import silversword.axiom.client.utils.render.DrawTexture;
 
 public class UiContext {
     public final Minecraft mc;
@@ -68,16 +71,27 @@ public class UiContext {
         uiText.render(s, x, y, new silversword.axiom.client.render.rendersystem.utils.color.Color(argb), false);
     }
 
+    public void addTexture(Identifier textureId, double x, double y, double width, double height, Color color) {
+        DrawTexture.add(textureId, x, y, width, height, color);
+    }
+
+    /**
+     * Lisää kierretyn tekstuurin keräyslistaan.
+     */
+    public void addTexture(Identifier textureId, double x, double y, double width, double height, double rotation, Color color) {
+        DrawTexture.add(textureId, x, y, width, height, rotation, color);
+    }
+
     public void textShadow(String s, int x, int y, int argb) {
         uiText.render(s, x, y, new silversword.axiom.client.render.rendersystem.utils.color.Color(argb), true);
     }
 
     public int textWidth(String s) {
-        return (int) uiText.getWidth(s);
+        return (int) (uiText.getWidth(s));
     }
 
     public int fontHeight() {
-        return (int) uiText.getHeight();
+        return (int) (uiText.getHeight());
     }
 
     public int fontAscent() {

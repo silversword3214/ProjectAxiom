@@ -26,6 +26,7 @@ public final class HudContext {
 
     private final List<TextEntry> textEntries = new ArrayList<>();
 
+
     public HudContext(Minecraft mc, GuiGraphics draw, Theme theme, float delta, Renderer2D renderer) {
         this.mc = mc;
         this.draw = draw;

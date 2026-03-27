@@ -16,7 +16,6 @@ public final class PhaseWBoat extends AxiomMod implements KeybindConfigurable {
 
     // ===== TUTORIAL TEXT =====
     private static final String TUTORIAL_TEXT =
-            "This by-passes Vulcan and Spartan anti-cheats. (WARNING: Must use ONLY when going UPWARDS)\n\n" +
                     "Before you do anything:\n" +
                     "1. Go to Flight -module's setting and set the VERTICAL speed to 0.5, Mode to Packet and Anti-Kick to Dolphin.\n\n" +
                     "Ensure you changed those settings!\n\n" +
@@ -121,7 +120,7 @@ public final class PhaseWBoat extends AxiomMod implements KeybindConfigurable {
             flight.setEnabled(true);
         }
 
-        phaseDelay = 25; // 2 seconds (20 ticks per second)
+        phaseDelay = 1; // 2 seconds (20 ticks per second)
         flightDelay = 0;
         shiftPressed = false;
         phaseActivated = false;
@@ -166,7 +165,7 @@ public final class PhaseWBoat extends AxiomMod implements KeybindConfigurable {
             }
 
             // Start 1‑second timer to disable Flight
-            flightDelay = 20; // 1 second
+            flightDelay = 1; // 1 second
         }
 
         // --- Flight deactivation timer ---
