@@ -1,6 +1,11 @@
 package silversword.axiom.client.render.rendersystem.utils.texture;
 
+import net.minecraft.resources.Identifier;
+
 public class TextureRegion {
+
+    public Identifier atlasId;
+
     public double x1, y1;
     public double x2, y2;
 

@@ -14,8 +14,10 @@ import silversword.axiom.client.gui.core.UiContext;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.render.font.TextRenderer;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
 import silversword.axiom.client.hud.*;
+import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
 
 public final class HudEditScreen extends Screen {
     private static final int GRID_SIZE = 10;
@@ -48,11 +50,12 @@ public final class HudEditScreen extends Screen {
     public void render(GuiGraphics vanillaCtx, int mouseX, int mouseY, float delta) {
         this.lastMouseX = mouseX;
         this.lastMouseY = mouseY;
+        Matrix4f proj = RenderUtils.getScaledProjection(vanillaCtx);
         Minecraft mc = Minecraft.getInstance();
         Theme theme = ThemeManager.getCurrentTheme();
 
         // Käytetään Screen-luokan valmiita pikselimittoja (this.width, this.height)
-        Matrix4f proj = new Matrix4f().setOrtho(0, this.width, this.height, 0, -1000, 1000);
+
         Renderer2D renderer = new Renderer2D(vanillaCtx, RenderAPI.getInstance().getCore(), proj);
 
         // Luo UiContext ja HudContext
@@ -60,7 +63,7 @@ public final class HudEditScreen extends Screen {
         HudContext hudCtx = new HudContext(mc, vanillaCtx, theme, delta, renderer);
 
         // 1. Piirrä läpikuultava tausta (koko ruudun kokoinen)
-        uiCtx.fill(0, 0, this.width, this.height, BACKGROUND_COLOR);
+        uiCtx.fill(0, 0, width, height, BACKGROUND_COLOR);
 
         // 2. Piirrä grid (vain jos raahataan)
         if (gridVisible) {
@@ -90,20 +93,20 @@ public final class HudEditScreen extends Screen {
 
         TextRenderer.get().end();
 
-        // 7. Lähetä kaikki piirto-objektit GPU:lle
         RenderAPI.getInstance().getCore().flush();
 
         super.render(vanillaCtx, mouseX, mouseY, delta);
     }
 
     private void drawGrid(UiContext ctx) {
-        // Piirretään pystysuorat viivat
-        for (int x = 0; x < this.width; x += GRID_SIZE) {
-            ctx.drawOutline(x, 0, 1, this.height, GRID_COLOR);
+        RenderCore core = RenderAPI.getInstance().getCore();
+        // Pystysuorat viivat
+        for (int x = 0; x < width; x += GRID_SIZE) {
+            core.addLine2D(x, 0, x, height, 1.0f, GRID_COLOR);
         }
-        // Piirretään vaakasuorat viivat
-        for (int y = 0; y < this.height; y += GRID_SIZE) {
-            ctx.drawOutline(0, y, this.width, 1, GRID_COLOR);
+        // Vaakasuorat viivat
+        for (int y = 0; y < height; y += GRID_SIZE) {
+            core.addLine2D(0, y, width, y, 1.0f, GRID_COLOR);
         }
     }
 

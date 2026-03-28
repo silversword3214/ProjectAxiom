@@ -1,8 +1,10 @@
 package silversword.axiom.client.hud;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.DeltaTracker;
+import org.joml.Matrix3x2fStack;
 import org.joml.Matrix4f;
 import silversword.axiom.client.event.render.Render2DEvent;
 import silversword.axiom.client.gui.core.Theme;
@@ -73,30 +75,38 @@ public final class HudManager {
         if (mc.level == null || mc.player == null) return;
 
         float delta = tickCounter.getGameTimeDeltaPartialTick(true);
-
-        // 1. Käytetään skaalattua projektiota, jotta kaikki on samassa koossa
         Matrix4f proj = RenderUtils.getScaledProjection(draw);
         Renderer2D renderer = new Renderer2D(draw, RenderAPI.getInstance().getCore(), proj);
 
         Theme theme = ThemeManager.getCurrentTheme();
 
-        // 2. LÄHETÄ EVENT TÄSSÄ (Moduulit kuten NameTags piirtävät nyt tässä)
         Render2DEvent event = new Render2DEvent(renderer, delta, draw, draw.guiWidth(), draw.guiHeight());
         AxiomInitialize.EVENT_BUS.post(event);
 
-        // 3. Piirrä HUD-elementit (kuten Watermark, Coordinates)
         HudContext ctx = new HudContext(mc, draw, theme, delta, renderer);
+
         for (HudElement e : elements) {
             if (!e.enabled()) continue;
             e.render(ctx, tickCounter);
         }
 
+        RenderAPI.getInstance().getCore().flush();
+
+        for (HudContext.ItemEntry entry : ctx.getItems()) {
+            Matrix3x2fStack pose = draw.pose();
+            pose.pushMatrix();
+            pose.translate((float) entry.x, (float) entry.y);
+            float scale = entry.size / 16.0f;
+            pose.scale(scale, scale);
+            draw.renderItem(entry.stack, 0, 0);
+            draw.renderItemDecorations(mc.font, entry.stack, 0, 0);
+            pose.popMatrix();
+        }
+
         ctx.renderTexts();
 
         RenderAPI.getInstance().getCore().flush();
-
         DrawTexture.renderAll();
-
         RenderAPI.getInstance().getCore().flush();
     }
 

@@ -26,7 +26,7 @@ public class ShieldBreaker extends AxiomMod implements KeybindConfigurable {
     private boolean wasKeyPressed = false;
 
     public ShieldBreaker() {
-        super("ShieldBreaker", "Press key to instantly axe-switch-hit and switch back", ModuleCategory.COMBAT);
+        super("Shield Breaker", "Press key to instantly axe-switch-hit and switch back", ModuleCategory.COMBAT);
         addSetting(range);
         addHiddenSetting(triggerKey);
     }

@@ -7,10 +7,7 @@ import silversword.axiom.client.modules.movement.*;
 import silversword.axiom.client.modules.player.*;
 import silversword.axiom.client.modules.render.*;
 import silversword.axiom.client.modules.misc.*;
-import silversword.axiom.client.modules.world.FastBreak;
-import silversword.axiom.client.modules.world.FastPlace;
-import silversword.axiom.client.modules.world.TimeChanger;
-import silversword.axiom.client.modules.world.WeatherChanger;
+import silversword.axiom.client.modules.world.*;
 
 
 import java.util.ArrayList;

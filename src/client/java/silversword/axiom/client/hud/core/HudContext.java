@@ -1,5 +1,6 @@
 package silversword.axiom.client.hud.core;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -25,6 +26,8 @@ public final class HudContext {
     public final Renderer2D renderer;
 
     private final List<TextEntry> textEntries = new ArrayList<>();
+
+    private final List<ItemEntry> items = new ArrayList<>();
 
 
     public HudContext(Minecraft mc, GuiGraphics draw, Theme theme, float delta, Renderer2D renderer) {
@@ -53,10 +56,15 @@ public final class HudContext {
         renderer.drawRoundedRectOutline(x, y, w, h, radius, argb, thickness);
     }
 
-    public void fillTriangle(int x1, int y1, int x2, int y2, int x3, int y3, int argb) {
-        // Kolmiota ei toteutettu uudessa Renderer2D:ssä. Jos tarvitaan, lisää metodi.
-        // Toistaiseksi ei tee mitään.
+    public void drawOutline(int x, int y, int w, int h, int argb, float thickness) {
+        renderer.drawRectOutline(x, y, w, h, thickness, argb);
     }
+
+    public void drawOutline(int x, int y, int w, int h, int argb) {
+        drawOutline(x, y, w, h, argb, 1.0f);
+    }
+
+
 
     public void drawCircle(int cx, int cy, int radius, int argb) {
         renderer.drawCircle(cx, cy, radius, argb);
@@ -76,14 +84,22 @@ public final class HudContext {
         draw.blitSprite(RenderPipelines.GUI_TEXTURED, tex, x, y, size, size, color);
     }
 
-    public void drawItem(ItemStack stack, int x, int y) {
+    public void item(ItemStack stack, int x, int y) {
+        item(stack, x, y, 16); // default size 16
+    }
+
+    public void item(ItemStack stack, int x, int y, int size) {
         if (!stack.isEmpty()) {
-            draw.renderItem(stack, x, y);
+            items.add(new ItemEntry(stack, x, y, size));
         }
     }
 
+    public void drawItem(ItemStack stack, int x, int y) {
+        item(stack, x, y);
+    }
+
     public void drawItem(ItemStack stack, int x, int y, int size) {
-        drawItem(stack, x, y);
+        item(stack, x, y);
     }
 
     // --- Tekstin lisäys listaan (ei piirretä heti) ---
@@ -107,7 +123,7 @@ public final class HudContext {
         textEntries.add(new TextEntry(s, x, y, argb, shadow, scale));
     }
 
-    // Piirretään kaikki kerätyt tekstit (kutsutaan fillien jälkeen)
+
     public void renderTexts() {
         for (TextEntry e : textEntries) {
             boolean wasBuilding = TextRenderer.get().isBuilding();
@@ -146,6 +162,7 @@ public final class HudContext {
         }
     }
 
+
     public void drawVanillaText(String s, int x, int y, int argb) {
         drawVanillaText(s, x, y, argb, false);
     }
@@ -183,6 +200,23 @@ public final class HudContext {
             this.color = color;
             this.shadow = shadow;
             this.scale = scale;
+        }
+    }
+
+    public List<ItemEntry> getItems() {
+        return items;
+    }
+
+    public static class ItemEntry {
+        public final ItemStack stack;
+        public final int x, y;
+        public final int size; // target size in pixels
+
+        public ItemEntry(ItemStack stack, int x, int y, int size) {
+            this.stack = stack;
+            this.x = x;
+            this.y = y;
+            this.size = size;
         }
     }
 }

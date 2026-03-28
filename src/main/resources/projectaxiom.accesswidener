@@ -28,3 +28,7 @@ accessible method net/minecraft/client/Camera getMaxZoom (F)F
 
 accessible method net/minecraft/client/renderer/GameRenderer getFov (Lnet/minecraft/client/Camera;FZ)F
 accessible field net/minecraft/world/entity/Entity onGround Z
+accessible field net/minecraft/world/entity/player/Inventory items Lnet/minecraft/core/NonNullList;
+accessible field net/minecraft/client/resources/model/ModelManager atlasManager Lnet/minecraft/client/resources/model/AtlasManager;
+accessible field net/minecraft/client/renderer/Sheets BANNER_MATERIALS Ljava/util/Map;
+accessible field net/minecraft/client/renderer/Sheets SHIELD_MATERIALS Ljava/util/Map;

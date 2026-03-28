@@ -256,10 +256,6 @@ public final class RadarHud extends BaseHudElement {
 
     @Override
     public void renderEdit(HudContext ctx) {
-        float scaledSize = size * radarScale;
-        RenderCore core = RenderAPI.getInstance().getCore();
-        core.addRoundedRect(x, y, scaledSize, scaledSize, BASE_CORNER_RADIUS, 0x80000000);
-        core.addRoundedRectOutline(x, y, scaledSize, scaledSize, BASE_CORNER_RADIUS, 1.0f, BASE_BORDER_COLOR);
         ctx.drawScaledText("Radar", x + 4, y + 4, 0xFFFFFFFF, true, textScale);
     }
 }

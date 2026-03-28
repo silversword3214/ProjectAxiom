@@ -20,6 +20,8 @@ public final class AxiomHudBootstrap {
 
         HudManager.get().register(new CoordinatesHud());
         HudManager.get().register(new HardwareHud());
+        HudManager.get().register(new FpsHud());
+        HudManager.get().register(new InventoryViewer());
 
         // Rekisteröi Fabric HUD -layer VAIN KERRAN
         if (!layerRegistered) {

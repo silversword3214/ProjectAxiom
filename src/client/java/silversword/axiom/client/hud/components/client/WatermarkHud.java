@@ -102,7 +102,7 @@ public final class WatermarkHud extends BaseHudElement {
         int radius = (int) backgroundRadius.getValue();
         double thickness = outlineThickness.getValue();
 
-        int textX = x + logoW + padding;
+        int textX = x + logoW + padding - 20;
         int textY = y + (logoH - textH) / 2;
 
         int bgW = textW + padding * 2;

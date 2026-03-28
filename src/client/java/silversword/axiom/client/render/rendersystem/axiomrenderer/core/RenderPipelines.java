@@ -172,8 +172,6 @@ public final class RenderPipelines {
                 if (optional.isEmpty()) {
                     LOGGER.error("Shader not found: {}", identifier);
                     // Voit myös tulostaa tiedostojärjestelmän polun, jos haluat
-                } else {
-                    LOGGER.info("Shader found: {}", identifier);
                 }
                 try (InputStream in = optional.get().open()) {
                     String source = IOUtils.toString(in, StandardCharsets.UTF_8);
