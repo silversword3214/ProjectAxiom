@@ -68,6 +68,7 @@ public final class ModuleManager {
         // Combat
         safeAdd(new Velocity());
         safeAdd(new KillAura());
+        safeAdd(new CrystalAura());
         safeAdd(new TPAura());
         safeAdd(new TriggerBot());
         safeAdd(new Criticals());
@@ -78,6 +79,7 @@ public final class ModuleManager {
         safeAdd(new AutoTotem());
         safeAdd(new AutoGapple());
         safeAdd(new HitEffect());
+        safeAdd(new Velocity());
         safeAdd(new ReachDisplay());
 
         // Movement

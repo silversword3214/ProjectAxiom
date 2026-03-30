@@ -44,8 +44,17 @@ public class Fullbright extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onTick() {
-        // Päivitetään tila, jos asetus muuttuu
-        FullbrightState.noShadows = noShadows.get();
+        boolean currentNoShadows = noShadows.get();
+        if (currentNoShadows != FullbrightState.noShadows) {
+            FullbrightState.noShadows = currentNoShadows;
+            reloadChunks();
+        }
+    }
+
+    private void reloadChunks() {
+        if (mc.levelRenderer != null) {
+            mc.levelRenderer.allChanged();
+        }
     }
 
     private void forceLightmapUpdate() {

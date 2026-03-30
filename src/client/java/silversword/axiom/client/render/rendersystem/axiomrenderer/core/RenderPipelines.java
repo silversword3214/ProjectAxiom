@@ -26,7 +26,6 @@ public final class RenderPipelines {
     private static final Logger LOGGER = LoggerFactory.getLogger(RenderPipelines.class);
     public static final Map<Identifier, String> SHADER_SOURCE_CACHE = new HashMap<>();
 
-    // The standard Minecraft uniform block for transforms
     private static final RenderPipeline.Snippet DYNAMIC_TRANSFORMS = RenderPipeline.builder()
             .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
             .buildSnippet();
@@ -142,9 +141,8 @@ public final class RenderPipelines {
                 .withVertexFormat(AxiomVertexFormats.POS2_UV_COLOR, VertexFormat.Mode.TRIANGLES)
                 .withVertexShader(id("shaders/post/outline.vert"))
                 .withFragmentShader(id("shaders/post/outline.frag"))
-                .withSampler("u_Scene")      // original scene
-                .withSampler("u_ID")         // entity ID texture
-                .withUniform("OutlineData", UniformType.UNIFORM_BUFFER)  // thickness, glow strength, colors
+                .withSampler("u_Scene")
+                .withUniform("OutlineData", UniformType.UNIFORM_BUFFER)
                 .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
                 .withDepthWrite(false)
                 .withBlend(BlendFunction.TRANSLUCENT)
@@ -171,7 +169,6 @@ public final class RenderPipelines {
                 var optional = resources.getResource(identifier);
                 if (optional.isEmpty()) {
                     LOGGER.error("Shader not found: {}", identifier);
-                    // Voit myös tulostaa tiedostojärjestelmän polun, jos haluat
                 }
                 try (InputStream in = optional.get().open()) {
                     String source = IOUtils.toString(in, StandardCharsets.UTF_8);

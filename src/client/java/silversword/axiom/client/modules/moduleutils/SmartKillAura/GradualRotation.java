@@ -1,10 +1,6 @@
 package silversword.axiom.client.modules.moduleutils.SmartKillAura;
 
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.Vec3;
-
-import static silversword.axiom.client.main.AxiomInitialize.mc;
 
 public class GradualRotation {
     private float targetYaw, targetPitch;
