@@ -9,19 +9,24 @@ import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.setting.SettingKeybind;
+import silversword.axiom.client.setting.SettingNumber;
 
 import java.util.HashSet;
 import java.util.Set;
 
 public final class XRay extends AxiomMod implements KeybindConfigurable {
 
-    // "Näytettävät" blokit XRayssa (ore + whatever).
     private static final Set<Block> XRAY_BLOCKS = new HashSet<>();
 
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
 
+    private static volatile float HIDDEN_ALPHA = 0f;
+    private final SettingNumber opacity;
+
     // Globaalisti miksineille helppo lippu
     private static volatile boolean ENABLED = false;
+
+    private static final ThreadLocal<Boolean> CURRENT_BLOCK_HIDDEN = ThreadLocal.withInitial(() -> false);
 
     static {
         // Coal
@@ -116,13 +121,6 @@ public final class XRay extends AxiomMod implements KeybindConfigurable {
 
         // SPAWNER
         add("minecraft:spawner");
-
-        // OTHER
-        add("minecraft:short_grass");
-        add("minecraft:tall_grass");
-        add("minecraft:oak_leaves");
-
-
     }
 
     private static void add(String id) {
@@ -144,6 +142,14 @@ public final class XRay extends AxiomMod implements KeybindConfigurable {
         return ENABLED;
     }
 
+    public static boolean isCurrentBlockHidden() {
+        return ENABLED && CURRENT_BLOCK_HIDDEN.get();
+    }
+
+    public static void setCurrentBlockHidden(boolean hidden) {
+        CURRENT_BLOCK_HIDDEN.set(hidden);
+    }
+
     /** True jos tämä blockstate on "näytettävä" XRayssa. */
     public static boolean isXrayVisible(BlockState state) {
         if (state == null) return false;
@@ -159,7 +165,10 @@ public final class XRay extends AxiomMod implements KeybindConfigurable {
 
     public XRay() {
         super("XRay", "Better than texture pack", ModuleCategory.RENDER);
+        opacity = new SettingNumber("Hidden Opacity", 1, 100.0, 1.0, 60.0);
+
         addHiddenSetting(toggleKey);
+        addSetting(opacity);
     }
 
     @Override
@@ -174,21 +183,31 @@ public final class XRay extends AxiomMod implements KeybindConfigurable {
         }
     }
 
+    public static float getHiddenAlpha() {
+        return HIDDEN_ALPHA;
+    }
+
     @Override
     protected void onEnable() {
+        HIDDEN_ALPHA = (float)(opacity.getValue() / 100.0);
         ENABLED = true;
         reloadChunks();
     }
 
     @Override
-    protected void onDisable() {
-        ENABLED = false;
-        reloadChunks();
+    protected void onTick() {
+        float newAlpha = 1.0f - (float)(opacity.getValue() / 100.0);
+        if (Math.abs(newAlpha - HIDDEN_ALPHA) > 0.1f) {
+            HIDDEN_ALPHA = newAlpha;
+            reloadChunks();
+        }
     }
 
     @Override
-    protected void onTick() {
-        // Ei tarvi tick-logiikkaa tässä mallissa.
+    protected void onDisable() {
+        HIDDEN_ALPHA = 0f;
+        ENABLED = false;
+        reloadChunks();
     }
 
     private static void rebuildChunks() {

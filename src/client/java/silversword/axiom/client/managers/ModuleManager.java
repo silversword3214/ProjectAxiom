@@ -66,6 +66,7 @@ public final class ModuleManager {
 
     private void registerModules() {
         // Combat
+        safeAdd(new Velocity());
         safeAdd(new KillAura());
         safeAdd(new TPAura());
         safeAdd(new TriggerBot());
@@ -73,7 +74,6 @@ public final class ModuleManager {
         safeAdd(new Reach());
         safeAdd(new ShieldBreaker());
         safeAdd(new Aimbot());
-        safeAdd(new AntiKnockback());
         safeAdd(new NoHitDelay());
         safeAdd(new AutoTotem());
         safeAdd(new AutoGapple());
@@ -107,12 +107,10 @@ public final class ModuleManager {
 
         // Render
         safeAdd(new WaypointModule());
-        safeAdd(new BoxESP());
-        safeAdd(new SphereESP());
+        safeAdd(new ESP());
         safeAdd(new ChestESP());
         safeAdd(new CaveESP());
         safeAdd(new LavaESP());
-        safeAdd(new SkeletonESP());
         safeAdd(new NameTags());
         safeAdd(new SearchBlocks());
         safeAdd(new Tracers());
@@ -147,6 +145,7 @@ public final class ModuleManager {
         safeAdd(new DeathLocationModule());
         safeAdd(new TunnelMiner());
         safeAdd(new AutoClicker());
+        safeAdd(new PingSpoof());
 
         // World
         safeAdd(new FastBreak());

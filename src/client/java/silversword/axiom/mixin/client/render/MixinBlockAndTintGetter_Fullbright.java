@@ -18,12 +18,9 @@ public interface MixinBlockAndTintGetter_Fullbright {
             cancellable = true
     )
     default void axiom_fullbright_getLightLevel(LightLayer type, BlockPos pos, CallbackInfoReturnable<Integer> cir) {
-        if (!FullbrightState.enabled) return;
-
-        // null = molemmat, muuten rajaa
-        if (FullbrightState.type != null && FullbrightState.type != type) return;
-
-        cir.setReturnValue(FullbrightState.minimumLight); // 15 = “normi fullbright”
+        if (FullbrightState.enabled) {
+            cir.setReturnValue(FullbrightState.MINIMUM_LIGHT);
+        }
     }
 
     @Inject(
@@ -32,9 +29,8 @@ public interface MixinBlockAndTintGetter_Fullbright {
             cancellable = true
     )
     default void axiom_fullbright_getBaseLightLevel(BlockPos pos, int ambientDarkness, CallbackInfoReturnable<Integer> cir) {
-        if (!FullbrightState.enabled) return;
-
-        // Base light level vaikuttaa myös useaan laskentapolkuun
-        cir.setReturnValue(FullbrightState.minimumLight);
+        if (FullbrightState.enabled) {
+            cir.setReturnValue(FullbrightState.MINIMUM_LIGHT);
+        }
     }
 }

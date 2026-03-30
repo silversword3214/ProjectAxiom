@@ -22,7 +22,6 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import silversword.axiom.client.managers.ModuleManager;
-import silversword.axiom.client.modules.combat.AntiKnockback;
 import silversword.axiom.client.modules.movement.NoSlow;
 import silversword.axiom.client.modules.render.AntiBlind;
 import silversword.axiom.client.modules.render.NoOverlay;
@@ -53,16 +52,7 @@ public abstract class LivingEntityMixin {
         }
     }
 
-    // AntiKnockback
-    @ModifyVariable(method = "knockback", at = @At("HEAD"), argsOnly = true, index = 1)
-    private double modifyKnockbackStrength(double strength) {
-        AntiKnockback mod = ModuleManager.getInstance().getModule(AntiKnockback.class);
-        if (mod != null && mod.isEnabled()) {
-            // knockbackPercent on slider, getValue() palauttaa double-arvon (0-100)
-            return strength * (mod.knockbackPercent.getValue() / 100.0);
-        }
-        return strength;
-    }
+
 
     // AntiBlind
     private boolean shouldRemoveEffect(Holder<MobEffect> effect) {

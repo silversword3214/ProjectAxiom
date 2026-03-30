@@ -15,6 +15,7 @@ public class RotationHandler {
     private static int lastRotationTimer;
     private static boolean sentLastRotation;
     public static boolean rotating = false;
+    private static boolean packetSentThisTick = false;
 
     private static float serverYaw, serverPitch;
     public static int rotationTimer;
@@ -58,6 +59,7 @@ public class RotationHandler {
     // Kutsutaan ennen liikepakettien lähetystä
     public static void onPreSendMovementPackets() {
         if (mc.getCameraEntity() != mc.player) return;
+        packetSentThisTick = false;
         sentLastRotation = false;
 
         if (!rotations.isEmpty()) {
@@ -127,12 +129,14 @@ public class RotationHandler {
     }
 
     private static void sendRotationPacket(Rotation rotation) {
+        if (packetSentThisTick) return; // älä lähetä toista rotaatiopakettia samalla tickillä
         mc.getConnection().send(new ServerboundMovePlayerPacket.Rot(
                 (float) rotation.yaw,
                 (float) rotation.pitch,
                 mc.player.onGround(),
                 mc.player.horizontalCollision
         ));
+        packetSentThisTick = true;
     }
 
     public static float getServerYaw() { return serverYaw; }

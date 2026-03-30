@@ -1,4 +1,4 @@
-package silversword.axiom.mixin.client.render;
+package silversword.axiom.mixin.client.render.xray;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
@@ -21,7 +21,6 @@ public class XRayLightmapMixin {
     @Inject(method = "updateLightTexture", at = @At("HEAD"), cancellable = true)
     private void onUpdate(float tickDelta, CallbackInfo ci) {
         if (XRay.isXRayEnabled()) {
-            // Täysi valkoinen valaistus (255,255,255,255)
             RenderSystem.getDevice().createCommandEncoder()
                     .clearColorTexture(texture, ARGB.color(255, 255, 255, 255));
             ci.cancel();

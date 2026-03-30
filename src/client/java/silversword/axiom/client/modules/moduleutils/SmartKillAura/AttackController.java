@@ -6,30 +6,47 @@ public class AttackController {
 
     private long lastAttackTime = 0;
     private double currentDelay = 0;
+    private boolean waitingForRotation = false;
+    private long rotationReadyTime = 0;
 
     public boolean canAttack(Player player, double minCps, double maxCps) {
-        // Lasketaan satunnainen viive annetulla CPS-välillä
+        // Odota että attack bar on täynnä (1.0)
+        if (player.getAttackStrengthScale(0.5f) < 1.0f) return false;
+
+        // CPS-pohjainen lisäviive (humanisoi)
         if (currentDelay == 0) {
             double cps = minCps + Math.random() * (maxCps - minCps);
-            currentDelay = 1000.0 / cps; // millisekunteina
+            currentDelay = 1000.0 / cps;
         }
 
         long now = System.currentTimeMillis();
-        if (now - lastAttackTime >= currentDelay) {
-            // Lisäksi tarkista 1.9+ cooldown
-            float progress = player.getAttackStrengthScale(0.5f);
-            return progress > 0.92f;
-        }
-        return false;
+        return now - lastAttackTime >= currentDelay;
     }
 
     public void recordAttack() {
         lastAttackTime = System.currentTimeMillis();
-        currentDelay = 0; // arvotaan uusi viive seuraavalle iskulle
+        currentDelay = 0;
+        waitingForRotation = false;
     }
 
     public void reset() {
         lastAttackTime = 0;
         currentDelay = 0;
+        waitingForRotation = false;
+        rotationReadyTime = 0;
+    }
+
+    public void startWaitingForRotation() {
+        waitingForRotation = true;
+        rotationReadyTime = System.currentTimeMillis() + (long)(Math.random() * 20);
+    }
+
+    public boolean isRotationReady() {
+        if (!waitingForRotation) return true;
+        if (System.currentTimeMillis() >= rotationReadyTime) {
+            waitingForRotation = false;
+            return true;
+        }
+        return false;
     }
 }

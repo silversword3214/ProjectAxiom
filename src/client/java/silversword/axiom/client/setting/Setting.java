@@ -24,4 +24,20 @@ public abstract class Setting {
     public abstract int getHeight();
     public abstract void render(int x, int y, int mouseX, int mouseY);
     public abstract void mouseClicked(double mouseX, double mouseY, int button);
+
+    // Lisää nämä Setting-kantaluokkaan:
+
+    private SettingBoolean parentSetting = null;
+
+    public void setParent(SettingBoolean parent) {
+        this.parentSetting = parent;
+    }
+
+    public SettingBoolean getParent() {
+        return parentSetting;
+    }
+
+    public boolean isVisible() {
+        return parentSetting == null || parentSetting.get();
+    }
 }

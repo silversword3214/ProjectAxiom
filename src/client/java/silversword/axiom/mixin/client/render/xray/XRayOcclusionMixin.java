@@ -1,4 +1,4 @@
-package silversword.axiom.mixin.client.render;
+package silversword.axiom.mixin.client.render.xray;
 
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.BlockGetter;
@@ -15,9 +15,6 @@ public abstract class XRayOcclusionMixin {
     @Inject(method = "isSolidRender()Z", at = @At("HEAD"), cancellable = true)
     private void axiom$xray_notOpaqueFullCube(CallbackInfoReturnable<Boolean> cir) {
         if (!XRay.isXRayEnabled()) return;
-
-        // Tee XRayn näkyvistä blokeista “ei-opaque-full-cube”
-        // -> vähentää outoa occlusion/culling -käyttäytymistä.
         if (XRay.isXrayHidden((net.minecraft.world.level.block.state.BlockState)(Object)this)) {
             cir.setReturnValue(false);
         }

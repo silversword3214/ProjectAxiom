@@ -9,7 +9,7 @@ public class AxiomConfigScreen extends Screen {
     private final Screen parent;
 
     public AxiomConfigScreen(Screen parent) {
-        super(Component.literal("Obsidian Client Settings"));
+        super(Component.literal("Axiom Settings"));
         this.parent = parent;
     }
 

@@ -7,14 +7,14 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import silversword.axiom.client.modules.render.XRay;
+import silversword.axiom.client.modules.render.FullbrightState;
 
 @Mixin(BlockBehaviour.BlockStateBase.class)
-public class XRayAmbientOcclusionMixin {
+public class FullbrightShadeMixin {
 
     @Inject(method = "getShadeBrightness", at = @At("HEAD"), cancellable = true)
-    private void onGetAmbientOcclusionLightLevel(BlockGetter world, BlockPos pos, CallbackInfoReturnable<Float> cir) {
-        if (XRay.isXRayEnabled()) {
+    private void onGetShadeBrightness(BlockGetter world, BlockPos pos, CallbackInfoReturnable<Float> cir) {
+        if (FullbrightState.enabled && FullbrightState.noShadows) {
             cir.setReturnValue(1.0f);
         }
     }

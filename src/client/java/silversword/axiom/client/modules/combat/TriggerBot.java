@@ -21,6 +21,7 @@ public class TriggerBot extends AxiomMod implements KeybindConfigurable {
     private final AttackController attackController = new AttackController();
 
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
+    private final SettingBoolean onlySword = new SettingBoolean("Only Sword", false);
 
     private final SettingMode targetMode = new SettingMode(
             "Target Mode",
@@ -56,6 +57,7 @@ public class TriggerBot extends AxiomMod implements KeybindConfigurable {
         addSetting(range);
         addSetting(minCps);
         addSetting(maxCps);
+        addSetting(onlySword);
         addSetting(checkWalls);
         addSetting(ignoreBots);
         addSetting(onlyWhenHolding);
@@ -103,6 +105,11 @@ public class TriggerBot extends AxiomMod implements KeybindConfigurable {
 
         // Seinätarkistus
         if (checkWalls.get() && !isTargetVisible(living)) return;
+
+        if (onlySword.get()) {
+            net.minecraft.world.item.ItemStack held = mc.player.getMainHandItem();
+            if (!held.is(net.minecraft.tags.ItemTags.SWORDS)) return;
+        }
 
         // Hyökkäys
         if (attackController.canAttack(mc.player, minCps.getValue(), maxCps.getValue())) {

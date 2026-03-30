@@ -17,6 +17,7 @@ public final class ModuleSettingsView implements UiComponent {
     private final AxiomMod module;
     private final ScrollContainer scroll = new ScrollContainer();
     private int lastCount = -1;
+    private boolean needsRebuild = false;
 
     public ModuleSettingsView(AxiomMod module) {
         this.module = Objects.requireNonNull(module);
@@ -33,18 +34,17 @@ public final class ModuleSettingsView implements UiComponent {
     }
 
     @Override
-    public int getPreferredHeight() {
-        return 9999; // scroll hoitaa
-    }
+    public int getPreferredHeight() { return 9999; }
 
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
         List<Setting> settings = module.getSettings();
         int count = settings == null ? 0 : settings.size();
 
-        if (scroll.getChildren().isEmpty() || count != lastCount) {
+        if (scroll.getChildren().isEmpty() || count != lastCount || needsRebuild) {
             rebuild(settings);
             lastCount = count;
+            needsRebuild = false;
         }
 
         scroll.render(ui, mouseX, mouseY, delta);
@@ -55,44 +55,64 @@ public final class ModuleSettingsView implements UiComponent {
 
         if (settings == null || settings.isEmpty()) {
             scroll.add(new DummyLabel("No settings"));
-        } else {
-            for (Setting s : settings) {
-                if (s == null) continue;
-                UiComponent row =
-                        (s instanceof SettingBoolean b) ? new SettingToggleRow(b) :
-                                (s instanceof SettingMode m) ? new SettingModeRow(m) :
-                                        (s instanceof SettingNumber n) ? new SettingNumberSliderRow(n) :
-                                                (s instanceof SettingSlider sl) ? new SettingPresetSliderRow(sl) :
-                                                        (s instanceof SettingTime t) ? new SettingTimeFieldRow(t) : // <-- MUUTOS
-                                                                new SettingFallbackRow(s);
+            return;
+        }
 
+        for (Setting s : settings) {
+            if (s == null) continue;
 
+            // Piilota tällä hetkellä ei-aktiiviset subsettingit
+            if (!s.isVisible()) continue;
+
+            UiComponent row = buildRow(s);
+
+            // Jos on parent, kääritään sisennyskomponenttiin
+            if (s.getParent() != null) {
+                scroll.add(new IndentedRow(row, 12));
+            } else {
                 scroll.add(row);
+            }
+
+            // Jos tämä on SettingBoolean jolla on lapsia, kuunnellaan muutoksia
+            if (s instanceof SettingBoolean b && hasChildren(settings, b)) {
+                b.setOnChange(() -> needsRebuild = true);
             }
         }
 
-        // COLOR CUSTOMIZER
+        // Color/block buttons
         if (module instanceof ColorConfigurable) {
-            scroll.add(new ActionButton("Edit Colors", () -> {
-                ((ColorConfigurable) module).openColorEditor();
-            }));
+            scroll.add(new ActionButton("Edit Colors", () ->
+                    ((ColorConfigurable) module).openColorEditor()));
         }
-
-        // BLOCK TARGETING
         if (module instanceof SearchBlocks) {
-            scroll.add(new ActionButton("Target Blocks", () -> {
-                ((SearchBlocks) module).openBlockSelector();
-            }));
+            scroll.add(new ActionButton("Target Blocks", () ->
+                    ((SearchBlocks) module).openBlockSelector()));
         }
-
         if (module instanceof TunnelMiner) {
-            scroll.add(new ActionButton("Search Blocks", () -> {
-                ((TunnelMiner) module).openBlockSelector();
-            }));
+            scroll.add(new ActionButton("Search Blocks", () ->
+                    ((TunnelMiner) module).openBlockSelector()));
         }
     }
 
-    // input forward
+    private UiComponent buildRow(Setting s) {
+        return switch (s) {
+            case SettingBoolean b  -> new SettingToggleRow(b);
+            case SettingMode m     -> new SettingModeRow(m);
+            case SettingNumber n   -> new SettingNumberSliderRow(n);
+            case SettingSlider sl  -> new SettingPresetSliderRow(sl);
+            case SettingTime t     -> new SettingTimeFieldRow(t);
+            default                -> new SettingFallbackRow(s);
+        };
+    }
+
+    /** Tarkistaa onko jollakin settingillä tämä boolean parenttina */
+    private boolean hasChildren(List<Setting> settings, SettingBoolean parent) {
+        for (Setting s : settings) {
+            if (s != null && s.getParent() == parent) return true;
+        }
+        return false;
+    }
+
     @Override public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) { return scroll.mouseClicked(ui, mouseX, mouseY, button); }
     @Override public void mouseReleased(UiContext ui, double mouseX, double mouseY, int button) { scroll.mouseReleased(ui, mouseX, mouseY, button); }
     @Override public boolean mouseDragged(UiContext ui, double mouseX, double mouseY, int button, double dx, double dy) { return scroll.mouseDragged(ui, mouseX, mouseY, button, dx, dy); }

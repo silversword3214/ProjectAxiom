@@ -1,4 +1,4 @@
-package silversword.axiom.mixin.client.render;
+package silversword.axiom.mixin.client.render.xray;
 
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -25,8 +25,6 @@ public abstract class XRayShouldDrawSideMixin {
     ) {
         if (!XRay.isXRayEnabled()) return;
 
-        // Piirretään sivu jos tämä block on "näytettävä" (ore) ja naapuri on XRay-hidden.
-        // Tämä tekee naapurista "ilmaa cullauksen silmissä" -> vein näkyy kokonaan.
         if (XRay.shouldRender(state) && XRay.isXrayHidden(neighbor)) {
             cir.setReturnValue(true);
         }
