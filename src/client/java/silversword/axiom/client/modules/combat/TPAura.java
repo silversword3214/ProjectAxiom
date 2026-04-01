@@ -12,8 +12,8 @@ import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
-import silversword.axiom.client.modules.moduleutils.SmartKillAura.AttackController;
-import silversword.axiom.client.modules.moduleutils.SmartKillAura.TargetManager;
+import silversword.axiom.client.modules.moduleutils.killaura.AttackController;
+import silversword.axiom.client.modules.moduleutils.killaura.TargetManager;
 
 
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
@@ -122,7 +122,7 @@ public class TPAura extends AxiomMod implements KeybindConfigurable {
 
         if (checkWalls.get() && !isTargetVisible(target)) return;
 
-        if (attackController.canAttack(mc.player, minCps.getValue(), maxCps.getValue())) {
+        if (attackController.canAttack(mc.player)) {
             Vec3 tpPos = calculateTpPosition(target);
             if (tpPos != null && isSafePosition(tpPos)) {
                 // Teleporttaa serverille ja clientille

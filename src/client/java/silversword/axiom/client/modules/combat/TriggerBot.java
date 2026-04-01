@@ -8,7 +8,7 @@ import net.minecraft.world.phys.HitResult;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
-import silversword.axiom.client.modules.moduleutils.SmartKillAura.AttackController;
+import silversword.axiom.client.modules.moduleutils.killaura.AttackController;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingMode;
@@ -79,6 +79,7 @@ public class TriggerBot extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onTick() {
+        if (!isEnabled()) return;
         if (mc.player == null || mc.level == null) return;
 
         if (onlyWhenHolding.get() && !mc.options.keyAttack.isDown()) return;
@@ -112,7 +113,7 @@ public class TriggerBot extends AxiomMod implements KeybindConfigurable {
         }
 
         // Hyökkäys
-        if (attackController.canAttack(mc.player, minCps.getValue(), maxCps.getValue())) {
+        if (attackController.canAttack(mc.player)) {
             mc.gameMode.attack(mc.player, target);
             mc.player.swing(mc.player.getUsedItemHand());
             attackController.recordAttack();
@@ -123,6 +124,7 @@ public class TriggerBot extends AxiomMod implements KeybindConfigurable {
         return mc.getConnection().getOnlinePlayers().stream()
                 .noneMatch(entry -> entry.getProfile().id().equals(player.getUUID()));
     }
+
 
     private boolean isTargetVisible(LivingEntity target) {
         return mc.player.hasLineOfSight(target);

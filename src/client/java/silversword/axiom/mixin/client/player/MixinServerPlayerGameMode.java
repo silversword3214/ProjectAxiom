@@ -38,14 +38,12 @@ public class MixinServerPlayerGameMode {
 
         }
 
-        // 2. Kokeillaan onUseWithItem (blokin oma metodi esineen kanssa)
         InteractionResult result = state.useItemOn(stack, world, player, hand, hitResult);
         if (result.consumesAction()) {
             cir.setReturnValue(result);
             return;
         }
 
-        // 3. Jos se palauttaa PASS_TO_DEFAULT_BLOCK_ACTION, kokeillaan onUse (ilman esinettä)
         if (result instanceof InteractionResult.TryEmptyHandInteraction && hand == InteractionHand.MAIN_HAND) {
             result = state.useWithoutItem(world, player, hitResult);
             if (result.consumesAction()) {
@@ -54,7 +52,7 @@ public class MixinServerPlayerGameMode {
             }
         }
 
-        // 4. Yritetään käyttää itse esinettä blokkiin (stack.useOnBlock)
+
         if (!stack.isEmpty() && !player.getCooldowns().isOnCooldown(stack)) {
             UseOnContext context = new UseOnContext(player, hand, hitResult);
             result = stack.useOn(context);
@@ -65,6 +63,4 @@ public class MixinServerPlayerGameMode {
         }
 
     }
-
-
 }

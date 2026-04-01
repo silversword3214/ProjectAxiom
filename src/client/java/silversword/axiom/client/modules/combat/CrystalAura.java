@@ -5,56 +5,69 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
-
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
-import silversword.axiom.client.modules.moduleutils.SmartKillAura.RotationHandler;
 import silversword.axiom.client.setting.*;
+import silversword.axiom.client.utils.Rotations;
+
+import java.util.Comparator;
+import java.util.Random;
 
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
 public class CrystalAura extends AxiomMod implements KeybindConfigurable {
 
     private static CrystalAura instance;
+    private final Random random = new Random();
 
-    // ---------- Asetukset ----------
+    // ---------- ASETUKSET ----------
     private final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
 
+    // Toimintatapa
+    private final SettingMode crystalMode = new SettingMode(
+            "Crystal Mode", new String[]{"Auto", "Hold"}, "Auto"
+    );
+
+    // Kohdevalinta (vain Auto-moodissa)
     private final SettingMode targetMode = new SettingMode(
             "Target Mode", new String[]{"Players", "Mobs", "Both"}, "Players"
     );
-
     private final SettingMode priority = new SettingMode(
             "Priority", new String[]{"Distance", "Health", "Armor", "Hybrid"}, "Distance"
     );
 
+    // Etäisyydet ja viiveet
     private final SettingSlider placeRange = new SettingSlider(
             "Place Range", new double[]{3.5, 4.0, 4.5, 5.0, 5.5}, 4.5
     );
-
     private final SettingSlider breakRange = new SettingSlider(
             "Break Range", new double[]{3.5, 4.0, 4.5, 5.0, 5.5}, 4.5
     );
-
     private final SettingSlider placeDelay = new SettingSlider(
             "Place Delay (ms)", new double[]{150, 200, 250, 300, 350, 400}, 200
     );
-
     private final SettingSlider breakDelay = new SettingSlider(
             "Break Delay (ms)", new double[]{100, 150, 200, 250, 300}, 150
     );
+    private final SettingSlider holdPlaceDelay = new SettingSlider(
+            "Hold Place Delay (ms)", new double[]{100, 150, 200, 250, 300}, 150
+    );
+    private final SettingSlider holdBreakDelay = new SettingSlider(
+            "Hold Break Delay (ms)", new double[]{50, 100, 150, 200, 250}, 100
+    );
 
+    // Automaattinen slotin vaihto (Auto-moodissa)
     private final SettingBoolean autoSwitch = new SettingBoolean("Auto Switch", true);
     private final SettingBoolean checkWalls = new SettingBoolean("Check Walls", true);
     private final SettingBoolean silentRotations = new SettingBoolean("Silent Rotations", true);
@@ -66,37 +79,45 @@ public class CrystalAura extends AxiomMod implements KeybindConfigurable {
             "Jitter Amount", new double[]{0.5, 1.0, 1.5, 2.0, 2.5, 3.0}, 1.5
     );
 
+    // Slot palautus (Auto-moodi)
     private final SettingSlider returnDelay = new SettingSlider(
             "Return Delay (sec)", new double[]{0.5, 1.0, 1.5, 2.0, 3.0, 5.0}, 1.0
     );
-
     private final SettingBoolean returnToPrevious = new SettingBoolean("Return to Previous Slot", true);
 
-    // ---------- State ----------
+    // ---------- TILAMUUTTUJAT ----------
     private long lastPlaceTime = 0;
     private long lastBreakTime = 0;
     private LivingEntity currentTarget = null;
-
     private int previousSlot = -1;
     private int noTargetTicks = 0;
 
+    // Hold-moodin tilat
+    private long lastHoldPlaceTime = 0;
+    private long lastHoldBreakTime = 0;
+    private BlockPos lastHoldPlacedPos = null;
+    private long lastHoldPlacedTime = 0;
+
     public CrystalAura() {
-        super("Crystal Aura", "Automatically places and detonates end crystals", ModuleCategory.COMBAT);
+        super("Crystal Aura", "Advanced crystal placement and detonation", ModuleCategory.COMBAT);
         addSetting(toggleKey);
+        addSetting(crystalMode);
         addSetting(targetMode);
         addSetting(priority);
-        addSetting(returnToPrevious);
-        addSetting(returnDelay);
         addSetting(placeRange);
         addSetting(breakRange);
         addSetting(placeDelay);
         addSetting(breakDelay);
+        addSetting(holdPlaceDelay);
+        addSetting(holdBreakDelay);
         addSetting(autoSwitch);
         addSetting(checkWalls);
         addSetting(silentRotations);
         addSetting(turnSpeed);
         addSetting(addJitter);
         addSetting(jitterAmount);
+        addSetting(returnToPrevious);
+        addSetting(returnDelay);
         instance = this;
     }
 
@@ -107,82 +128,65 @@ public class CrystalAura extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onEnable() {
-        currentTarget = null;
-        lastPlaceTime = 0;
-        lastBreakTime = 0;
+        resetState();
     }
 
     @Override
     protected void onDisable() {
-        if (returnToPrevious.get() && previousSlot != -1) {
-            assert mc.player != null;
+        if (returnToPrevious.get() && previousSlot != -1 && mc.player != null) {
             mc.player.getInventory().selected = previousSlot;
-            previousSlot = -1;
         }
+        resetState();
+    }
+
+    private void resetState() {
         currentTarget = null;
+        lastPlaceTime = 0;
+        lastBreakTime = 0;
+        previousSlot = -1;
         noTargetTicks = 0;
+        lastHoldPlaceTime = 0;
+        lastHoldBreakTime = 0;
+        lastHoldPlacedPos = null;
+        lastHoldPlacedTime = 0;
     }
 
     @Override
     protected void onTick() {
         if (mc.player == null || mc.level == null) return;
 
-        // 1. Valitse kohde
+        if (crystalMode.getMode().equals("Auto")) {
+            tickAuto();
+        } else {
+            tickHold();
+        }
+    }
+
+    // ==================== AUTO-MOODI ====================
+    private void tickAuto() {
         currentTarget = selectTarget();
         if (currentTarget == null) {
-            // Ei kohdetta -> kasvatetaan laskuria
-            if (returnToPrevious.get() && previousSlot != -1) {
-                noTargetTicks++;
-                int maxTicks = (int)(returnDelay.getValue() * 20); // 20 ticks per second
-                if (noTargetTicks >= maxTicks) {
-                    // Palauta alkuperäinen slot
-                    mc.player.getInventory().selected = previousSlot;
-                    previousSlot = -1;
-                    noTargetTicks = 0;
-                }
-            }
+            handleNoTarget();
             return;
         } else {
-            // Kohde löytyi -> nollaa laskuri ja varmista että kristalli on kädessä
             noTargetTicks = 0;
-            if (autoSwitch.get() && mc.player.getMainHandItem().getItem() != Items.END_CRYSTAL) {
-                // Tallenna nykyinen slot jos ei vielä tallennettu
-                if (previousSlot == -1) {
-                    previousSlot = mc.player.getInventory().selected;
-                }
-                int crystalSlot = findCrystalSlot();
-                if (crystalSlot != -1) {
-                    mc.player.getInventory().selected = crystalSlot;
-                }
-            }
+            ensureCrystalInHand();
         }
 
-        // 2. Laske rotaatio kohteeseen
-        float yaw = (float) getYawTo(currentTarget);
-        float pitch = (float) getPitchTo(currentTarget);
-        yaw = net.minecraft.util.Mth.wrapDegrees(yaw);
-        pitch = net.minecraft.util.Mth.clamp(pitch, -90, 90);
+        // Rotaatiot
+        applyRotations(currentTarget);
 
-        // 3. Käsittele rotaatio (silent / smooth)
-        if (silentRotations.get()) {
-            // Silent: lähetä suoraan paketti
-            RotationHandler.rotateImmediate(yaw, pitch);
-        } else {
-            // Smooth: käytä RotationHandlerin smooth-järjestelmää
-            RotationHandler.rotate(yaw, pitch, (int) turnSpeed.getValue(), null);
-        }
-
-        // 4. Yritä asettaa kristalli
+        // Kristallin asetus
         if (System.currentTimeMillis() - lastPlaceTime >= placeDelay.getValue()) {
             BlockPos placePos = findBestCrystalSpot(currentTarget);
             if (placePos != null && isInRange(placePos, placeRange.getValue())) {
-                if (placeCrystal(placePos)) {
+                if (placeCrystal(placePos, true)) {
                     lastPlaceTime = System.currentTimeMillis();
                 }
             }
         }
 
-        // 5. Yritä räjäyttää kristalli
+        // Kristallin räjäytys
         if (System.currentTimeMillis() - lastBreakTime >= breakDelay.getValue()) {
             EndCrystal crystal = findClosestCrystal(currentTarget);
             if (crystal != null && isInRange(crystal, breakRange.getValue())) {
@@ -192,100 +196,117 @@ public class CrystalAura extends AxiomMod implements KeybindConfigurable {
         }
     }
 
-    // ---------- Target Selection ----------
-    private LivingEntity selectTarget() {
-        // Käytä samaa logiikkaa kuin KillAuran TargetManager
-        // Voit joko kopioida TargetManagerin tänne tai tehdä siitä yhteisen.
-        // Yksinkertainen versio:
-        return mc.level.getEntitiesOfClass(LivingEntity.class,
-                        mc.player.getBoundingBox().inflate(8),
-                        e -> isValidTarget(e)).stream()
-                .min((a, b) -> {
-                    if (priority.getMode().equals("Distance"))
-                        return Double.compare(a.distanceToSqr(mc.player), b.distanceToSqr(mc.player));
-                    else if (priority.getMode().equals("Health"))
-                        return Float.compare(a.getHealth(), b.getHealth());
-                    // ... muut
-                    return 0;
-                }).orElse(null);
+    private void handleNoTarget() {
+        if (returnToPrevious.get() && previousSlot != -1) {
+            noTargetTicks++;
+            int maxTicks = (int)(returnDelay.getValue() * 20);
+            if (noTargetTicks >= maxTicks) {
+                mc.player.getInventory().selected = previousSlot;
+                previousSlot = -1;
+                noTargetTicks = 0;
+            }
+        }
     }
 
-    private boolean isValidTarget(LivingEntity entity) {
-        if (entity == mc.player) return false;
-        if (!entity.isAlive()) return false;
-        if (targetMode.getMode().equals("Players") && !(entity instanceof Player)) return false;
-        if (targetMode.getMode().equals("Mobs") && entity instanceof Player) return false;
-        if (checkWalls.get() && !hasLineOfSight(entity)) return false;
-        return true;
+    private void ensureCrystalInHand() {
+        if (autoSwitch.get() && mc.player.getMainHandItem().getItem() != Items.END_CRYSTAL) {
+            if (previousSlot == -1) previousSlot = mc.player.getInventory().selected;
+            int crystalSlot = findCrystalSlot();
+            if (crystalSlot != -1) mc.player.getInventory().selected = crystalSlot;
+        }
     }
 
-    private boolean hasLineOfSight(Entity entity) {
-        Vec3 start = mc.player.getEyePosition();
-        Vec3 end = entity.getBoundingBox().getCenter();
-        return mc.level.clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mc.player))
-                .getType() == net.minecraft.world.phys.HitResult.Type.MISS;
-    }
+    // ==================== HOLD-MOODI ====================
+    private void tickHold() {
+        // Tarkistetaan, pidetäänkö oikeaa nappia pohjassa
+        if (!mc.mouseHandler.isRightPressed()) {
+            lastHoldPlacedPos = null; // nollataan kun nappi vapautetaan
+            return;
+        }
 
-    // ---------- Crystal Placement Logic ----------
-    private BlockPos findBestCrystalSpot(LivingEntity target) {
-        // Etsi obsidian/bedrock -lohkoja targetin ympäriltä
-        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-        int radius = 3; // etäisyys kohteesta
-        for (int x = -radius; x <= radius; x++) {
-            for (int z = -radius; z <= radius; z++) {
-                for (int y = -1; y <= 2; y++) { // targetin korkeudelta
-                    pos.set(target.getBlockX() + x, target.getBlockY() + y, target.getBlockZ() + z);
-                    if (isValidCrystalSpot(pos)) {
-                        // Tarkista, että kristalli osuu kohteeseen (räjähdysalue)
-                        // Laske lohkon keskipiste (x+0.5, y+0.5, z+0.5)
-                        Vec3 blockCenter = new Vec3(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
-                        if (blockCenter.distanceToSqr(target.position()) <= 4.0 * 4.0) {
-                            return pos.immutable();
-                        }
-                    }
+        // 1. Etsi lohko johon katsoo
+        HitResult hit = mc.player.pick(placeRange.getValue(), 0.0f, false);
+        if (hit == null || hit.getType() != HitResult.Type.BLOCK) return;
+
+        BlockHitResult blockHit = (BlockHitResult) hit;
+        BlockPos pos = blockHit.getBlockPos();
+
+        // 2. Aseta kristalli viiveen mukaan (EI vaihdeta slotia)
+        if (System.currentTimeMillis() - lastHoldPlaceTime >= holdPlaceDelay.getValue()) {
+            if (isValidCrystalSpot(pos)) {
+                if (placeCrystalManual(pos)) {
+                    lastHoldPlaceTime = System.currentTimeMillis();
+                    lastHoldPlacedPos = pos;
+                    lastHoldPlacedTime = System.currentTimeMillis();
                 }
             }
         }
-        return null;
+
+        // 3. Räjäytä automaattisesti lähin kristalli (tai juuri asetettu)
+        if (System.currentTimeMillis() - lastHoldBreakTime >= holdBreakDelay.getValue()) {
+            EndCrystal crystal = findClosestCrystalToPlayer();
+            if (crystal != null && mc.player.distanceToSqr(crystal) <= breakRange.getValue() * breakRange.getValue()) {
+                breakCrystal(crystal);
+                lastHoldBreakTime = System.currentTimeMillis();
+            }
+        }
     }
 
-    private boolean isValidCrystalSpot(BlockPos pos) {
-        // 1. Alustan on oltava obsidian tai bedrock
-        var blockState = mc.level.getBlockState(pos);
-        if (!blockState.is(Blocks.OBSIDIAN) && !blockState.is(Blocks.BEDROCK)) return false;
-
-        // 2. Yläpuolella on oltava ilmaa (ja mahdollisesti muita korvaavia blokkeja)
-        BlockPos above = pos.above();
-        if (!mc.level.getBlockState(above).isAir() && !mc.level.getBlockState(above).canBeReplaced()) return false;
-
-        // 3. Toinen yläpuolella myös ilmaa (kristalli on 1 blokki korkea, mutta tarvitsee tilaa)
-        BlockPos above2 = above.above();
-        if (!mc.level.getBlockState(above2).isAir() && !mc.level.getBlockState(above2).canBeReplaced()) return false;
-
-        // 4. Ei muita kristalleja tai entiteettejä tässä paikassa
-        return mc.level.getEntitiesOfClass(EndCrystal.class, new net.minecraft.world.phys.AABB(above)).isEmpty();
+    private EndCrystal findClosestCrystalToPlayer() {
+        return mc.level.getEntitiesOfClass(EndCrystal.class,
+                        mc.player.getBoundingBox().inflate(breakRange.getValue()),
+                        e -> e.isAlive() && mc.player.distanceToSqr(e) <= breakRange.getValue() * breakRange.getValue())
+                .stream()
+                .min(Comparator.comparingDouble(e -> mc.player.distanceToSqr(e)))
+                .orElse(null);
     }
 
-    private boolean placeCrystal(BlockPos pos) {
-        // Varmista, että end crystal on kädessä
-        if (autoSwitch.get() && mc.player.getMainHandItem().getItem() != Items.END_CRYSTAL) {
+    // ==================== YHTEISET TOIMINNOT ====================
+    private void applyRotations(LivingEntity target) {
+        float yaw = (float) getYawTo(target);
+        float pitch = (float) getPitchTo(target);
+        yaw = net.minecraft.util.Mth.wrapDegrees(yaw);
+        pitch = net.minecraft.util.Mth.clamp(pitch, -90, 90);
+
+        if (silentRotations.get()) {
+            Rotations.rotate(yaw, pitch);
+        } else {
+            Rotations.rotate(yaw, pitch, (int) turnSpeed.getValue(), null);
+        }
+    }
+
+    /**
+     * Asettaa kristallin Auto-moodissa (vaihtaa slotia tarvittaessa)
+     */
+    private boolean placeCrystal(BlockPos pos, boolean checkSlot) {
+        if (checkSlot && autoSwitch.get() && mc.player.getMainHandItem().getItem() != Items.END_CRYSTAL) {
             int slot = findCrystalSlot();
             if (slot == -1) return false;
             mc.player.getInventory().selected = slot;
         }
 
-        // Tarkista, että pelaaja on tarpeeksi lähellä
         if (mc.player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > placeRange.getValue() * placeRange.getValue())
             return false;
 
-        // Lähetä rotaatio ennen placementia (jos silent rotations)
+        return sendPlacePacket(pos);
+    }
+
+    /**
+     * Asettaa kristallin Hold-moodissa – EI vaihda slotia, luottaa siihen että kristalli on kädessä.
+     */
+    private boolean placeCrystalManual(BlockPos pos) {
+        if (mc.player.getMainHandItem().getItem() != Items.END_CRYSTAL) {
+            return false; // Ei kristallia kädessä
+        }
+        return sendPlacePacket(pos);
+    }
+
+    private boolean sendPlacePacket(BlockPos pos) {
         if (silentRotations.get()) {
-            // Laske rotaatio tarkasti lohkon keskikohtaan
             float[] rotations = getRotationsTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
-            RotationHandler.rotateImmediate(rotations[0], rotations[1]);
+            Rotations.rotate(rotations[0], rotations[1]);
         }
 
-        // Lähetä place-paketti
         Direction direction = Direction.UP;
         Vec3 hitVec = new Vec3(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
         BlockHitResult hitResult = new BlockHitResult(hitVec, direction, pos, false);
@@ -298,37 +319,94 @@ public class CrystalAura extends AxiomMod implements KeybindConfigurable {
         return true;
     }
 
-    private int findCrystalSlot() {
-        for (int i = 0; i < 9; i++) {
-            if (mc.player.getInventory().getItem(i).getItem() == Items.END_CRYSTAL) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    // ---------- Crystal Detonation ----------
-    private EndCrystal findClosestCrystal(LivingEntity target) {
-        return mc.level.getEntitiesOfClass(EndCrystal.class,
-                        target.getBoundingBox().inflate(6),
-                        e -> e.isAlive() && e.distanceTo(target) <= 6 && e.distanceTo(mc.player) <= breakRange.getValue())
-                .stream()
-                .min((a, b) -> Double.compare(a.distanceToSqr(target), b.distanceToSqr(target)))
-                .orElse(null);
-    }
-
     private void breakCrystal(Entity crystal) {
-        // Lähetä rotaatio ennen rikkomista (silent)
         if (silentRotations.get()) {
             float[] rotations = getRotationsTo(crystal.getX(), crystal.getY() + crystal.getBbHeight() / 2, crystal.getZ());
-            RotationHandler.rotateImmediate(rotations[0], rotations[1]);
+            Rotations.rotate(rotations[0], rotations[1]);
         }
 
         ServerboundInteractPacket packet = ServerboundInteractPacket.createAttackPacket(crystal, mc.player.isShiftKeyDown());
         mc.getConnection().send(packet);
     }
 
-    // ---------- Apumetodit ----------
+    // ==================== APUMETODIT ====================
+    private LivingEntity selectTarget() {
+        return mc.level.getEntitiesOfClass(LivingEntity.class,
+                        mc.player.getBoundingBox().inflate(8),
+                        this::isValidTarget).stream()
+                .min((a, b) -> {
+                    switch (priority.getMode()) {
+                        case "Distance": return Double.compare(a.distanceToSqr(mc.player), b.distanceToSqr(mc.player));
+                        case "Health": return Float.compare(a.getHealth(), b.getHealth());
+                        default: return 0;
+                    }
+                }).orElse(null);
+    }
+
+    private boolean isValidTarget(LivingEntity entity) {
+        if (entity == mc.player || !entity.isAlive()) return false;
+        String mode = targetMode.getMode();
+        if (mode.equals("Players") && !(entity instanceof Player)) return false;
+        if (mode.equals("Mobs") && entity instanceof Player) return false;
+        if (checkWalls.get() && !hasLineOfSight(entity)) return false;
+        return true;
+    }
+
+    private boolean hasLineOfSight(Entity entity) {
+        Vec3 start = mc.player.getEyePosition();
+        Vec3 end = entity.getBoundingBox().getCenter();
+        return mc.level.clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mc.player))
+                .getType() == HitResult.Type.MISS;
+    }
+
+    private BlockPos findBestCrystalSpot(LivingEntity target) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int radius = 3;
+        for (int x = -radius; x <= radius; x++) {
+            for (int z = -radius; z <= radius; z++) {
+                for (int y = -1; y <= 2; y++) {
+                    pos.set(target.getBlockX() + x, target.getBlockY() + y, target.getBlockZ() + z);
+                    if (isValidCrystalSpot(pos)) {
+                        Vec3 blockCenter = new Vec3(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+                        if (blockCenter.distanceToSqr(target.position()) <= 4.0 * 4.0) {
+                            return pos.immutable();
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean isValidCrystalSpot(BlockPos pos) {
+        var blockState = mc.level.getBlockState(pos);
+        if (!blockState.is(Blocks.OBSIDIAN) && !blockState.is(Blocks.BEDROCK)) return false;
+
+        BlockPos above = pos.above();
+        if (!mc.level.getBlockState(above).isAir() && !mc.level.getBlockState(above).canBeReplaced()) return false;
+
+        BlockPos above2 = above.above();
+        if (!mc.level.getBlockState(above2).isAir() && !mc.level.getBlockState(above2).canBeReplaced()) return false;
+
+        return mc.level.getEntitiesOfClass(EndCrystal.class, new net.minecraft.world.phys.AABB(above)).isEmpty();
+    }
+
+    private EndCrystal findClosestCrystal(LivingEntity target) {
+        return mc.level.getEntitiesOfClass(EndCrystal.class,
+                        target.getBoundingBox().inflate(6),
+                        e -> e.isAlive() && e.distanceTo(target) <= 6 && e.distanceTo(mc.player) <= breakRange.getValue())
+                .stream()
+                .min(Comparator.comparingDouble(e -> e.distanceToSqr(target)))
+                .orElse(null);
+    }
+
+    private int findCrystalSlot() {
+        for (int i = 0; i < 9; i++) {
+            if (mc.player.getInventory().getItem(i).getItem() == Items.END_CRYSTAL) return i;
+        }
+        return -1;
+    }
+
     private float[] getRotationsTo(double x, double y, double z) {
         double dx = x - mc.player.getX();
         double dy = y - (mc.player.getY() + mc.player.getEyeHeight());
@@ -338,8 +416,8 @@ public class CrystalAura extends AxiomMod implements KeybindConfigurable {
         float pitch = (float) -Math.toDegrees(Math.atan2(dy, dist));
         if (addJitter.get()) {
             float jit = (float) jitterAmount.getValue();
-            yaw += (float) ((Math.random() - 0.5) * jit);
-            pitch += (float) ((Math.random() - 0.5) * jit * 0.5);
+            yaw += (float) ((random.nextDouble() - 0.5) * jit);
+            pitch += (float) ((random.nextDouble() - 0.5) * jit * 0.5);
         }
         return new float[]{yaw, pitch};
     }

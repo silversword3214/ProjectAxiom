@@ -14,10 +14,10 @@ public final class PingSpoof extends AxiomMod implements KeybindConfigurable {
     private final SettingNumber fakePing;
 
     public PingSpoof() {
-        super("PingSpoof", "Spoofs your displayed ping", ModuleCategory.MISC);
+        super("PingSpoof", "Spoofs your displayed ping (only visual)", ModuleCategory.MISC);
         INSTANCE = this;
 
-        fakePing = new SettingNumber("Ping", 1, 999, 1, 69);
+        fakePing = new SettingNumber("Ping", 1, 500, 1, 69);
 
         addHiddenSetting(toggleKey);
         addSetting(fakePing);

@@ -9,6 +9,7 @@
     "GuiMixin",
     "KeyboardHandlerMixin",
     "KeyboardInputMixin",
+    "MinecraftClientMixin",
     "MinecraftMixin",
     "MouseHandlerMixin",
     "MouseHandlerScrollMixin",
@@ -63,7 +64,8 @@
     "render.xray.XRayShouldDrawSideMixin",
     "render.xray.XRaySideCullingMixin",
     "render.xray.XRayTerrainRenderContextMixin",
-    "world.ClientWorldPropertiesMixin"
+    "world.ClientWorldPropertiesMixin",
+    "render.FullbrightShadeMixin"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -72,6 +74,6 @@
     "requireAnnotations": true
   },
   "mixins": [
-    "render.FullbrightShadeMixin"
+
   ]
 }

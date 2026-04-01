@@ -1,4 +1,4 @@
-package silversword.axiom.client.modules.moduleutils.SmartKillAura;
+package silversword.axiom.client.modules.moduleutils.killaura;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;

@@ -28,6 +28,7 @@ import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderPip
 import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.FabricHudHook;
 
 import silversword.axiom.client.sound.CustomSounds;
+import silversword.axiom.client.utils.Rotations;
 
 public final class AxiomInitialize implements ClientModInitializer {
     public static final EventBus EVENT_BUS = new EventBus();

@@ -7,98 +7,58 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.ClipContext;
+import silversword.axiom.client.event.mouse.MouseUpdateEvent;
+import silversword.axiom.client.event.player.PreMotionEvent; // TÄRKEÄ: Käytetään uutta eventtiä
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
-import silversword.axiom.client.modules.moduleutils.SmartKillAura.*;
+import silversword.axiom.client.modules.moduleutils.killaura.AttackController;
+import silversword.axiom.client.modules.moduleutils.killaura.TargetManager;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
-import silversword.axiom.client.setting.SettingBoolean;
-import silversword.axiom.client.setting.SettingKeybind;
-import silversword.axiom.client.setting.SettingMode;
-import silversword.axiom.client.setting.SettingSlider;
+import silversword.axiom.client.setting.*;
+import silversword.axiom.client.utils.Rotations;
 
 import static silversword.axiom.client.main.AxiomInitialize.mc;
+import static silversword.axiom.client.main.AxiomInitialize.EVENT_BUS;
 
 public class KillAura extends AxiomMod implements KeybindConfigurable {
-
     private static KillAura instance;
 
     private final TargetManager targetManager = new TargetManager();
     private final AttackController attackController = new AttackController();
-    private final RotationManager rotationManager = new RotationManager();
-
-    private final SilentRotationController silentRotation = new SilentRotationController();
 
     private LivingEntity currentTarget = null;
 
-    // Hyökkäysjonotus
-    private int attackDelay = 0;
-    private LivingEntity pendingAttack = null;
+    private float targetYawForMouse, targetPitchForMouse;
+    private boolean shouldSimulateMouse = false;
 
-    // ---------- Asetukset ----------
+    // ---------- Settings ----------
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
-
-    private final SettingMode mode = new SettingMode(
-            "Mode", new String[]{"Silent", "Legit"}, "Silent"
-    );
-
-    private final SettingMode targetMode = new SettingMode(
-            "Target Mode", new String[]{"Players", "Mobs", "Both"}, "Players"
-    );
-
-    private final SettingMode priorityMode = new SettingMode(
-            "Priority", new String[]{"Distance", "Health", "Armor", "Hybrid"}, "Distance"
-    );
-
-    private final SettingSlider attackRange = new SettingSlider(
-            "Attack Range", new double[]{3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0}, 4.0
-    );
-
-    private final SettingSlider minCps = new SettingSlider(
-            "Min CPS", new double[]{4, 5, 6, 7, 8, 9, 10, 12, 15}, 8
-    );
-
-    private final SettingSlider maxCps = new SettingSlider(
-            "Max CPS", new double[]{6, 7, 8, 9, 10, 12, 15, 20}, 12
-    );
-
+    private final SettingMode mode = new SettingMode("Mode", new String[]{"Silent", "Legit"}, "Legit");
+    private final SettingMode targetMode = new SettingMode("Target Mode", new String[]{"Players", "Mobs", "Both"}, "Players");
+    private final SettingMode priorityMode = new SettingMode("Priority", new String[]{"Distance", "Health", "Armor", "Hybrid"}, "Distance");
+    private final SettingSlider attackRange = new SettingSlider("Attack Range", new double[]{3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0}, 4.0);
     private final SettingBoolean checkWalls = new SettingBoolean("Check Walls", true);
-    private final SettingBoolean predictMovement = new SettingBoolean("Predict Movement", true);
     private final SettingBoolean ignoreBots = new SettingBoolean("Ignore Bots", true);
-
-    private final SettingSlider maxTurnSpeed = new SettingSlider(
-            "Turn Speed (deg/tick)", new double[]{5, 10, 15, 20, 25, 30, 35, 40}, 20
-    );
-
+    private final SettingSlider maxTurnSpeed = new SettingSlider("Turn Speed (deg/tick)", new double[]{5, 10, 15, 20, 25, 30, 35, 40}, 20);
     private final SettingBoolean simulateJitter = new SettingBoolean("Simulate Jitter", true);
-    private final SettingSlider jitterAmount = new SettingSlider(
-            "Jitter Amount", new double[]{0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0}, 2.0
-    );
-
-    // Attack jitter (satunnainen poikkeama hyökkäyshetkellä)
+    private final SettingSlider jitterAmount = new SettingSlider("Jitter Amount", new double[]{0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0}, 2.0);
     private final SettingBoolean attackJitter = new SettingBoolean("Attack Jitter", true);
-    private final SettingSlider attackJitterAmount = new SettingSlider(
-            "Attack Jitter Amount", new double[]{0.5, 1.0, 1.5, 2.0, 2.5, 3.0}, 1.5
-    );
-
+    private final SettingSlider attackJitterAmount = new SettingSlider("Attack Jitter Amount", new double[]{0.5, 1.0, 1.5, 2.0, 2.5, 3.0}, 1.5);
     private final SettingBoolean renderTargetBox = new SettingBoolean("Draw Box", true);
     private final SettingColor boxColor = new SettingColor("Box Color", Color.GREEN);
 
     public KillAura() {
-        super("Kill Aura", "Kill Aura with multiple modes", ModuleCategory.COMBAT);
-
+        super("Kill Aura", "Kill Aura with smooth rotations", ModuleCategory.COMBAT);
         addSetting(mode);
         addSetting(targetMode);
         addSetting(priorityMode);
         addSetting(attackRange);
-        addSetting(minCps);
-        addSetting(maxCps);
         addSetting(checkWalls);
-        addSetting(predictMovement);
         addSetting(ignoreBots);
         addSetting(maxTurnSpeed);
         addSetting(simulateJitter);
@@ -108,130 +68,154 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
         addSetting(renderTargetBox);
         addHiddenSetting(boxColor.getSetting());
         addHiddenSetting(toggleKey);
-
         instance = this;
     }
 
     @Override
-    public SettingKeybind getKeybind() {
-        return toggleKey;
-    }
+    public SettingKeybind getKeybind() { return toggleKey; }
 
     @Override
     protected void onEnable() {
         targetManager.reset();
         attackController.reset();
-        rotationManager.reset();
         currentTarget = null;
-        pendingAttack = null;
-        attackDelay = 0;
-        if (mc.player != null) {
-            silentRotation.init(mc.player.getYRot(), mc.player.getXRot());
-        }
-    }
+        shouldSimulateMouse = false;
 
+    }
     @Override
     protected void onDisable() {
         currentTarget = null;
-        silentRotation.reset();
-        pendingAttack = null;
-        attackDelay = 0;
+        shouldSimulateMouse = false;
+        // Tyhjennetään puskuri heti kun moduuli sammuu
+        if (attackController != null) {
+            attackController.reset();
+        }
     }
 
-    @Override
-    protected void onTick() {
-        if (mc.player == null || mc.level == null) return;
+    @Subscribe
+    public void onMouseUpdate(MouseUpdateEvent event) {
+        if (!isEnabled() || !mode.getMode().equals("Legit") || !shouldSimulateMouse) return;
 
-        // Käsitellään jonotettu hyökkäys
-        if (attackDelay > 0) {
-            attackDelay--;
-            if (attackDelay == 0 && pendingAttack != null) {
-                performAttack(pendingAttack);
-                pendingAttack = null;
-            }
+        float currentYaw = mc.player.getYRot();
+        float currentPitch = mc.player.getXRot();
+
+        float yawDiff = Mth.wrapDegrees(targetYawForMouse - currentYaw);
+        float pitchDiff = targetPitchForMouse - currentPitch;
+
+        if (Math.abs(yawDiff) < 0.01f && Math.abs(pitchDiff) < 0.01f) {
+            shouldSimulateMouse = false;
+            return;
         }
 
-        LivingEntity target = targetManager.selectTarget(
+        float maxTurnSpeedF = (float) maxTurnSpeed.getValue();
+        float yawStep = Mth.clamp(yawDiff, -maxTurnSpeedF, maxTurnSpeedF);
+        float pitchStep = Mth.clamp(pitchDiff, -maxTurnSpeedF, maxTurnSpeedF);
+
+        if (simulateJitter.get()) {
+            float jitter = (float) jitterAmount.getValue();
+            yawStep += (float) ((Math.random() - 0.5) * jitter);
+            pitchStep += (float) ((Math.random() - 0.5) * jitter * 0.5);
+        }
+
+        double sens = mc.options.sensitivity().get();
+        double deltaX = yawStep * 0.6 * sens;
+        double deltaY = pitchStep * 0.6 * sens;
+
+        event.setDeltaX(event.getDeltaX() + deltaX);
+        event.setDeltaY(event.getDeltaY() + deltaY);
+    }
+
+    /**
+     * KORJAUS: Kaikki KillAuran logiikka on nyt PreMotion-vaiheessa.
+     * Tämä tapahtuu LocalPlayerMixinissä juuri ennen liikkumispaketin lähettämistä.
+     */
+    @Subscribe
+    public void onPreMotion(PreMotionEvent event) {
+        if (!isEnabled()) return;
+        if (mc.player == null || mc.level == null) return;
+
+        // 1. Kohteen valinta
+        currentTarget = targetManager.selectTarget(
                 mc.player, mc.level,
                 priorityMode.getMode(), ignoreBots.get(), targetMode.getMode()
         );
-        currentTarget = target;
 
-        if (target == null) {
-            silentRotation.reset();
+        if (currentTarget == null) {
+            shouldSimulateMouse = false;
             return;
         }
 
-        double range = attackRange.getValue();
-        if (mc.player.distanceTo(target) > range) {
-            silentRotation.reset();
+        if (mc.player.distanceTo(currentTarget) > attackRange.getValue()) {
+            shouldSimulateMouse = false;
             return;
         }
 
-        if (checkWalls.get() && !isTargetVisible(target)) {
-            silentRotation.reset();
+        if (checkWalls.get() && !isTargetVisible(currentTarget)) {
+            shouldSimulateMouse = false;
             return;
         }
+
+        // 2. Rotaatioiden laskenta
+        float targetYaw = (float) getYawToTarget(currentTarget);
+        float targetPitch = (float) getPitchToTarget(currentTarget);
+        targetYaw = Mth.wrapDegrees(targetYaw);
+        targetPitch = Mth.clamp(targetPitch, -90f, 90f);
 
         String currentMode = mode.getMode();
 
-        if (currentMode.equals("Silent")) {
-            // Laske tavoiterotaatio
-            float targetYaw = (float) getYawToTarget(target);
-            float targetPitch = (float) getPitchToTarget(target);
-            targetYaw = Mth.wrapDegrees(targetYaw);
-            targetPitch = Mth.clamp(targetPitch, -90f, 90f);
+        if (currentMode.equals("Legit")) {
+            targetYawForMouse = targetYaw;
+            targetPitchForMouse = targetPitch;
+            shouldSimulateMouse = true;
 
-            float speed = (float) maxTurnSpeed.getValue();
-            float jitter = simulateJitter.get() ? (float) jitterAmount.getValue() : 0f;
-            silentRotation.setTarget(targetYaw, targetPitch, speed, jitter);
-            silentRotation.update();
-
-            // Pelaajan pää kääntyy visuaalisesti
-            mc.player.setYHeadRot(silentRotation.getCurrentYaw());
-            mc.player.yHeadRotO = silentRotation.getCurrentYaw();
-
-            // Jonotetaan hyökkäys seuraavalle tickille, jotta liikepaketti ehtii mennä ensin
-            if (attackController.canAttack(mc.player, minCps.getValue(), maxCps.getValue()) && pendingAttack == null) {
-                pendingAttack = target;
-                // Satunnainen viive 0–2 tickiä (ihmismäinen)
-                attackDelay = 1 + (int) (Math.random() * 2);
+            // Legit hyökkäys: Varmistetaan crosshair ja cooldown
+            if (isCrosshairOnTarget(currentTarget) && attackController.canAttack(mc.player)) {
+                performAttack(currentTarget);
             }
-        } else if (currentMode.equals("Legit")) {
-            RotationManager.Rotation targetRotation = rotationManager.calculateRotation(
-                    mc.player, target, predictMovement.get()
-            );
-            rotationManager.rotateSmoothly(
-                    mc.player, targetRotation, (float) maxTurnSpeed.getValue(),
-                    simulateJitter.get() ? (float) jitterAmount.getValue() : 0f
-            );
+        }
+        else if (currentMode.equals("Silent")) {
+            // Lasketaan jitter jos päällä
+            float jitter = simulateJitter.get() ? (float) jitterAmount.getValue() : 0f;
+            float yaw = Mth.wrapDegrees(targetYaw + (float)((Math.random() - 0.5) * jitter));
+            float pitch = Mth.clamp(targetPitch + (float)((Math.random() - 0.5) * jitter * 0.5), -90f, 90f);
 
-            if (attackController.canAttack(mc.player, minCps.getValue(), maxCps.getValue()) && pendingAttack == null) {
-                pendingAttack = target;
-                attackDelay = 1;
+            // Jos pystytään hyökkäämään, kuitataan rotaatio ja hyökätään callbackissa
+            if (attackController.canAttack(mc.player)) {
+                Rotations.rotate(yaw, pitch, 10, false, () -> {
+                    // Tämä suoritetaan Rotations.onPreSendMovementPackets sisällä
+                    performAttack(currentTarget);
+                });
+            } else if (Rotations.getRotationTimer() > 5) {
+                // Pidetään katsomissuunta kohteessa vaikkei hyökätä
+                Rotations.rotate(yaw, pitch, 5, false, null);
             }
         }
     }
 
+    /**
+     * HUOM: onTick on nyt tyhjä tai poistettu, koska käytämme onPreMotionia.
+     */
+    @Override
+    protected void onTick() {
+        // Logiikka siirretty onPreMotioniin
+    }
+
     private void performAttack(LivingEntity target) {
+        if (!isEnabled()) return;
         if (target == null || !target.isAlive()) return;
 
-        // Attack jitter: pieni satunnainen poikkeama rotaatioon hyökkäyshetkellä
+        // Jos hyökkäysjitter on päällä, käännetään päätä hetkeksi paketin ajaksi
         if (attackJitter.get()) {
             float jitter = (float) attackJitterAmount.getValue();
-            float yawOffset = (float) ((Math.random() - 0.5) * jitter);
-            float pitchOffset = (float) ((Math.random() - 0.5) * jitter * 0.5);
-
-            // Väliaikainen rotaation muutos (vain client-puoli)
             float oldYaw = mc.player.getYRot();
             float oldPitch = mc.player.getXRot();
-            mc.player.setYRot(oldYaw + yawOffset);
-            mc.player.setXRot(oldPitch + pitchOffset);
+
+            mc.player.setYRot(oldYaw + (float)((Math.random() - 0.5) * jitter));
+            mc.player.setXRot(oldPitch + (float)((Math.random() - 0.5) * jitter * 0.5));
 
             mc.gameMode.attack(mc.player, target);
             mc.player.swing(mc.player.getUsedItemHand());
 
-            // Palautetaan alkuperäinen rotaatio
             mc.player.setYRot(oldYaw);
             mc.player.setXRot(oldPitch);
         } else {
@@ -239,7 +223,16 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
             mc.player.swing(mc.player.getUsedItemHand());
         }
 
+        // Päivitetään attackControllerin viive
         attackController.recordAttack();
+    }
+
+    // --- Helperit pidetty ennallaan ---
+    private boolean isCrosshairOnTarget(LivingEntity target) {
+        if (mc.hitResult instanceof EntityHitResult entityHit) {
+            return entityHit.getEntity() == target;
+        }
+        return false;
     }
 
     private double getYawToTarget(LivingEntity target) {
@@ -259,14 +252,8 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
     private boolean isTargetVisible(LivingEntity target) {
         Vec3 start = mc.player.getEyePosition();
         Vec3 end = target.getBoundingBox().getCenter();
-        HitResult result = mc.level.clip(new ClipContext(
-                start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mc.player
-        ));
-        if (result.getType() == HitResult.Type.MISS) return true;
-        if (result instanceof EntityHitResult entityHit) {
-            return entityHit.getEntity() == target;
-        }
-        return false;
+        HitResult result = mc.level.clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mc.player));
+        return result.getType() == HitResult.Type.MISS || (result instanceof EntityHitResult ehr && ehr.getEntity() == target);
     }
 
     @Subscribe
@@ -274,20 +261,10 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
         if (!isEnabled() || currentTarget == null || !renderTargetBox.get()) return;
         Renderer3D renderer = event.getRenderer();
         AABB box = currentTarget.getBoundingBox();
-        int color = boxColor.getCurrentColor().getARGB();
-        renderer.boxOutline(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, color, 0);
+        renderer.boxOutline(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, boxColor.getCurrentColor().getARGB(), 0);
     }
 
-    // ---------- Staattiset metodit mixinille ----------
-    public static KillAura getInstance() {
-        return instance;
-    }
-
-    public boolean isSilentModeActive() {
-        return isEnabled() && mode.getMode().equals("Silent");
-    }
-
-    public SilentRotationController getSilentRotationController() {
-        return silentRotation;
-    }
+    public AttackController getAttackController() { return this.attackController; }
+    public static KillAura getInstance() { return instance; }
+    public boolean isSilentModeActive() { return isEnabled() && mode.getMode().equals("Silent"); }
 }

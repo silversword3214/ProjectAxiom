@@ -8,6 +8,6 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(SubmitNodeStorage.class)
 public interface SubmitNodeStorageAccessor {
-    @Accessor("submitsPerOrder") // Yarn name – Mixin will remap to field_62244 in production
+    @Accessor("submitsPerOrder")
     Int2ObjectAVLTreeMap<SubmitNodeCollection> axiom$getSubmitsPerOrder();
 }
