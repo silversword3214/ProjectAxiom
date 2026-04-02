@@ -125,10 +125,6 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
         event.setDeltaY(event.getDeltaY() + deltaY);
     }
 
-    /**
-     * KORJAUS: Kaikki KillAuran logiikka on nyt PreMotion-vaiheessa.
-     * Tämä tapahtuu LocalPlayerMixinissä juuri ennen liikkumispaketin lähettämistä.
-     */
     @Subscribe
     public void onPreMotion(PreMotionEvent event) {
         if (!isEnabled()) return;
@@ -155,7 +151,6 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
             return;
         }
 
-        // 2. Rotaatioiden laskenta
         float targetYaw = (float) getYawToTarget(currentTarget);
         float targetPitch = (float) getPitchToTarget(currentTarget);
         targetYaw = Mth.wrapDegrees(targetYaw);
@@ -174,37 +169,29 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
             }
         }
         else if (currentMode.equals("Silent")) {
-            // Lasketaan jitter jos päällä
             float jitter = simulateJitter.get() ? (float) jitterAmount.getValue() : 0f;
             float yaw = Mth.wrapDegrees(targetYaw + (float)((Math.random() - 0.5) * jitter));
             float pitch = Mth.clamp(targetPitch + (float)((Math.random() - 0.5) * jitter * 0.5), -90f, 90f);
 
-            // Jos pystytään hyökkäämään, kuitataan rotaatio ja hyökätään callbackissa
             if (attackController.canAttack(mc.player)) {
                 Rotations.rotate(yaw, pitch, 10, false, () -> {
                     // Tämä suoritetaan Rotations.onPreSendMovementPackets sisällä
                     performAttack(currentTarget);
                 });
             } else if (Rotations.getRotationTimer() > 5) {
-                // Pidetään katsomissuunta kohteessa vaikkei hyökätä
                 Rotations.rotate(yaw, pitch, 5, false, null);
             }
         }
     }
 
-    /**
-     * HUOM: onTick on nyt tyhjä tai poistettu, koska käytämme onPreMotionia.
-     */
     @Override
     protected void onTick() {
-        // Logiikka siirretty onPreMotioniin
     }
 
     private void performAttack(LivingEntity target) {
         if (!isEnabled()) return;
         if (target == null || !target.isAlive()) return;
 
-        // Jos hyökkäysjitter on päällä, käännetään päätä hetkeksi paketin ajaksi
         if (attackJitter.get()) {
             float jitter = (float) attackJitterAmount.getValue();
             float oldYaw = mc.player.getYRot();
@@ -223,11 +210,9 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
             mc.player.swing(mc.player.getUsedItemHand());
         }
 
-        // Päivitetään attackControllerin viive
         attackController.recordAttack();
     }
 
-    // --- Helperit pidetty ennallaan ---
     private boolean isCrosshairOnTarget(LivingEntity target) {
         if (mc.hitResult instanceof EntityHitResult entityHit) {
             return entityHit.getEntity() == target;

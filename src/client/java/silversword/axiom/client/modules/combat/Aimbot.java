@@ -1,187 +1,168 @@
 package silversword.axiom.client.modules.combat;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.util.Mth;
-import net.minecraft.world.phys.Vec3;
+import org.lwjgl.glfw.GLFW;
+import silversword.axiom.client.event.mouse.MouseUpdateEvent;
+import silversword.axiom.client.event.player.PreMotionEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
-import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.KeybindConfigurable;
-import silversword.axiom.client.setting.SettingBoolean;
-import silversword.axiom.client.setting.SettingKeybind;
-import silversword.axiom.client.setting.SettingMode;
-import silversword.axiom.client.setting.SettingNumber;
+import silversword.axiom.client.modules.ModuleCategory;
+import silversword.axiom.client.modules.moduleutils.killaura.TargetManager;
+import silversword.axiom.client.setting.*;
+
+import static silversword.axiom.client.main.AxiomInitialize.mc;
 
 public class Aimbot extends AxiomMod implements KeybindConfigurable {
 
-    private final Minecraft mc = Minecraft.getInstance();
+    private final TargetManager targetManager = new TargetManager();
+    private LivingEntity currentTarget = null;
 
-    // Asetukset
+    private float targetYawForMouse, targetPitchForMouse;
+    private boolean shouldSimulateMouse = false;
+
+    // ---------- Settings ----------
+    public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
     public final SettingMode targetMode = new SettingMode("Target", new String[]{"Players", "Mobs", "Both"}, "Both");
-    public final SettingNumber range = new SettingNumber("Range", 1, 100, 1, 64);
+    public final SettingSlider range = new SettingSlider("Range", new double[]{3.0, 4.0, 5.0, 6.0}, 5.0);
     public final SettingMode bodyPart = new SettingMode("Body Part", new String[]{"Head", "Body", "Feet"}, "Body");
-    public final SettingNumber smooth = new SettingNumber("Smooth", 1, 100, 1, 25);
-    public final SettingBoolean hold = new SettingBoolean("Hold", true);
-    public final SettingNumber manualOverrideThreshold = new SettingNumber("Manual Override", 0, 10, 0.5, 2.0);
-    public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0, true);
-    public final SettingKeybind holdKey = new SettingKeybind("Hold Key", 0, false);
 
-    private Entity target = null;
-    private float lastYaw = 0;
-    private float lastPitch = 0;
-    private boolean active = false;
+    // Uusi smooth: maksimi asteet per tick (0 = välitön, 30 = hidas)
+    public final SettingSlider maxTurnSpeed = new SettingSlider("Max Turn Speed (deg/tick)", new double[]{0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 80}, 40.0);
+
+    public final SettingBoolean onlyOnHold = new SettingBoolean("Only on Hold", true);
+    public final SettingKeybind holdKey = new SettingKeybind("Hold Key", 0);
+    public final SettingBoolean manualOverride = new SettingBoolean("Manual Override", false);
+    public final SettingBoolean checkWalls = new SettingBoolean("Check Walls", true);
+    public final SettingBoolean ignoreBots = new SettingBoolean("Ignore Bots", true);
 
     public Aimbot() {
         super("Aimbot", "Automatically aims at nearby entities", ModuleCategory.COMBAT);
         addSetting(targetMode);
         addSetting(range);
         addSetting(bodyPart);
-        addSetting(smooth);
-        addSetting(hold);
-        addSetting(manualOverrideThreshold);
+        addSetting(maxTurnSpeed);
+        addSetting(onlyOnHold);
+        addSetting(holdKey);
+        addSetting(manualOverride);
+        addSetting(checkWalls);
+        addSetting(ignoreBots);
         addHiddenSetting(toggleKey);
-        addHiddenSetting(holdKey);
     }
 
     @Override
-    public SettingKeybind getKeybind() {
-        return toggleKey;
-    }
+    public SettingKeybind getKeybind() { return toggleKey; }
 
     @Override
     protected void onEnable() {
-        target = null;
-        active = false;
-        if (mc.player != null) {
-            lastYaw = mc.player.getYRot();
-            lastPitch = mc.player.getXRot();
-        }
+        currentTarget = null;
+        shouldSimulateMouse = false;
     }
 
     @Override
     protected void onDisable() {
-        target = null;
-        active = false;
+        currentTarget = null;
+        shouldSimulateMouse = false;
     }
 
     @Override
     protected void onTick() {
-        if (mc.player == null || mc.level == null) return;
 
-        boolean shouldAim = false;
-        if (hold.get()) {
-            shouldAim = isEnabled();
-        } else {
+    }
+
+    @Subscribe
+    public void onMouseUpdate(MouseUpdateEvent event) {
+        if (!isEnabled() || !shouldSimulateMouse) return;
+
+        float currentYaw = mc.player.getYRot();
+        float currentPitch = mc.player.getXRot();
+
+        float yawDiff = Mth.wrapDegrees(targetYawForMouse - currentYaw);
+        float pitchDiff = targetPitchForMouse - currentPitch;
+
+        if (Math.abs(yawDiff) < 0.01f && Math.abs(pitchDiff) < 0.01f) {
+            shouldSimulateMouse = false;
+            return;
+        }
+
+        // Käytetään maxTurnSpeed (asteet per tick)
+        float maxSpeed = (float) maxTurnSpeed.getValue();
+        float yawStep = Mth.clamp(yawDiff, -maxSpeed, maxSpeed);
+        float pitchStep = Mth.clamp(pitchDiff, -maxSpeed, maxSpeed);
+
+        double sens = mc.options.sensitivity().get();
+        double deltaX = yawStep * 0.6 * sens;
+        double deltaY = pitchStep * 0.6 * sens;
+
+        event.setDeltaX(event.getDeltaX() + deltaX);
+        event.setDeltaY(event.getDeltaY() + deltaY);
+    }
+
+    @Subscribe
+    public void onPreMotion(PreMotionEvent event) {
+        if (!isEnabled() || mc.player == null || mc.level == null) return;
+
+        // Manual override ohittaa hold-näppäimen
+        boolean override = manualOverride.get();
+        if (!override && onlyOnHold.get() && holdKey.get() != 0) {
             int key = holdKey.get();
-            if (key != 0) {
-                long handle = mc.getWindow().handle();
-                boolean pressed = org.lwjgl.glfw.GLFW.glfwGetKey(handle, key) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
-                shouldAim = pressed && isEnabled();
-            }
-        }
-
-        if (!shouldAim) {
-            active = false;
-            target = null;
-            return;
-        }
-
-        // Tarkistetaan manuaalinen ohitus (hiiren liike)
-        float yawDiff = Math.abs(mc.player.getYRot() - lastYaw);
-        float pitchDiff = Math.abs(mc.player.getXRot() - lastPitch);
-        float threshold = (float) manualOverrideThreshold.getValue(); // <-- KORJATTU
-        if (yawDiff > threshold || pitchDiff > threshold) {
-            active = false;
-            target = null;
-            lastYaw = mc.player.getYRot();
-            lastPitch = mc.player.getXRot();
-            return;
-        }
-
-        if (target == null || !target.isAlive() || mc.player.distanceTo(target) > range.getValue()) {
-            target = findTarget();
-            if (target == null) {
-                active = false;
+            long handle = GLFW.glfwGetCurrentContext();
+            boolean isMouse = key < 8;
+            boolean pressed = isMouse ?
+                    GLFW.glfwGetMouseButton(handle, key) == GLFW.GLFW_PRESS :
+                    GLFW.glfwGetKey(handle, key) == GLFW.GLFW_PRESS;
+            if (!pressed) {
+                currentTarget = null;
+                shouldSimulateMouse = false;
                 return;
             }
         }
 
-        Vec3 targetPos = getTargetPosition(target);
-        Vec3 playerPos = mc.player.getEyePosition();
-        double dx = targetPos.x - playerPos.x;
-        double dy = targetPos.y - playerPos.y;
-        double dz = targetPos.z - playerPos.z;
-
-        double distance = Math.sqrt(dx * dx + dz * dz);
-        float targetYaw = (float) Math.toDegrees(Math.atan2(dz, dx)) - 90;
-        float targetPitch = (float) -Math.toDegrees(Math.atan2(dy, distance));
-
-        float smoothFactor = (float) smooth.getValue() / 100f; // <-- KORJATTU
-        if (smoothFactor > 0) {
-            float currentYaw = mc.player.getYRot();
-            float currentPitch = mc.player.getXRot();
-            float newYaw = currentYaw + Mth.wrapDegrees(targetYaw - currentYaw) * smoothFactor;
-            float newPitch = currentPitch + (targetPitch - currentPitch) * smoothFactor;
-            mc.player.setYRot(newYaw);
-            mc.player.setXRot(newPitch);
-        } else {
-            mc.player.setYRot(targetYaw);
-            mc.player.setXRot(targetPitch);
+        // Etsi kohde
+        currentTarget = targetManager.selectTarget(
+                mc.player, mc.level,
+                "Distance", ignoreBots.get(), targetMode.getMode()
+        );
+        if (currentTarget == null) {
+            shouldSimulateMouse = false;
+            return;
         }
 
-        active = true;
-        lastYaw = mc.player.getYRot();
-        lastPitch = mc.player.getXRot();
-    }
-
-    private Entity findTarget() {
-        double maxDist = range.getValue();
-        Entity best = null;
-        double bestAngle = Double.MAX_VALUE;
-
-        for (Entity entity : mc.level.entitiesForRendering()) {
-            if (entity == mc.player || !entity.isAlive()) continue;
-            if (!isValidTarget(entity)) continue;
-            double dist = mc.player.distanceTo(entity);
-            if (dist > maxDist) continue;
-
-            Vec3 playerPos = mc.player.getEyePosition();
-            Vec3 targetPos = getTargetPosition(entity);
-            Vec3 toTarget = targetPos.subtract(playerPos).normalize();
-            Vec3 lookVec = mc.player.getViewVector(1.0f);
-            double angle = Math.acos(lookVec.dot(toTarget)) * (180 / Math.PI);
-
-            if (angle < bestAngle) {
-                bestAngle = angle;
-                best = entity;
-            }
+        if (mc.player.distanceTo(currentTarget) > range.getValue()) {
+            shouldSimulateMouse = false;
+            return;
         }
-        return best;
-    }
 
-    private boolean isValidTarget(Entity entity) {
-        String mode = targetMode.getMode();
-        if (mode.equals("Players")) return entity instanceof Player;
-        if (mode.equals("Mobs")) return entity instanceof LivingEntity && !(entity instanceof Player);
-        return entity instanceof LivingEntity;
-    }
-
-    private Vec3 getTargetPosition(Entity entity) {
-        String part = bodyPart.getMode();
-        double yOffset = 0;
-        switch (part) {
-            case "Head":
-                yOffset = entity.getBbHeight() * 0.9;
-                break;
-            case "Body":
-                yOffset = entity.getBbHeight() * 0.5;
-                break;
-            case "Feet":
-                yOffset = 0;
-                break;
+        if (checkWalls.get() && !mc.player.hasLineOfSight(currentTarget)) {
+            shouldSimulateMouse = false;
+            return;
         }
-        return entity.position().add(0, yOffset, 0);
+
+        // Kulmat kohteeseen
+        float targetYaw = (float) getYawToTarget(currentTarget);
+        float targetPitch = (float) getPitchToTarget(currentTarget);
+        targetYaw = Mth.wrapDegrees(targetYaw);
+        targetPitch = Mth.clamp(targetPitch, -90f, 90f);
+
+        targetYawForMouse = targetYaw;
+        targetPitchForMouse = targetPitch;
+        shouldSimulateMouse = true;
+    }
+
+    // Apumetodit (kopioitu KillAurasta)
+    private double getYawToTarget(LivingEntity target) {
+        double diffX = target.getX() - mc.player.getX();
+        double diffZ = target.getZ() - mc.player.getZ();
+        return Math.toDegrees(Math.atan2(diffZ, diffX)) - 90.0;
+    }
+
+    private double getPitchToTarget(LivingEntity target) {
+        double diffX = target.getX() - mc.player.getX();
+        double diffY = target.getY() + target.getBbHeight() / 2 - (mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()));
+        double diffZ = target.getZ() - mc.player.getZ();
+        double distance = Math.sqrt(diffX * diffX + diffZ * diffZ);
+        return -Math.toDegrees(Math.atan2(diffY, distance));
     }
 }

@@ -22,16 +22,8 @@ public class LocalPlayerMixin {
     // LocalPlayerMixin.java sisällä
     @Inject(method = "sendPosition", at = @At("HEAD"))
     private void onPreSendMovementPackets(CallbackInfo ci) {
-        // 1. Postataan eventti moduuleille
         AxiomInitialize.EVENT_BUS.post(new silversword.axiom.client.event.player.PreMotionEvent());
 
-        // 2. Kutsutaan kontrolleria (se hoitaa itse jonon tyhjennyksen jos moduuli on pois päältä)
-        KillAura ka = KillAura.getInstance();
-        if (ka != null) {
-            ka.getAttackController().onPreMotion();
-        }
-
-        // 3. Suoritetaan rotaatiot
         Rotations.onPreSendMovementPackets();
     }
 

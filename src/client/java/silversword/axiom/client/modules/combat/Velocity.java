@@ -63,10 +63,9 @@ public final class Velocity extends AxiomMod implements KeybindConfigurable {
                         original.z * h
                 );
 
-                // Vaihda paketti JA aseta velocity suoraan
                 event.setPacket(new ClientboundSetEntityMotionPacket(pkt.getId(), modified));
                 mc.player.setDeltaMovement(modified);
-                event.setCancelled(true); // estä alkuperäinen paketti
+                event.setCancelled(true);
             }
         }
     }

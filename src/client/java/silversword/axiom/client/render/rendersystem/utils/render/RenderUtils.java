@@ -53,6 +53,7 @@ public class RenderUtils {
 
         if (mc.getCameraEntity() instanceof net.minecraft.client.player.AbstractClientPlayer player) {
 
+            // VIEW BOBBING
             if (mc.options.bobView().get() && !bobbingCancelledByMod) {
                 var state = player.avatarState();
                 float g = state.getBackwardsInterpolatedWalkDistance(tickDelta);
@@ -68,24 +69,23 @@ public class RenderUtils {
                 bobCorrection.translate(translateX, -translateY, 0.0F);
             }
 
+            // HURT TILT
             if (mc.options.damageTiltStrength().get() > 0 && !isHurtTiltCancelled) {
-                float g = (float)player.hurtTime - tickDelta;
-
+                float g = (float) player.hurtTime - tickDelta;
                 if (g >= 0.0F) {
-                    g /= (float)player.hurtDuration;
-                    g = net.minecraft.util.Mth.sin(g * g * g * g * (float)Math.PI);
+                    g /= (float) player.hurtDuration;
+                    g = net.minecraft.util.Mth.sin(g * g * g * g * (float) Math.PI);
                     float h = player.getHurtDir();
-                    float i = (float)((double)(-g) * 14.0D * mc.options.damageTiltStrength().get());
 
-                    // REVERSE: Kumotaan pystysuuntainen kallistus
-                    bobCorrection.rotateY(h * 0.017453292F);
-                    bobCorrection.rotateZ(i * 0.017453292F);
-                    bobCorrection.rotateY(h * 0.017453292F);
+                    float strength = mc.options.damageTiltStrength().get().floatValue();
+
+                    matrix.rotateY(-h * 0.017453292F);
+                    matrix.rotateZ(-g * 14.0F * strength * 0.017453292F);
+                    matrix.rotateY(h * 0.017453292F);
                 }
             }
         }
 
-        // 2. YHDISTÄMINEN
         matrix.mul(bobCorrection);
         matrix.rotate(camera.rotation().conjugate());
 

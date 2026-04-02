@@ -37,30 +37,21 @@ public class Rotations {
                 lastRotation = null;
             }
 
-            // Otetaan prioriteettijonon ensimmäinen rotaatio
             Rotation rotation = rotations.remove(0);
 
-            // Asetetaan palvelinpuolen rotaatiot ja tallennetaan client-arvot
             applyRotation(rotation);
 
             if (rotation.callback != null) rotation.callback.run();
 
-            // Siivotaan muut rotaatiot
-            rotations.forEach(rotationPool::free);
             rotations.clear();
 
         } else {
-            // JOS JONO ON TYHJÄ, LOPETETAAN KÄÄNTYMINEN HETI
             rotating = false;
             lastRotation = null;
 
         }
     }
 
-    /**
-     * Kutsutaan LocalPlayerMixinistä (sendPosition TAIL).
-     * Palauttaa pelaajan näkymän takaisin, jos käytettiin clientSide-rotaatiota.
-     */
     public static void onPostSendMovementPackets() {
         if (mc.player == null) return;
         if (sentLastRotation || rotating) {
@@ -82,8 +73,6 @@ public class Rotations {
         serverPitch = (float) rotation.pitch;
         rotationTimer = 0;
 
-        // HUOM: Ei manuaalista paketin lähetystä tässä!
-        // ConnectionMixin hoitaa paketin muokkauksen lennosta.
     }
 
     public static void rotate(double yaw, double pitch, int priority, boolean clientSide, Runnable callback) {

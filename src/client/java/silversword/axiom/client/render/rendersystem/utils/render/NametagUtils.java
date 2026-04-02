@@ -23,8 +23,7 @@ public final class NametagUtils {
         // 2. Perusnäkymämatriisi (Kameran rotaatio)
         Matrix4f view = new Matrix4f().rotation(camera.rotation());
 
-        // YHDISTETÄÄN: Korjaus pitää ajaa ENNEN perusrotaatiota nimitagien tapauksessa,
-        // jotta ne seuraavat näytön heiluntaa oikeassa suhteessa.
+
         bobCorrection.mul(view);
 
         // 3. Haetaan projektio
@@ -89,10 +88,12 @@ public final class NametagUtils {
                     g /= (float) player.hurtDuration;
                     g = net.minecraft.util.Mth.sin(g * g * g * g * (float) Math.PI);
                     float h = player.getHurtDir();
-                    float i = (float) ((double) (-g) * 14.0D * mc.options.damageTiltStrength().get());
 
-                    matrix.rotateY(h * 0.017453292F);
-                    matrix.rotateZ(i * 0.017453292F);
+                    // LISÄTTY mc.options.damageTiltStrength().get().floatValue() kertoimeksi
+                    float tiltStrength = mc.options.damageTiltStrength().get().floatValue();
+
+                    matrix.rotateY(-h * 0.017453292F);
+                    matrix.rotateZ(-g * 14.0F * tiltStrength * 0.017453292F);
                     matrix.rotateY(h * 0.017453292F);
                 }
             }

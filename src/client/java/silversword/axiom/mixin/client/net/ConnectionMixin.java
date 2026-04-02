@@ -20,8 +20,7 @@ public abstract class ConnectionMixin {
 
     @ModifyVariable(method = "send(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;)V", at = @At("HEAD"), argsOnly = true)
     private Packet<?> modifyPacket(Packet<?> packet) {
-        // KORJAUS: Muokataan pakettia VAIN jos rotaatio on aktiivisesti käynnissä juuri nyt.
-        // Poistettu "getRotationTimer() <= 5", koska se aiheuttaa AimDuplicate-flageja Grimissä.
+
         if (Rotations.rotating) {
 
             if (packet instanceof ServerboundMovePlayerPacket.Rot rotPacket) {
