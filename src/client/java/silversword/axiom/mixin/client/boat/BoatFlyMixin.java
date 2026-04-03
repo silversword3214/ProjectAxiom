@@ -25,10 +25,8 @@ public abstract class BoatFlyMixin {
         LivingEntity controller = boat.getControllingPassenger();
         if (controller != mc.player) return;
 
-        // Disable gravity
         boat.setNoGravity(true);
 
-        // Force boat rotation to match the controller's yaw (prevents unwanted rotation)
         assert controller != null;
         boat.setYRot(controller.getYRot());
 
@@ -41,7 +39,6 @@ public abstract class BoatFlyMixin {
         if (mc.options.keyJump.isDown()) up = 1;
         if (mc.options.keyShift.isDown()) up = -1;
 
-        // Normalize diagonal movement
         if (forward != 0 || strafe != 0) {
             double len = Math.hypot(forward, strafe);
             forward /= len;
@@ -50,8 +47,7 @@ public abstract class BoatFlyMixin {
 
         float yaw = controller.getYRot();
         float speed = (float) mod.speed.getValue();
-
-        // Compute movement relative to player's facing direction
+        
         double motionX = (forward * Math.cos(Math.toRadians(yaw)) + strafe * Math.sin(Math.toRadians(yaw))) * speed;
         double motionZ = (forward * Math.sin(Math.toRadians(yaw)) - strafe * Math.cos(Math.toRadians(yaw))) * speed;
         double motionY = up * speed;

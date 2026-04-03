@@ -3,13 +3,10 @@ package silversword.axiom.mixin.client.net;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import silversword.axiom.client.event.packets.PacketReceiveEvent;
 import silversword.axiom.client.main.AxiomInitialize;
-import silversword.axiom.client.main.AxiomMod;
-import silversword.axiom.client.modules.misc.PingSpoof;
 
 @Mixin(ClientPacketListener.class)
 public class ClientPacketListenerMixin {
@@ -43,5 +40,4 @@ public class ClientPacketListenerMixin {
             ci.cancel();
         }
     }
-
 }

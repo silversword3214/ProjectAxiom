@@ -1,8 +1,8 @@
 package silversword.axiom.mixin.client.entity;
 
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.InteractionHand;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -10,14 +10,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.managers.ModuleManager;
-import silversword.axiom.client.modules.combat.KillAura;
-import silversword.axiom.client.modules.combat.TriggerBot;
 import silversword.axiom.client.modules.movement.NoSlow;
 import silversword.axiom.client.utils.Rotations;
 
 
 @Mixin(LocalPlayer.class)
-public class LocalPlayerMixin {
+public abstract class LocalPlayerMixin {
+
+    @Shadow
+    protected abstract void tickDeath();
+    private boolean wasDead = false;
 
     @Inject(method = "sendPosition", at = @At("HEAD"))
     private void onPreSendMovementPackets(CallbackInfo ci) {
@@ -45,4 +47,6 @@ public class LocalPlayerMixin {
             cir.setReturnValue(false);
         }
     }
+
+
 }

@@ -11,9 +11,13 @@ import silversword.axiom.client.event.mouse.MouseUpdateEvent;
 import silversword.axiom.client.event.player.PreMotionEvent; // TÄRKEÄ: Käytetään uutta eventtiä
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.eventbus.Subscribe;
+import silversword.axiom.client.gui.components.ColorCustomizerView;
+import silversword.axiom.client.gui.window.WindowFactory;
 import silversword.axiom.client.main.AxiomMod;
+import silversword.axiom.client.modules.ColorConfigurable;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
+import silversword.axiom.client.modules.NamedColor;
 import silversword.axiom.client.modules.moduleutils.killaura.AttackController;
 import silversword.axiom.client.modules.moduleutils.killaura.TargetManager;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
@@ -22,10 +26,12 @@ import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.setting.*;
 import silversword.axiom.client.utils.Rotations;
 
+import java.util.List;
+
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 import static silversword.axiom.client.main.AxiomInitialize.EVENT_BUS;
 
-public class KillAura extends AxiomMod implements KeybindConfigurable {
+public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConfigurable {
     private static KillAura instance;
 
     private final TargetManager targetManager = new TargetManager();
@@ -44,12 +50,20 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
     private final SettingSlider attackRange = new SettingSlider("Attack Range", new double[]{3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0}, 4.0);
     private final SettingBoolean checkWalls = new SettingBoolean("Check Walls", true);
     private final SettingBoolean ignoreBots = new SettingBoolean("Ignore Bots", true);
-    private final SettingSlider maxTurnSpeed = new SettingSlider("Turn Speed (deg/tick)", new double[]{5, 10, 15, 20, 25, 30, 35, 40}, 20);
+    private final SettingSlider maxTurnSpeed = new SettingSlider("Turn Speed (deg/tick)", new double[]{5, 10, 15, 20, 25, 30, 35, 40, 60, 80}, 20);
     private final SettingBoolean simulateJitter = new SettingBoolean("Simulate Jitter", true);
     private final SettingSlider jitterAmount = new SettingSlider("Jitter Amount", new double[]{0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0}, 2.0);
     private final SettingBoolean attackJitter = new SettingBoolean("Attack Jitter", true);
     private final SettingSlider attackJitterAmount = new SettingSlider("Attack Jitter Amount", new double[]{0.5, 1.0, 1.5, 2.0, 2.5, 3.0}, 1.5);
     private final SettingBoolean renderTargetBox = new SettingBoolean("Draw Box", true);
+
+    private final SettingColor portalColor = new SettingColor("Portal Color", new Color(100, 0, 150, 180));
+    private final SettingBoolean renderPortalEffect = new SettingBoolean("Portal Effect", false);
+    private final SettingSlider portalRadius = new SettingSlider("Portal Radius", new double[]{0.5, 0.8, 1.0, 1.2, 1.5, 1.8, 2.0}, 1.2);
+    private final SettingSlider portalVerticalSegments = new SettingSlider("Vertical Segments", new double[]{4, 8, 12, 16, 20, 24, 32}, 16);
+    private final SettingSlider portalHorizontalSegments = new SettingSlider("Horizontal Segments", new double[]{8, 12, 16, 20, 24, 32, 48}, 24);
+
+
     private final SettingColor boxColor = new SettingColor("Box Color", Color.GREEN);
 
     public KillAura() {
@@ -66,6 +80,13 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
         addSetting(attackJitter);
         addSetting(attackJitterAmount);
         addSetting(renderTargetBox);
+        addSetting(renderPortalEffect);
+
+        addHiddenSetting(portalColor.getSetting());
+        addSetting(portalRadius);
+        addSetting(portalVerticalSegments);
+        addSetting(portalHorizontalSegments);
+
         addHiddenSetting(boxColor.getSetting());
         addHiddenSetting(toggleKey);
         instance = this;
@@ -243,10 +264,55 @@ public class KillAura extends AxiomMod implements KeybindConfigurable {
 
     @Subscribe
     public void onRender3D(Render3DEvent event) {
-        if (!isEnabled() || currentTarget == null || !renderTargetBox.get()) return;
+        if (!isEnabled() || currentTarget == null) return;
         Renderer3D renderer = event.getRenderer();
-        AABB box = currentTarget.getBoundingBox();
-        renderer.boxOutline(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, boxColor.getCurrentColor().getARGB(), 0);
+
+        if (renderTargetBox.get()) {
+            AABB box = currentTarget.getBoundingBox();
+            renderer.boxOutline(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ,
+                    boxColor.getCurrentColor().getARGB(), 0);
+        }
+
+        if (renderPortalEffect.get()) {
+            renderPortalEffect(renderer, currentTarget, boxColor.getCurrentColor());
+        }
+    }
+
+    private void renderPortalEffect(Renderer3D renderer, LivingEntity target, Color baseColor) {
+        float td = renderer.getTickDelta();
+        double x = Mth.lerp(td, target.xOld, target.getX());
+        double y = Mth.lerp(td, target.yOld, target.getY());
+        double z = Mth.lerp(td, target.zOld, target.getZ());
+        double height = target.getBbHeight() / 2;
+        double radius = (target.getBbWidth() / 2.0) * portalRadius.getValue();
+        int vertSeg = (int) portalVerticalSegments.getValue();
+        int horiSeg = (int) portalHorizontalSegments.getValue();
+
+        Color portalColorCurrent = portalColor.getCurrentColor();
+
+        renderer.drawPortalCylinder(x, y, z, radius, height, portalColorCurrent, vertSeg, horiSeg);
+    }
+
+
+
+    // ── ColorConfigurable ────────────────────────────────────────────────────
+
+    @Override
+    public List<NamedColor> getColors() {
+        return List.of(
+                new NamedColor("Box Color", boxColor),
+                new NamedColor("Portal Color", portalColor)
+        );
+    }
+
+    @Override
+    public void openColorEditor() {
+        WindowFactory factory = AxiomMod.getWindowFactory();
+        if (factory == null) return;
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
+        factory.openCustomWindow("killaura_color", "KillAura Color Customizer",
+                sw, sh, new ColorCustomizerView(this));
     }
 
     public AttackController getAttackController() { return this.attackController; }

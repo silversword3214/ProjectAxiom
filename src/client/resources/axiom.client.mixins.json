@@ -16,6 +16,7 @@
     "MultiPlayerGameModeMixin",
     "ReachMixin",
     "SubmitNodeStorageAccessor",
+    "FishingHookMixin",
     "VertexConsumerProviderImmediateMixin",
     "accessors.CameraAccessor",
     "accessors.ClientboundEntityEventPacketAccessor",

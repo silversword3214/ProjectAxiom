@@ -4,17 +4,25 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.Identifier;
 import silversword.axiom.client.render.font.TextRenderer;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.utils.render.DrawTexture;
 
+import java.util.Stack;
+
 public class UiContext {
+
     public final Minecraft mc;
     public final GuiGraphics draw;
     public final Theme theme;
     public final float delta;
+    public final RenderCore renderCore;
     private final TextRenderer uiText;
-    private final Renderer2D renderer;
+    public final Renderer2D renderer;
+
+    private final Stack<Rect> scissorStack = new Stack<>();
+
 
     public UiContext(Minecraft mc, GuiGraphics draw, Theme theme, float delta, Renderer2D renderer) {
         this.mc = mc;
@@ -23,6 +31,41 @@ public class UiContext {
         this.delta = delta;
         this.uiText = TextRenderer.get();
         this.renderer = renderer;
+        this.renderCore = renderer.core;
+    }
+
+    private Rect intersect(Rect a, Rect b) {
+        int left = Math.max(a.x, b.x);
+        int top = Math.max(a.y, b.y);
+        int right = Math.min(a.right(), b.right());
+        int bottom = Math.min(a.bottom(), b.bottom());
+        if (left < right && top < bottom) {
+            return new Rect(left, top, right - left, bottom - top);
+        }
+        // Jos eivät leikkaa, palauta tyhjä scissor (nolla-alue)
+        return new Rect(0, 0, 0, 0);
+    }
+
+    public void enableScissor(int x, int y, int w, int h) {
+        renderCore.flush();
+        Rect newRect = new Rect(x, y, w, h);
+        if (!scissorStack.isEmpty()) {
+            Rect parent = scissorStack.peek();
+            newRect = intersect(parent, newRect); // Leikkaa edellisen kanssa
+        }
+        scissorStack.push(newRect);
+        renderCore.enableScissor(newRect.x, newRect.y, newRect.w, newRect.h);
+    }
+
+    public void disableScissor() {
+        renderCore.flush();
+        scissorStack.pop();
+        if (scissorStack.isEmpty()) {
+            renderCore.disableScissor();
+        } else {
+            Rect top = scissorStack.peek();
+            renderCore.enableScissor(top.x, top.y, top.w, top.h);
+        }
     }
 
     public void fill(Rect r, int argb) {
@@ -72,14 +115,11 @@ public class UiContext {
     }
 
     public void addTexture(Identifier textureId, double x, double y, double width, double height, Color color) {
-        DrawTexture.add(textureId, x, y, width, height, color);
+        renderer.drawTexture(textureId, (float) x, (float) y, (float) width, (float) height, color.getARGB());
     }
 
-    /**
-     * Lisää kierretyn tekstuurin keräyslistaan.
-     */
     public void addTexture(Identifier textureId, double x, double y, double width, double height, double rotation, Color color) {
-        DrawTexture.add(textureId, x, y, width, height, rotation, color);
+        renderer.core.addRotatedTexture(textureId, (float) x, (float) y, (float) width, (float) height, (float) rotation, color.getARGB());
     }
 
     public void textShadow(String s, int x, int y, int argb) {

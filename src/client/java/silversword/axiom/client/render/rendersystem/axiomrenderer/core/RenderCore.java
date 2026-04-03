@@ -20,10 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import silversword.axiom.client.render.rendersystem.utils.texture.Texture;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
+import java.util.*;
 
 public class RenderCore {
     private static final Logger LOGGER = LoggerFactory.getLogger(RenderCore.class);
@@ -32,10 +29,11 @@ public class RenderCore {
     private final Map<RenderPipeline, VertexBufferManager> bufferManagers = new HashMap<>();
     private final ByteBufferBuilder allocator = new ByteBufferBuilder(RenderType.SMALL_BUFFER_SIZE);
 
-    private boolean pipelinesInitialized = false;
-
     private Matrix4f currentProjectionMatrix;
     private Matrix4f currentModelViewMatrix;
+
+    private boolean scissorEnabled = false;
+    private int scissorX, scissorY, scissorW, scissorH;
 
     public RenderCore() {
 
@@ -66,6 +64,19 @@ public class RenderCore {
 
     private VertexBufferManager getBufferManager(RenderPipeline pipeline) {
         return bufferManagers.computeIfAbsent(pipeline, k -> new VertexBufferManager());
+    }
+
+    public void enableScissor(int x, int y, int w, int h) {
+        this.scissorEnabled = true;
+        this.scissorX = x;
+        this.scissorY = y;
+        this.scissorW = w;
+        this.scissorH = h;
+    }
+
+
+    public void disableScissor() {
+        this.scissorEnabled = false;
     }
 
     // ----- Normal batch drawing (colored, textured) -----
@@ -137,6 +148,28 @@ public class RenderCore {
             }
 
             renderPass.setPipeline(pipeline);
+
+
+            // Scissor oikeilla pikselikoordinaateilla
+            if (scissorEnabled) {
+                Minecraft mc = Minecraft.getInstance();
+                int windowWidth = mc.getWindow().getWidth();
+                int windowHeight = mc.getWindow().getHeight();
+                int scaledWidth = mc.getWindow().getGuiScaledWidth();
+                int scaledHeight = mc.getWindow().getGuiScaledHeight();
+                float scaleX = (float) windowWidth / scaledWidth;
+                float scaleY = (float) windowHeight / scaledHeight;
+
+                int glX = (int) (scissorX * scaleX);
+                int glY = windowHeight - (int) ((scissorY + scissorH) * scaleY);
+                int glW = (int) (scissorW * scaleX);
+                int glH = (int) (scissorH * scaleY);
+
+                renderPass.enableScissor(glX, glY, glW, glH);
+            } else {
+                renderPass.disableScissor();
+            }
+
             RenderSystem.bindDefaultUniforms(renderPass);
             renderPass.setUniform("DynamicTransforms", dynamicTransforms);
             renderPass.setVertexBuffer(0, vertices);
@@ -202,6 +235,27 @@ public class RenderCore {
             }
 
             renderPass.setPipeline(pipeline);
+
+            // Scissor
+            if (scissorEnabled) {
+                Minecraft mc = Minecraft.getInstance();
+                int windowWidth = mc.getWindow().getWidth();
+                int windowHeight = mc.getWindow().getHeight();
+                int scaledWidth = mc.getWindow().getGuiScaledWidth();
+                int scaledHeight = mc.getWindow().getGuiScaledHeight();
+                float scaleX = (float) windowWidth / scaledWidth;
+                float scaleY = (float) windowHeight / scaledHeight;
+
+                int glX = (int) (scissorX * scaleX);
+                int glY = windowHeight - (int) ((scissorY + scissorH) * scaleY);
+                int glW = (int) (scissorW * scaleX);
+                int glH = (int) (scissorH * scaleY);
+
+                renderPass.enableScissor(glX, glY, glW, glH);
+            } else {
+                renderPass.disableScissor();
+            }
+
             RenderSystem.bindDefaultUniforms(renderPass);
             renderPass.setUniform("DynamicTransforms", dynamicTransforms);
             renderPass.setVertexBuffer(0, vertices);
@@ -265,6 +319,22 @@ public class RenderCore {
         batch.vertex((float)x1, (float)y1, (float)z1, r, g, b, a);
         batch.vertex((float)x3, (float)y3, (float)z3, r, g, b, a);
         batch.vertex((float)x4, (float)y4, (float)z4, r, g, b, a);
+    }
+
+    public void addTriangle(double x1, double y1, double z1,
+                            double x2, double y2, double z2,
+                            double x3, double y3, double z3,
+                            int color) {
+        RenderPipeline pipeline = RenderPipelines.WORLD_COLORED;
+        if (pipeline == null) return;
+        Batch batch = batches.computeIfAbsent(pipeline, k -> new Batch(AxiomVertexFormats.POS3_COLOR, VertexFormat.Mode.TRIANGLES));
+        float r = ((color >> 16) & 0xFF) / 255f;
+        float g = ((color >> 8) & 0xFF) / 255f;
+        float b = (color & 0xFF) / 255f;
+        float a = ((color >> 24) & 0xFF) / 255f;
+        batch.vertex((float)x1, (float)y1, (float)z1, r, g, b, a);
+        batch.vertex((float)x2, (float)y2, (float)z2, r, g, b, a);
+        batch.vertex((float)x3, (float)y3, (float)z3, r, g, b, a);
     }
 
     // --- 2D drawing methods ---
@@ -457,119 +527,75 @@ public class RenderCore {
     }
 
     public void addRoundedRectCustom(float x, float y, float w, float h, float radius, int color,
-                                     boolean topLeft, boolean topRight, boolean bottomRight, boolean bottomLeft) {
-        if (w <= 0 || h <= 0) return;
-        if (radius <= 0.5f || (!topLeft && !topRight && !bottomRight && !bottomLeft)) {
+                                     boolean tl, boolean tr, boolean br, boolean bl) {
+        // Varmistetaan järkevä säde
+        radius = Math.min(radius, Math.min(w, h) / 2.0f);
+
+        if (radius <= 0.1f) {
             addRect2D(x, y, w, h, color);
             return;
         }
-        radius = Math.min(radius, Math.min(w / 2, h / 2));
-        RenderPipeline pipeline = RenderPipelines.UI_COLORED;
-        if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_COLOR, VertexFormat.Mode.TRIANGLES));
-        float r = ((color >> 16) & 0xFF) / 255f;
-        float g = ((color >> 8) & 0xFF) / 255f;
-        float b = (color & 0xFF) / 255f;
-        float a = ((color >> 24) & 0xFF) / 255f;
 
-        float rTop = (topLeft || topRight) ? radius : 0;
-        float rBottom = (bottomLeft || bottomRight) ? radius : 0;
-        float rLeft = (topLeft || bottomLeft) ? radius : 0;
-        float rRight = (topRight || bottomRight) ? radius : 0;
+        // --- Keskiosat (EI päällekkäisyyksiä) ---
 
-        float centerX = x + rLeft;
-        float centerY = y + rTop;
-        float centerW = w - rLeft - rRight;
-        float centerH = h - rTop - rBottom;
+        // Vasen suikale (kulmien välissä)
+        addRect2D(x, y + radius, radius, h - 2 * radius, color);
+        // Keskisuikale (koko korkeus)
+        addRect2D(x + radius, y, w - 2 * radius, h, color);
+        // Oikea suikale (kulmien välissä)
+        addRect2D(x + w - radius, y + radius, radius, h - 2 * radius, color);
 
-        if (centerW > 0 && centerH > 0) {
-            addQuad2D(batch, centerX, centerY, centerW, centerH, r, g, b, a);
+        // --- Kulmat ---
+
+        // Ylä-vasen (Top-Left)
+        if (tl) {
+            addArc(x + radius, y + radius, radius, 180, 270, color);
+        } else {
+            addRect2D(x, y, radius, radius, color);
         }
 
-        if (rTop > 0 && centerW > 0) {
-            addQuad2D(batch, centerX, y, centerW, rTop, r, g, b, a);
-        }
-        if (rBottom > 0 && centerW > 0) {
-            addQuad2D(batch, centerX, y + h - rBottom, centerW, rBottom, r, g, b, a);
-        }
-        if (rLeft > 0 && centerH > 0) {
-            addQuad2D(batch, x, centerY, rLeft, centerH, r, g, b, a);
-        }
-        if (rRight > 0 && centerH > 0) {
-            addQuad2D(batch, x + w - rRight, centerY, rRight, centerH, r, g, b, a);
+        // Ylä-oikea (Top-Right)
+        if (tr) {
+            addArc(x + w - radius, y + radius, radius, 270, 360, color);
+        } else {
+            addRect2D(x + w - radius, y, radius, radius, color);
         }
 
-        // Suorat kulmat (jos ei pyöristetty)
-        if (!topLeft) {
-            addQuad2D(batch, x, y, rLeft > 0 ? rLeft : radius, rTop > 0 ? rTop : radius, r, g, b, a);
-        }
-        if (!topRight) {
-            addQuad2D(batch, x + w - (rRight > 0 ? rRight : radius), y, rRight > 0 ? rRight : radius, rTop > 0 ? rTop : radius, r, g, b, a);
-        }
-        if (!bottomRight) {
-            addQuad2D(batch, x + w - (rRight > 0 ? rRight : radius), y + h - (rBottom > 0 ? rBottom : radius), rRight > 0 ? rRight : radius, rBottom > 0 ? rBottom : radius, r, g, b, a);
-        }
-        if (!bottomLeft) {
-            addQuad2D(batch, x, y + h - (rBottom > 0 ? rBottom : radius), rLeft > 0 ? rLeft : radius, rBottom > 0 ? rBottom : radius, r, g, b, a);
+        // Ala-oikea (Bottom-Right)
+        if (br) {
+            addArc(x + w - radius, y + h - radius, radius, 0, 90, color);
+        } else {
+            addRect2D(x + w - radius, y + h - radius, radius, radius, color);
         }
 
-        // Kaaret (pyöristetyt kulmat)
-        double arcLength = (Math.PI * radius) / 2;
-        int segments = Math.max(6, (int) (arcLength / 0.5));
-        double angleStep = Math.PI / 2 / segments;
+        // Ala-vasen (Bottom-Left)
+        if (bl) {
+            addArc(x + radius, y + h - radius, radius, 90, 180, color);
+        } else {
+            addRect2D(x, y + h - radius, radius, radius, color);
+        }
+    }
 
-        if (topLeft) {
-            float cx = x + radius;
-            float cy = y + radius;
-            for (int i = 0; i < segments; i++) {
-                double angle1 = Math.PI + i * angleStep;
-                double angle2 = Math.PI + (i + 1) * angleStep;
-                double x1 = cx + radius * Math.cos(angle1);
-                double y1 = cy + radius * Math.sin(angle1);
-                double x2 = cx + radius * Math.cos(angle2);
-                double y2 = cy + radius * Math.sin(angle2);
-                addTriangle2D(batch, cx, cy, (float) x1, (float) y1, (float) x2, (float) y2, r, g, b, a);
-            }
-        }
-        if (topRight) {
-            float cx = x + w - radius;
-            float cy = y + radius;
-            for (int i = 0; i < segments; i++) {
-                double angle1 = Math.PI * 1.5 + i * angleStep;
-                double angle2 = Math.PI * 1.5 + (i + 1) * angleStep;
-                double x1 = cx + radius * Math.cos(angle1);
-                double y1 = cy + radius * Math.sin(angle1);
-                double x2 = cx + radius * Math.cos(angle2);
-                double y2 = cy + radius * Math.sin(angle2);
-                addTriangle2D(batch, cx, cy, (float) x1, (float) y1, (float) x2, (float) y2, r, g, b, a);
-            }
-        }
-        if (bottomRight) {
-            float cx = x + w - radius;
-            float cy = y + h - radius;
-            for (int i = 0; i < segments; i++) {
-                double angle1 = i * angleStep;
-                double angle2 = (i + 1) * angleStep;
-                double x1 = cx + radius * Math.cos(angle1);
-                double y1 = cy + radius * Math.sin(angle1);
-                double x2 = cx + radius * Math.cos(angle2);
-                double y2 = cy + radius * Math.sin(angle2);
-                addTriangle2D(batch, cx, cy, (float) x1, (float) y1, (float) x2, (float) y2, r, g, b, a);
-            }
-        }
-        if (bottomLeft) {
-            float cx = x + radius;
-            float cy = y + h - radius;
-            for (int i = 0; i < segments; i++) {
-                double angle1 = Math.PI / 2 + i * angleStep;
-                double angle2 = Math.PI / 2 + (i + 1) * angleStep;
-                double x1 = cx + radius * Math.cos(angle1);
-                double y1 = cy + radius * Math.sin(angle1);
-                double x2 = cx + radius * Math.cos(angle2);
-                double y2 = cy + radius * Math.sin(angle2);
-                addTriangle2D(batch, cx, cy, (float) x1, (float) y1, (float) x2, (float) y2, r, g, b, a);
-            }
+    private void addArc(float cx, float cy, float r, int startDeg, int endDeg, int color) {
+        int segments = 10;
+        float step = (endDeg - startDeg) / (float) segments;
+
+        float a = ((color >> 24) & 0xFF) / 255.0f;
+        float r_col = ((color >> 16) & 0xFF) / 255.0f;
+        float g = ((color >> 8) & 0xFF) / 255.0f;
+        float b = (color & 0xFF) / 255.0f;
+
+        for (int i = 0; i < segments; i++) {
+            float a1 = (float) Math.toRadians(startDeg + i * step);
+            float a2 = (float) Math.toRadians(startDeg + (i + 1) * step);
+
+            float x1 = cx + (float) Math.cos(a1) * r;
+            float y1 = cy + (float) Math.sin(a1) * r;
+            float x2 = cx + (float) Math.cos(a2) * r;
+            float y2 = cy + (float) Math.sin(a2) * r;
+
+            addTriangle(cx, cy, 0, x1, y1, 0, x2, y2, 0, color);
+
         }
     }
 
@@ -802,5 +828,25 @@ public class RenderCore {
             vbm.close();
         }
         bufferManagers.clear();
+    }
+
+    public boolean isScissorEnabled() {
+        return scissorEnabled;
+    }
+
+    public int getScissorX() {
+        return scissorX;
+    }
+
+    public int getScissorY() {
+        return scissorY;
+    }
+
+    public int getScissorW() {
+        return scissorW;
+    }
+
+    public int getScissorH() {
+        return scissorH;
     }
 }

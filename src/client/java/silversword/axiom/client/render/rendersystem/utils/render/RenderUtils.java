@@ -48,7 +48,7 @@ public class RenderUtils {
         boolean bobbingCancelledByMod = (bobMod != null && bobMod.isEnabled());
 
         boolean isHurtTiltCancelled = (hurtMod != null && hurtMod.isEnabled()) ||
-                (bobMod != null && bobMod.isEnabled() && bobMod.disableHurtTilt.get());
+                (bobMod != null && bobMod.isEnabled());
 
 
         if (mc.getCameraEntity() instanceof net.minecraft.client.player.AbstractClientPlayer player) {

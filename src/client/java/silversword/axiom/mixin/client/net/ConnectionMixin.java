@@ -50,4 +50,5 @@ public abstract class ConnectionMixin {
             ci.cancel();
         }
     }
+
 }

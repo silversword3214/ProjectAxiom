@@ -22,9 +22,8 @@ import silversword.axiom.client.setting.SettingNumber;
 public final class EnabledModulesHud extends BaseHudElement {
     private static final int FONT_HEIGHT = 9;
     private static final int PADDING = 4;
-    private static final int PADDINGRIGHT = -4;
     private static final int BAR_WIDTH = 2;
-    private static final int CORNER_RADIUS = 4;
+    private static final int CORNER_RADIUS = 3;
     private static final int CHAR_UNIT = 6;
 
     private final SettingNumber textScale;
@@ -80,7 +79,7 @@ public final class EnabledModulesHud extends BaseHudElement {
         int count = enabledNames().size();
         if (count == 0) return 0;
         float scale = (float) textScale.getValue();
-        int itemHeight = (int) ((FONT_HEIGHT + 2 * PADDING) * scale);
+        int itemHeight = (int) ((FONT_HEIGHT + 8 * PADDING) * scale);
         return count * itemHeight;
     }
 

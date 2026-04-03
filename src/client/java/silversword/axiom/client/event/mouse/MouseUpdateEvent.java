@@ -16,15 +16,37 @@ public class MouseUpdateEvent implements ICancellable {
         this.defaultDeltaY = deltaY;
     }
 
-    public double getDeltaX() { return deltaX; }
-    public void setDeltaX(double deltaX) { this.deltaX = deltaX; }
-    public double getDeltaY() { return deltaY; }
-    public void setDeltaY(double deltaY) { this.deltaY = deltaY; }
-    public double getDefaultDeltaX() { return defaultDeltaX; }
-    public double getDefaultDeltaY() { return defaultDeltaY; }
+    public double getDeltaX() {
+        return deltaX;
+    }
+
+    public void setDeltaX(double deltaX) {
+        this.deltaX = deltaX;
+    }
+
+    public double getDeltaY() {
+        return deltaY;
+    }
+
+    public void setDeltaY(double deltaY) {
+        this.deltaY = deltaY;
+    }
+
+    public double getDefaultDeltaX() {
+        return defaultDeltaX;
+    }
+
+    public double getDefaultDeltaY() {
+        return defaultDeltaY;
+    }
 
     @Override
-    public void setCancelled(boolean cancelled) { this.cancelled = cancelled; }
+    public void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
+    }
+
     @Override
-    public boolean isCancelled() { return cancelled; }
+    public boolean isCancelled() {
+        return cancelled;
+    }
 }

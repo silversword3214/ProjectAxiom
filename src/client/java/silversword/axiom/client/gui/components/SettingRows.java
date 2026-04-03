@@ -533,3 +533,74 @@ final class SettingPresetSliderRow extends SettingRowBase {
         return slider.mouseDragged(ui, mouseX, mouseY, button, dx, dy);
     }
 }
+
+final class SettingStringRow implements UiComponent {
+    private final SettingString setting;
+    private final TextField textField;
+    private Rect bounds;
+
+    public SettingStringRow(SettingString setting) {
+        this.setting = setting;
+        this.textField = new TextField();
+        this.textField.setText(setting.getString());
+        this.textField.setPlaceholder("Enter text...");
+        this.textField.setOnChange(newValue -> setting.setValue(newValue));
+    }
+
+    @Override
+    public void setBounds(Rect bounds) {
+        this.bounds = bounds;
+        // textField vie koko rivin leveyden, korkeus 16
+        textField.setBounds(new Rect(bounds.x, bounds.y, bounds.w, 16));
+    }
+
+    @Override
+    public Rect getBounds() { return bounds; }
+
+    @Override
+    public int getPreferredHeight() { return 16; }
+
+    @Override
+    public void render(UiContext ui, int mouseX, int mouseY, float delta) {
+        // Piirretään label ensin? Yleensä asetuksen nimi ja sitten kenttä.
+        // Toteutetaan niin, että vasemmalla nimi, oikealla textField.
+        // Yksinkertainen: koko rivi on textField, mutta näytetään myös nimi?
+        // Parempi: tehdään kuten SettingNumberSliderRow: nimi + komponentti.
+        // Käytetään nyt yksinkertaista: nimi vasemmalla, textField oikealla.
+        int labelWidth = 80;
+        ui.text(setting.getName(), bounds.x, bounds.y + 4, ui.theme.text);
+        Rect fieldRect = new Rect(bounds.x + labelWidth, bounds.y, bounds.w - labelWidth, 16);
+        textField.setBounds(fieldRect);
+        textField.render(ui, mouseX, mouseY, delta);
+    }
+
+    @Override
+    public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
+        return textField.mouseClicked(ui, mouseX, mouseY, button);
+    }
+
+    @Override
+    public void mouseReleased(UiContext ui, double mouseX, double mouseY, int button) {
+        textField.mouseReleased(ui, mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(UiContext ui, double mouseX, double mouseY, int button, double dx, double dy) {
+        return textField.mouseDragged(ui, mouseX, mouseY, button, dx, dy);
+    }
+
+    @Override
+    public boolean mouseScrolled(UiContext ui, double mouseX, double mouseY, double amount) {
+        return textField.mouseScrolled(ui, mouseX, mouseY, amount);
+    }
+
+    @Override
+    public boolean keyPressed(UiContext ui, int keyCode, int scanCode, int modifiers) {
+        return textField.keyPressed(ui, keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(UiContext ui, char chr, int modifiers) {
+        return textField.charTyped(ui, chr, modifiers);
+    }
+}

@@ -6,96 +6,70 @@ import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.utils.render.DrawTexture;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public final class Window {
 
+    public static final int MIN_WIDTH = 110;
+    public static final int MIN_HEIGHT = 50;
+
     public final String id;
     private String title;
-
     public int x, y, width, height;
-
     private int restoreHeight = -1;
     private boolean minimized = false;
     private boolean dragging = false;
     private boolean resizing = false;
-    private int dragOffX = 0;
-    private int dragOffY = 0;
-
+    private int dragOffX = 0, dragOffY = 0;
     private boolean minimizable = true;
     private boolean closable = true;
     private Runnable onClose = null;
-
-    private static final int RESIZE_HANDLE = 10;
-
+    private static final int RESIZE_HANDLE = 8;
     private boolean autoLayoutVertical = true;
-    private int padding = 6;
-    private int gap = 6;
+
+    // Täydellisesti kiinnittyvät moduulit
+    private int padding = 2;
+    private int gap = 0;
+
     private boolean hasKeybind = false;
     private Runnable onKeybindClick = null;
-    private int headerH = 18;
-
+    private int headerH = 16;
     private final List<UiComponent> children = new ArrayList<>();
     private Object userData = null;
     private UiComponent draggingChild = null;
 
-    // Animation fields
     public enum AnimState { NONE, OPENING, CLOSING }
     private AnimState animState = AnimState.NONE;
     private float animProgress = 1.0f;
     private float animTarget = 1.0f;
     private long animStartTime = 0;
-
     private boolean minimizeAnimating = false;
     private float minimizeAnimProgress = 0f;
     private long minimizeAnimStartTime = 0;
-
-    private static final long ANIM_DURATION = 700; // milliseconds
+    private static final long ANIM_DURATION = 700;
     private static final long MINIMIZE_ANIM_DURATION = 500;
     private boolean ignoreScale = false;
-
     private static final Identifier KEYBIND_TEXTURE = Identifier.fromNamespaceAndPath("projectaxiom", "textures/icons/keybind.png");
 
-    public void setIgnoreScale(boolean ignore) {
-        this.ignoreScale = ignore;
-    }
-
-
-
+    public void setIgnoreScale(boolean ignore) { this.ignoreScale = ignore; }
 
     public Window(String id, String title, int x, int y, int width, int height) {
         this.id = id;
         this.title = title == null ? "" : title;
         this.x = x;
         this.y = y;
-        this.width = Math.max(120, width);
-        this.height = Math.max(40, height);
+        // Käytetään keskitettyä minimimittoja
+        this.width = Math.max(MIN_WIDTH, width);
+        this.height = Math.max(MIN_HEIGHT, height);
     }
 
-    public void open() {
-        animState = AnimState.OPENING;
-        animProgress = 0.0f;
-        animTarget = 1.0f;
-        animStartTime = System.currentTimeMillis();
-    }
-
-    public void close() {
-        animState = AnimState.CLOSING;
-        animTarget = 0.0f;
-        animStartTime = System.currentTimeMillis();
-    }
-
-
+    public void open() { animState = AnimState.OPENING; animProgress = 0.0f; animTarget = 1.0f; animStartTime = System.currentTimeMillis(); }
+    public void close() { animState = AnimState.CLOSING; animTarget = 0.0f; animStartTime = System.currentTimeMillis(); }
     public boolean isAnimating() { return animState != AnimState.NONE; }
     public float getAnimProgress() { return animProgress; }
     public boolean isClosing() { return animState == AnimState.CLOSING; }
-
-    // ---------------------------
-    // Public API
-    // ---------------------------
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title == null ? "" : title; }
@@ -125,16 +99,12 @@ public final class Window {
         int cw = width - padding * 2;
         int ch = height - headerH - padding * 2;
         return new Rect(cx, cy, Math.max(1, cw), Math.max(1, ch));
-
-
-
     }
 
     public void updateAnimation() {
         if (animState == AnimState.NONE) return;
         long elapsed = System.currentTimeMillis() - animStartTime;
         float t = Math.min(1.0f, (float) elapsed / ANIM_DURATION);
-        // Ease out quadratic
         float eased = 1 - (1 - t) * (1 - t);
         animProgress = animProgress + (animTarget - animProgress) * eased;
         if (elapsed >= ANIM_DURATION) {
@@ -146,70 +116,39 @@ public final class Window {
     public void toggleMinimize() {
         if (!minimizable) return;
         if (minimizeAnimating) return;
-
-        // Tallenna nykyinen korkeus ennen tilan vaihtoa
-        if (!minimized) {
-            // menossa minimoituun
-            restoreHeight = height;
-        } else {
-            // menossa auki - restoreHeight on jo tallennettu
-        }
-
+        if (!minimized) restoreHeight = height;
         minimized = !minimized;
         minimizeAnimating = true;
         minimizeAnimStartTime = System.currentTimeMillis();
     }
+
     private void updateMinimizeAnimation() {
         if (!minimizeAnimating) return;
-
         long elapsed = System.currentTimeMillis() - minimizeAnimStartTime;
         float t = Math.min(1.0f, (float) elapsed / MINIMIZE_ANIM_DURATION);
-        float eased = 1 - (1 - t) * (1 - t); // ease out quadratic
-
+        float eased = 1 - (1 - t) * (1 - t);
         int startH, targetH;
-        if (minimized) {
-            // Oltiin auki, menossa kiinni: start = restoreHeight, target = headerH+2
-            startH = restoreHeight;
-            targetH = headerH + 2;
-        } else {
-            // Oltiin kiinni, menossa auki: start = headerH+2, target = restoreHeight
-            startH = headerH + 2;
-            targetH = restoreHeight;
-        }
-
+        if (minimized) { startH = restoreHeight; targetH = headerH + 2; }
+        else { startH = headerH + 2; targetH = restoreHeight; }
         height = (int) (startH + (targetH - startH) * eased);
-
-        if (elapsed >= MINIMIZE_ANIM_DURATION) {
-            minimizeAnimating = false;
-            height = targetH; // varmistetaan loppuarvo
-        }
+        if (elapsed >= MINIMIZE_ANIM_DURATION) { minimizeAnimating = false; height = targetH; }
     }
-
-
-    // ---------------------------
-    // Rendering with animation
-    // ---------------------------
 
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
         updateAnimation();
-        updateMinimizeAnimation(); // <-- lisää tämä
-
+        updateMinimizeAnimation();
         if (animProgress == 0 && animState == AnimState.NONE) return;
-
         float progress = getAnimProgress();
         int screenHeight = ui.mc.getWindow().getGuiScaledHeight();
-
         int renderY;
-        if (animState == AnimState.OPENING) {
-            renderY = (int) (y + (screenHeight - y) * (1 - progress));
-        } else if (animState == AnimState.CLOSING) {
-            renderY = (int) (y - (y + height) * (1 - progress));
-        } else {
-            renderY = y;
-        }
 
-        width = Math.max(140, width);
-        height = Math.max(minimized ? (headerH + 2) : 60, height); // tämä varmistaa minimikorkeuden
+        if (animState == AnimState.OPENING) renderY = (int) (y + (screenHeight - y) * (1 - progress));
+        else if (animState == AnimState.CLOSING) renderY = (int) (y - (y + height) * (1 - progress));
+        else renderY = y;
+
+        // --- KÄYTETÄÄN KESKITETTYÄ MINIMIMITTAA ---
+        width = Math.max(MIN_WIDTH, width);
+        height = Math.max(minimized ? (headerH + 2) : MIN_HEIGHT, height);
 
         Rect drawWin = new Rect(x, renderY, width, height);
         ui.fillRounded(drawWin, ui.theme.panel, ui.theme.radius);
@@ -218,16 +157,15 @@ public final class Window {
         int transparentHeader = (ui.theme.header & 0x00FFFFFF) | 0x20000000;
         ui.fillRoundedCustom(header, transparentHeader, ui.theme.radius, true, true, false, false);
 
-        // Piirrä erotinviiva vain jos ikkuna on täysin auki tai animoitumassa auki
-        if (height > headerH + 4) { // jos korkeus on suurempi kuin minimi + pieni toleranssi
+        if (height > headerH + 4) {
             int sepY = header.bottom();
-            int sepX = x;
-            int sepW = width;
-            ui.fill(sepX, sepY, sepW, 2, ui.theme.accent);
+            ui.fill(x, sepY, width, 2, ui.theme.accent);
         }
 
-        int titleY = header.y + header.h / 2 - ui.fontHeight() / 2 + 4;
-        ui.text(title, header.x + ui.theme.innerPadding, titleY, ui.theme.text);
+        // OTSIKKO: nyt täsmälleen samalla X-koordinaatilla kuin moduulirivien teksti
+        int titleX = x + 4;
+        int titleY = header.y + (header.h - ui.fontHeight()) / 2 + 4;
+        ui.text(title, titleX, titleY, ui.theme.text);
 
         int btnIndex = 0;
         if (closable) {
@@ -240,12 +178,10 @@ public final class Window {
             Rect keyBtn = headerButtonRect(btnIndex++, header);
             boolean hover = keyBtn.contains(mouseX, mouseY);
             ui.fillRounded(keyBtn, hover ? ui.theme.buttonHover : ui.theme.button, 3);
-
-            // Piirrä tekstuuri napin keskelle
             int iconSize = 10;
             int iconX = keyBtn.x + (keyBtn.w - iconSize) / 2;
             int iconY = keyBtn.y + (keyBtn.h - iconSize) / 2;
-            DrawTexture.add(KEYBIND_TEXTURE, iconX, iconY, iconSize, iconSize, new Color(255, 255, 255, 255));
+            DrawTexture.add(KEYBIND_TEXTURE, iconX, iconY, iconSize, iconSize, new Color(255,255,255,255));
         }
         if (minimizable) {
             Rect minBtn = headerButtonRect(btnIndex++, header);
@@ -253,27 +189,21 @@ public final class Window {
             ui.fillRounded(minBtn, hover ? ui.theme.buttonHover : ui.theme.button, 3);
             ui.text(minimized ? "+" : "-", minBtn.x + 6, minBtn.y + 4, ui.theme.textDim);
         }
-
-        // Piirrä resize-kahva vain jos ikkuna on täysin auki
         if (height > headerH + 4) {
             Rect rh = resizeRect(renderY);
             boolean rHover = rh.contains(mouseX, mouseY);
             ui.fillRounded(rh, rHover ? ui.theme.buttonHover : ui.theme.border, 3);
         }
-
-        // Piirrä children vain jos ikkuna on auki (korkeus > minimi)
         if (height > headerH + 4) {
             layoutChildren(ui, renderY);
-            for (UiComponent c : children) {
-                c.render(ui, mouseX, mouseY, delta);
-            }
+            for (UiComponent c : children) c.render(ui, mouseX, mouseY, delta);
         }
     }
 
     private Rect headerButtonRect(int indexFromRight, Rect header) {
         int bw = 16, bh = 14, rightPad = 4, spacing = 2;
         int bx = header.right() - rightPad - bw - (indexFromRight * (bw + spacing));
-        int by = header.y + 2;
+        int by = header.y + 1;
         return new Rect(bx, by, bw, bh);
     }
 
@@ -289,19 +219,18 @@ public final class Window {
         int contentH = height - headerH - padding * 2;
         Rect content = new Rect(contentX, contentY, Math.max(1, contentW), Math.max(1, contentH));
         int yy = content.y;
+
         for (int i = 0; i < children.size(); i++) {
             UiComponent c = children.get(i);
-            int pref = Math.max(1, c.getPreferredHeight());
+            int pref = c.getPreferredHeight();
             boolean last = (i == children.size() - 1);
-            int hh = last ? Math.max(1, content.bottom() - yy) : pref;
+
+            int hh = last ? (content.bottom() - yy) : pref;
             c.setBounds(new Rect(content.x, yy, content.w, hh));
-            yy += hh + gap;
+            yy += hh;
         }
     }
 
-    // ---------------------------
-    // Input handling (unchanged)
-    // ---------------------------
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
         Rect win = getBounds();
         if (!win.contains(mouseX, mouseY)) return false;
@@ -359,7 +288,9 @@ public final class Window {
         if (dragging) { x = (int) mouseX - dragOffX; y = (int) mouseY - dragOffY; return true; }
         if (resizing && !minimized) {
             int newW = (int) mouseX - x, newH = (int) mouseY - y;
-            width = Math.max(140, newW); height = Math.max(60, newH);
+            // --- KÄYTETÄÄN KESKITETTYÄ MINIMIMITTAA ---
+            width = Math.max(MIN_WIDTH, newW);
+            height = Math.max(MIN_HEIGHT, newH);
             return true;
         }
         if (minimized) return false;
@@ -395,11 +326,12 @@ public final class Window {
         return false;
     }
 
-    // Geometry helpers
     private Rect headerRect() { return new Rect(x + 1, y + 1, width - 2, headerH); }
+
     public void setBounds(Rect rect) {
         this.x = rect.x; this.y = rect.y;
-        this.width = Math.max(140, rect.w);
-        this.height = Math.max(minimized ? (headerH + 2) : 60, rect.h);
+        // --- KÄYTETÄÄN KESKITETTYÄ MINIMIMITTAA ---
+        this.width = Math.max(MIN_WIDTH, rect.w);
+        this.height = Math.max(minimized ? (headerH + 2) : MIN_HEIGHT, rect.h);
     }
 }

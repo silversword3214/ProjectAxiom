@@ -86,8 +86,8 @@ public final class UiConfigManager {
 
                 w.x = ws.x;
                 w.y = ws.y;
-                w.width = Math.max(140, ws.w);
-                w.height = Math.max(60, ws.h);
+                w.width = Math.max(Window.MIN_WIDTH, ws.w);
+                w.height = Math.max(Window.MIN_HEIGHT, ws.h);
                 if (ws.title != null) w.setTitle(ws.title);
 
                 if (ws.minimized != w.isMinimized()) {
@@ -154,9 +154,8 @@ public final class UiConfigManager {
                             }
                             return out;
                         },
-                        () -> "",
                         () -> "All",
-                        onOpenSettings,                   // ✅ EI ENÄÄ tyhjää
+                        onOpenSettings,
                         moduleId -> mwd.remove(moduleId)
                 );
 

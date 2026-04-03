@@ -30,23 +30,20 @@ public class ReachMixin {
         if (reach != null && reach.isEnabled()) {
             double targetValue = reach.getReachDistance();
 
-            // Jos päällä, asetetaan modin arvo molempiin
+
             if (lastReachValue != targetValue) {
                 blockAttr.setBaseValue(targetValue);
                 entityAttr.setBaseValue(targetValue);
                 lastReachValue = targetValue;
             }
         } else {
-            // JOS POIS PÄÄLTÄ: Palautetaan kumpikin omaan alkuperäiseen oletukseensa
-            // Survival: Block = 4.5, Entity = 3.0
-            // Creative: Block = 5.0, Entity = 5.0
             double defaultBlock = blockAttr.getAttribute().value().getDefaultValue();
             double defaultEntity = entityAttr.getAttribute().value().getDefaultValue();
 
             if (blockAttr.getBaseValue() != defaultBlock || entityAttr.getBaseValue() != defaultEntity) {
                 blockAttr.setBaseValue(defaultBlock);
                 entityAttr.setBaseValue(defaultEntity);
-                lastReachValue = -1; // Resetoidaan muisti
+                lastReachValue = -1;
             }
         }
     }

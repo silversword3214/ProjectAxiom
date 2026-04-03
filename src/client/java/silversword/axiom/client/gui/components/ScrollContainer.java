@@ -2,7 +2,6 @@ package silversword.axiom.client.gui.components;
 
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +22,6 @@ public final class ScrollContainer implements UiComponent {
     private static final int SCROLLBAR_WIDTH = 4;
     private static final int SCROLLBAR_PADDING = 1;
 
-    private boolean hovered = false;
     private boolean drawBackground = true;
 
     public ScrollContainer() {}
@@ -74,6 +72,7 @@ public final class ScrollContainer implements UiComponent {
         contentHeight = total;
         clampScroll();
     }
+
     public void setDrawBackground(boolean drawBackground) {
         this.drawBackground = drawBackground;
     }
@@ -109,28 +108,27 @@ public final class ScrollContainer implements UiComponent {
 
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
-
+        // Päivitetään sisällön korkeus ja asetellaan lapset ennen scissoria
+        updateContentHeight();
         layoutChildren();
 
-        ui.draw.enableScissor(bounds.x, bounds.y, bounds.right(), bounds.bottom());
 
+        // Ota scissor käyttöön (leikataan bounds-aluetta)
+        ui.enableScissor(bounds.x, bounds.y, bounds.w, bounds.h);
+
+        // Piirrä kaikki lapset (scissor hoitaa leikkaamisen automaattisesti)
         for (UiComponent c : children) {
-            Rect r = c.getBounds();
-            if (r == null) continue;
-            if (r.y >= bounds.y && r.bottom() <= bounds.bottom()) {
-                c.render(ui, mouseX, mouseY, delta);
-            }
+            c.render(ui, mouseX, mouseY, delta);
         }
 
-        ui.draw.disableScissor();
+        // Poista scissor
+        ui.disableScissor();
 
+        // Piirrä vierityspalkki, jos tarvitaan
         int max = maxScroll();
-        if (max > 0) {
-            boolean hover = bounds.contains(mouseX, mouseY);
-            if (hover) {
-                Rect thumb = getScrollbarThumbRect();
-                ui.fillRounded(thumb.x, thumb.y, thumb.w, thumb.h, ui.theme.accent, thumb.w / 2.0);
-            }
+        if (max > 0 && bounds.contains(mouseX, mouseY)) {
+            Rect thumb = getScrollbarThumbRect();
+            ui.fillRounded(thumb.x, thumb.y, thumb.w, thumb.h, ui.theme.accent, thumb.w / 2.0);
         }
     }
 
@@ -196,6 +194,7 @@ public final class ScrollContainer implements UiComponent {
             scrollY = bestScroll;
         }
     }
+
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
         if (button != 0) return false;
@@ -211,8 +210,7 @@ public final class ScrollContainer implements UiComponent {
 
         for (UiComponent c : children) {
             Rect r = c.getBounds();
-            if (r == null) continue;
-            if (r.y >= bounds.y && r.bottom() <= bounds.bottom() && r.contains(mouseX, mouseY)) {
+            if (r != null && r.contains(mouseX, mouseY)) {
                 if (c.mouseClicked(ui, mouseX, mouseY, button)) return true;
             }
         }
@@ -222,9 +220,10 @@ public final class ScrollContainer implements UiComponent {
     @Override
     public void mouseReleased(UiContext ui, double mouseX, double mouseY, int button) {
         if (button == 0) draggingScrollbar = false;
-        for (UiComponent c : children) c.mouseReleased(ui, mouseX, mouseY, button);
+        for (UiComponent c : children) {
+            c.mouseReleased(ui, mouseX, mouseY, button);
+        }
     }
-
 
     @Override
     public boolean mouseDragged(UiContext ui, double mouseX, double mouseY, int button, double dx, double dy) {
@@ -249,8 +248,7 @@ public final class ScrollContainer implements UiComponent {
 
         for (UiComponent c : children) {
             Rect r = c.getBounds();
-            if (r == null) continue;
-            if (r.y >= bounds.y && r.bottom() <= bounds.bottom() && r.contains(mouseX, mouseY)) {
+            if (r != null && r.contains(mouseX, mouseY)) {
                 if (c.mouseDragged(ui, mouseX, mouseY, button, dx, dy)) return true;
             }
         }
@@ -259,13 +257,22 @@ public final class ScrollContainer implements UiComponent {
 
     @Override
     public boolean keyPressed(UiContext ui, int keyCode, int scanCode, int modifiers) {
-        for (UiComponent c : children) if (c.keyPressed(ui, keyCode, scanCode, modifiers)) return true;
+        for (UiComponent c : children) {
+            if (c.keyPressed(ui, keyCode, scanCode, modifiers)) return true;
+        }
         return false;
     }
 
     @Override
     public boolean charTyped(UiContext ui, char chr, int modifiers) {
-        for (UiComponent c : children) if (c.charTyped(ui, chr, modifiers)) return true;
+        for (UiComponent c : children) {
+            if (c.charTyped(ui, chr, modifiers)) return true;
+        }
         return false;
+    }
+
+    public void scrollTo(int y) {
+        this.scrollY = y;
+        clampScroll();
     }
 }

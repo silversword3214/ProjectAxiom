@@ -53,10 +53,17 @@ public final class Slider implements UiComponent {
         return clamp(snapped);
     }
 
+    // Apumetodi, joka laskee leveyden olettaen, että jokainen merkki on tasan 6 pikseliä leveä
+    private int getHardcodedTextWidth(String text) {
+        if (text == null) return 0;
+        return text.length() * 6;
+    }
+
     private Rect calculateSliderArea(UiContext ui, double valueForWidth) {
-        int labelWidth = ui.textWidth(label);
+        // Korvattu ui.textWidth() kovakoodatulla laskennalla
+        int labelWidth = getHardcodedTextWidth(label);
         String valStr = formatValue(valueForWidth);
-        int valWidth = ui.textWidth(valStr);
+        int valWidth = getHardcodedTextWidth(valStr);
 
         int labelEnd = bounds.x + ui.theme.innerPadding + labelWidth;
         int valueStart = bounds.right() - ui.theme.innerPadding - valWidth;
@@ -112,7 +119,9 @@ public final class Slider implements UiComponent {
         double raw = clamp(getter.getAsDouble());
         double value = applyStep(raw);
         String valStr = formatValue(value);
-        int valWidth = ui.textWidth(valStr);
+
+        // Korvattu ui.textWidth() kovakoodatulla laskennalla
+        int valWidth = getHardcodedTextWidth(valStr);
         int valX = bounds.right() - ui.theme.innerPadding - valWidth;
         ui.text(valStr, valX, textY, ui.theme.textDim);
 

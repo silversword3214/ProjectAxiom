@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
@@ -315,5 +316,93 @@ public class Renderer3D {
         }
     }
 
+    public void drawPortalCylinder(double x, double y, double z,
+                                   double radius, double height,
+                                   Color color,
+                                   int verticalSegments, int horizontalSegments) {
+        verticalSegments = Math.max(1, verticalSegments);
+        horizontalSegments = Math.max(3, horizontalSegments);
+        double angleStep = 2 * Math.PI / horizontalSegments;
+        double yStep = height / verticalSegments;
 
+        int baseR = color.r;
+        int baseG = color.g;
+        int baseB = color.b;
+        int baseA = color.a;
+
+        for (int i = 0; i < horizontalSegments; i++) {
+            double angle1 = i * angleStep;
+            double angle2 = (i + 1) * angleStep;
+            double x1 = x + radius * Math.cos(angle1);
+            double z1 = z + radius * Math.sin(angle1);
+            double x2 = x + radius * Math.cos(angle2);
+            double z2 = z + radius * Math.sin(angle2);
+
+            for (int j = 0; j < verticalSegments; j++) {
+                double yBottom = y + j * yStep;
+                double yTop = y + (j + 1) * yStep;
+
+                double tBottom = (double) j / verticalSegments;
+                double tTop = (double) (j + 1) / verticalSegments;
+                int alphaBottom = (int) (baseA * (1 - tBottom));
+                int alphaTop = (int) (baseA * (1 - tTop));
+                alphaBottom = Mth.clamp(alphaBottom, 0, 255);
+                alphaTop = Mth.clamp(alphaTop, 0, 255);
+                // Käytetään keskiarvon alfa koko neliölle
+                int avgAlpha = (alphaBottom + alphaTop) / 2;
+                int quadColor = new Color(baseR, baseG, baseB, avgAlpha).getARGB();
+                // Piirretään neliö (x1,z1) -> (x2,z2) alhaalta ylös
+                core.addQuad(x1, yBottom, z1,
+                        x2, yBottom, z2,
+                        x2, yTop,   z2,
+                        x1, yTop,   z1,
+                        quadColor);
+            }
+        }
+    }
+
+    public void drawCircleOutline(double centerX, double y, double centerZ, double radius, Color color, float thickness, int segments) {
+        segments = Math.max(3, segments);
+        double angleStep = 2 * Math.PI / segments;
+        int argb = color.getARGB();
+        double prevX = centerX + radius * Math.cos(0);
+        double prevZ = centerZ + radius * Math.sin(0);
+        for (int i = 1; i <= segments; i++) {
+            double angle = i * angleStep;
+            double x = centerX + radius * Math.cos(angle);
+            double z = centerZ + radius * Math.sin(angle);
+            drawLine(prevX, y, prevZ, x, y, z, argb, thickness);
+            prevX = x;
+            prevZ = z;
+        }
+    }
+
+
+    public void drawFilledCircle(double centerX, double y, double centerZ, double radius, Color color, int segments) {
+        segments = Math.max(3, segments);
+        double angleStep = 2 * Math.PI / segments;
+        int argb = color.getARGB();
+        for (int i = 0; i < segments; i++) {
+            double angle1 = i * angleStep;
+            double angle2 = (i + 1) * angleStep;
+            double x1 = centerX + radius * Math.cos(angle1);
+            double z1 = centerZ + radius * Math.sin(angle1);
+            double x2 = centerX + radius * Math.cos(angle2);
+            double z2 = centerZ + radius * Math.sin(angle2);
+            core.addTriangle(centerX, y, centerZ, x1, y, z1, x2, y, z2, argb);
+        }
+    }
+
+    public void drawPortalCylinderWithGlow(double x, double y, double z,
+                                           double radius, double height,
+                                           Color color,
+                                           int verticalSegments, int horizontalSegments,
+                                           double glowOffset, float glowAlphaFactor) {
+
+        drawPortalCylinder(x, y, z, radius, height, color, verticalSegments, horizontalSegments);
+        if (glowOffset > 0.01) {
+            Color glowColor = new Color(color.r, color.g, color.b, (int)(color.a * glowAlphaFactor));
+            drawPortalCylinder(x, y, z, radius + glowOffset, height, glowColor, verticalSegments, horizontalSegments);
+        }
+    }
 }

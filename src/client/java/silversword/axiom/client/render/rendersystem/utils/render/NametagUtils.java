@@ -62,7 +62,7 @@ public final class NametagUtils {
         NoHurtCam hurtMod = ModuleManager.getInstance().getModule(NoHurtCam.class);
 
         boolean bobbingCancelled = (bobMod != null && bobMod.isEnabled());
-        boolean hurtCancelled = (hurtMod != null && hurtMod.isEnabled()) || (bobMod != null && bobMod.isEnabled() && bobMod.disableHurtTilt.get());
+        boolean hurtCancelled = (hurtMod != null && hurtMod.isEnabled()) || (bobMod != null && bobMod.isEnabled());
 
         if (mc.getCameraEntity() instanceof net.minecraft.client.player.AbstractClientPlayer player) {
             // VIEW BOBBING

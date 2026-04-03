@@ -66,104 +66,105 @@ public final class ModuleManager {
 
     private void registerModules() {
         // Combat
-        safeAdd(new BetterMace());
-        safeAdd(new Velocity());
-        safeAdd(new KillAura());
-        safeAdd(new CrystalAura());
-        safeAdd(new MultiAura());
-        safeAdd(new TPAura());
-        safeAdd(new TriggerBot());
-        safeAdd(new Criticals());
-        safeAdd(new Reach());
-        safeAdd(new ShieldBreaker());
-        safeAdd(new Aimbot());
-        safeAdd(new NoHitDelay());
-        safeAdd(new AutoTotem());
-        safeAdd(new AutoGapple());
-        safeAdd(new HitEffect());
-        safeAdd(new Velocity());
-        safeAdd(new ReachDisplay());
+        add(new BetterMace());
+        add(new KillAura());
+        add(new CrystalAura());
+        add(new MultiAura());
+        add(new TPAura());
+        add(new TriggerBot());
+        add(new Criticals());
+        add(new Reach());
+        add(new ShieldBreaker());
+        add(new Aimbot());
+        add(new NoHitDelay());
+        add(new AutoTotem());
+        add(new AutoGapple());
+        add(new HitEffect());
+        add(new Velocity());
 
         // Movement
-        safeAdd(new Flight());
-        safeAdd(new BoatFly());
-        safeAdd(new BoatPhase());
-        safeAdd(new PhaseWBoat());
-        safeAdd(new Speed());
-        safeAdd(new AirJump());
-        safeAdd(new AutoSprint());
-        safeAdd(new Step());
-        safeAdd(new Jesus());
-        safeAdd(new Spider());
-        safeAdd(new LeatherBoots());
-        safeAdd(new ClickTP());
-        safeAdd(new Scaffold());
-        safeAdd(new Blink());
-        safeAdd(new NoSlow());
+        add(new Flight());
+        add(new BoatFly());
+        add(new BoatPhase());
+        add(new PhaseWBoat());
+        add(new Speed());
+        add(new AirJump());
+        add(new AutoSprint());
+        add(new Step());
+        add(new Jesus());
+        add(new Spider());
+        add(new LeatherBoots());
+        add(new ClickTP());
+        add(new Scaffold());
+        add(new Blink());
+        add(new SlowDown());
+        add(new NoSlow());
 
         // Player
-        safeAdd(new NoFall());
-        safeAdd(new GhostHand());
-        safeAdd(new AutoTool());
-        safeAdd(new AirPlace());
-        safeAdd(new AutoArmor());
-        safeAdd(new ChestStealer());
-        safeAdd(new FakePlayer());
+        add(new NoFall());
+        add(new GhostHand());
+        add(new AutoTool());
+        add(new AirPlace());
+        add(new AutoArmor());
+        add(new ChestStealer());
+        add(new FakePlayer());
 
         // Render
-        safeAdd(new WaypointModule());
-        safeAdd(new ESP());
-        safeAdd(new ChestESP());
-        safeAdd(new CaveESP());
-        safeAdd(new LavaESP());
-        safeAdd(new NameTags());
-        safeAdd(new SearchBlocks());
-        safeAdd(new Tracers());
-        safeAdd(new Trajectories());
-        safeAdd(new XRay());
-        safeAdd(new BlockOutline());
-        safeAdd(new BlockNametag());
-        safeAdd(new RadarModule());
-        safeAdd(new CameraDistance());
-        safeAdd(new CameraClip());
-        safeAdd(new NoFog());
-        safeAdd(new Fullbright());
-        safeAdd(new NightVision());
-        safeAdd(new Zoom());
-        safeAdd(new Freecam());
-        safeAdd(new ChunkBorders());
-        safeAdd(new Breadcrumbs());
-        safeAdd(new NoHurtCam());
-        safeAdd(new LowerShield());
-        safeAdd(new NoParticleModule());
-        safeAdd(new NoOverlay());
-        safeAdd(new AntiBlind());
-        safeAdd(new NoVignette());
-        safeAdd(new NoViewBobbingTilt());
+        add(new WaypointModule());
+        add(new ESP());
+        add(new ChestESP());
+        add(new CaveESP());
+        add(new LavaESP());
+        add(new NameTags());
+        add(new SearchBlocks());
+        add(new Tracers());
+        add(new Trajectories());
+        add(new XRay());
+        add(new BlockOutline());
+        add(new BlockNametag());
+        add(new RadarModule());
+        add(new CameraDistance());
+        add(new CameraClip());
+        add(new NoFog());
+        add(new Fullbright());
+        add(new NightVision());
+        add(new Zoom());
+        add(new Freecam());
+        add(new ChunkBorders());
+        add(new Breadcrumbs());
+        add(new NoHurtCam());
+        add(new LowerShield());
+        add(new NoParticleModule());
+        add(new NoOverlay());
+        add(new AntiBlind());
+        add(new NoVignette());
+        add(new NoViewBobbingTilt());
 
         // Misc
-        safeAdd(new InvWalk());
-        safeAdd(new TargetHUD());
-        safeAdd(new PlayerINFO());
-        safeAdd(new ArmorHudModule());
-        safeAdd(new PotionEffects());
-        safeAdd(new DeathLocationModule());
-        safeAdd(new TunnelMiner());
-        safeAdd(new AutoClicker());
-        safeAdd(new PingSpoof());
+        add(new InvWalk());
+        add(new TargetHUD());
+        add(new PlayerINFO());
+        add(new ArmorHudModule());
+        add(new PotionEffects());
+        add(new AutoFish());
+        add(new AutoFarm());
+        add(new AutoMine());
+        add(new DeathLocationModule());
+        add(new AutoClicker());
+        add(new PingSpoof());
 
         // World
-        safeAdd(new FastBreak());
-        safeAdd(new FastPlace());
-        safeAdd(new WeatherChanger());
-        safeAdd(new TimeChanger());
+        add(new FastBreak());
+        add(new FastPlace());
+        add(new WeatherChanger());
+        add(new TimeChanger());
 
         // Hidden
-        safeAdd(new Keybinds());
+        add(new Keybinds());
     }
 
 
-    private void safeAdd(AxiomMod mod) {
+    private void add(AxiomMod mod) {
         if (mod == null) return;
 
         for (AxiomMod m : modules) {
@@ -172,7 +173,6 @@ public final class ModuleManager {
                 return;
             }
         }
-
         modules.add(mod);
     }
 

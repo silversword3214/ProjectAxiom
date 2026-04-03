@@ -7,8 +7,9 @@ import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCor
 
 public class Renderer2D {
     private final GuiGraphics graphics;
-    private final RenderCore core;
+    public final RenderCore core;
     private final Matrix4f projection;
+
 
     public Renderer2D(GuiGraphics graphics, RenderCore core, Matrix4f projection) {
         this.graphics = graphics;
@@ -48,7 +49,7 @@ public class Renderer2D {
     public void drawRoundedRectCustom(double x, double y, double w, double h, double radius, int color,
                                       boolean topLeft, boolean topRight, boolean bottomRight, boolean bottomLeft) {
         core.addRoundedRectCustom((float) x, (float) y, (float) w, (float) h, (float) radius, color,
-                topLeft, topRight, bottomRight, bottomLeft);
+                topLeft, topRight, bottomRight, bottomLeft); //
     }
 
     public void drawRoundedRectOutline(double x, double y, double w, double h, double radius, int color, double thickness) {

@@ -4,7 +4,7 @@ import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.ColorConfigurable;
-import silversword.axiom.client.modules.misc.TunnelMiner;
+import silversword.axiom.client.modules.misc.AutoMine;
 import silversword.axiom.client.modules.render.SearchBlocks;
 import silversword.axiom.client.setting.*;
 
@@ -21,8 +21,8 @@ public final class ModuleSettingsView implements UiComponent {
 
     public ModuleSettingsView(AxiomMod module) {
         this.module = Objects.requireNonNull(module);
-        scroll.setInnerPadding(6);
-        scroll.setGap(6);
+        scroll.setInnerPadding(2);
+        scroll.setGap(0);
     }
 
     @Override public Rect getBounds() { return bounds; }
@@ -88,9 +88,9 @@ public final class ModuleSettingsView implements UiComponent {
             scroll.add(new ActionButton("Target Blocks", () ->
                     ((SearchBlocks) module).openBlockSelector()));
         }
-        if (module instanceof TunnelMiner) {
+        if (module instanceof AutoMine) {
             scroll.add(new ActionButton("Search Blocks", () ->
-                    ((TunnelMiner) module).openBlockSelector()));
+                    ((AutoMine) module).openBlockSelector()));
         }
     }
 
@@ -101,6 +101,7 @@ public final class ModuleSettingsView implements UiComponent {
             case SettingNumber n   -> new SettingNumberSliderRow(n);
             case SettingSlider sl  -> new SettingPresetSliderRow(sl);
             case SettingTime t     -> new SettingTimeFieldRow(t);
+            case SettingString str -> new SettingStringRow(str);
             default                -> new SettingFallbackRow(s);
         };
     }

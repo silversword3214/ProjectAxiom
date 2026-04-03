@@ -28,9 +28,6 @@ public class RenderAPI {
         return INSTANCE;
     }
 
-
-
-    // RenderAPI.java - lisää metodi aloittamaan HUD pikselikoordinaateilla
     public void beginHUDUnscaled(GuiGraphics graphics, float tickDelta) {
         var window = Minecraft.getInstance().getWindow();
         int width = window.getGuiScaledWidth();

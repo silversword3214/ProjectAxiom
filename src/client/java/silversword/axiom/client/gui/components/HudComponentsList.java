@@ -100,7 +100,8 @@ public class HudComponentsList implements UiComponent {
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
         layoutGearRects();
 
-        ui.draw.enableScissor(bounds.x, bounds.y, bounds.right(), bounds.bottom());
+        // Käytä UiContext:n enableScissor, joka huolehtii pinosta ja oikeista parametreista
+        ui.enableScissor(bounds.x, bounds.y, bounds.w, bounds.h);
 
         for (int i = 0; i < toggles.size(); i++) {
             Toggle toggle = toggles.get(i);
@@ -127,9 +128,10 @@ public class HudComponentsList implements UiComponent {
                 ui.fillRounded(gearRect, gearHover ? ui.theme.buttonHover : ui.theme.panel, 3);
 
                 if (gearTexture != null) {
-                    DrawTexture.add(GEAR_TEXTURE, gearRect.x + 2, gearRect.y + 2, gearRect.w - 4, gearRect.h - 4, rotation, new Color(0xFFFFFFFF));
+                    // Suora piirto rendererillä (ei DrawTexture)
+                    ui.renderer.core.addRotatedTexture(GEAR_TEXTURE, gearRect.x + 2, gearRect.y + 2, gearRect.w - 4, gearRect.h - 4, rotation, 0xFFFFFFFF);
                 } else {
-                    String gear = "⚙";
+                    String gear = "...";
                     int gearW = ui.textWidth(gear);
                     int gearX = gearRect.x + (gearRect.w - gearW) / 2;
                     int gearY = gearRect.y + (gearRect.h - ui.fontHeight()) / 2;
@@ -138,9 +140,9 @@ public class HudComponentsList implements UiComponent {
             }
         }
 
-        ui.draw.disableScissor();
+        ui.disableScissor();
 
-        // Draw scroll bar
+        // Draw scroll bar (tämä piirretään scissorin ulkopuolelle, kuten ennenkin)
         int totalHeight = elements.size() * ROW_HEIGHT;
         int visibleHeight = bounds.h - 2 * PADDING;
         if (totalHeight > visibleHeight) {

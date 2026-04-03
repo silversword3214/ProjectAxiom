@@ -7,6 +7,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.modules.moduleutils.TargetManager;
 import silversword.axiom.client.setting.SettingBoolean;
+import silversword.axiom.client.setting.SettingMode;
 import silversword.axiom.client.setting.SettingNumber;
 import silversword.axiom.client.setting.SettingSlider;
 
@@ -24,19 +25,17 @@ public class MaceElytraMode {
     public final SettingBoolean upwardBoost = new SettingBoolean("Loop Mode", true);
     public final SettingNumber diveBoostDist = new SettingNumber("Dive Boost Dist", 5, 50, 1, 20);
     public final SettingNumber minFallDist = new SettingNumber("Min Fall Distance", 3, 20, 1, 5);
+    public final SettingMode targetMode = new SettingMode("Target Mode", new String[]{"Players", "Mobs", "Both"}, "Both");
 
     private LivingEntity currentTarget = null;
     private long lastAttackTime = 0;
-    private long lastActionTime = 0; // Viiveitä varten
+    private long lastActionTime = 0;
     private boolean isBoostingUp = false;
     private boolean isDiving = false;
     private boolean hasLockedAim = false;
-    private boolean hasSwitchedToMace = false;
     private boolean waitingForBoost = false;
-    private boolean mlgTriggered = false;
-    private int mlgDelayTicks = 0;
 
-
+    private final MlgHandler mlgHandler = new MlgHandler();
     private double customFallDistance = 0.0;
 
     public MaceElytraMode() {
@@ -54,10 +53,6 @@ public class MaceElytraMode {
     public void onPreMotion() {
         if (!enabled.get() || mc.player == null || mc.level == null) return;
 
-        if (currentTarget == null && !mc.player.onGround()) {
-            handleMlg();
-        }
-
         if (waitingForBoost) {
             if (System.currentTimeMillis() - lastAttackTime > 150) {
                 waitingForBoost = false;
@@ -71,7 +66,15 @@ public class MaceElytraMode {
             return;
         }
 
-        currentTarget = TargetManager.getClosest(mc.level, targetRange.getValue(), "Both");
+        currentTarget = TargetManager.getClosest(mc.level, targetRange.getValue(), targetMode.getMode());
+        boolean isDivingTowardTarget = (currentTarget != null && mc.player.getDeltaMovement().y < -0.1);
+
+        if (!isDivingTowardTarget) {
+            if (mlgHandler.tick() || mlgHandler.isMlgActive()) {
+                return;
+            }
+        }
+
         if (currentTarget == null) {
             resetState();
             return;
@@ -94,129 +97,53 @@ public class MaceElytraMode {
             ensureSwordEquipped();
             double heightDiff = mc.player.getY() - currentTarget.getY();
 
-            // Vaihdetaan syöksyyn jos ollaan tarpeeksi korkealla
+            // Reach desired height -> start dive
             if (heightDiff >= minHeight.getValue() || (heightDiff > 2 && deltaY < -0.2)) {
                 isBoostingUp = false;
                 isDiving = true;
                 hasLockedAim = false;
-
-                int maceSlot = findMaceSlot();
-                if (maceSlot != -1) {
-                    setHotbarSlot(maceSlot);
-                    hasSwitchedToMace = true;
-                }
+                // Do NOT switch to mace here – keep sword for the dive
             }
             return;
         }
 
         if (isDiving) {
+            // Use rocket once to dive toward target (still holding sword)
             if (!hasLockedAim && autoRocket.get()) {
                 useRocketTowardTarget();
                 hasLockedAim = true;
             }
 
-            if (!hasSwitchedToMace) {
-                int maceSlot = findMaceSlot();
-                if (maceSlot != -1) {
-                    setHotbarSlot(maceSlot);
-                    hasSwitchedToMace = true;
-                }
-            }
-
+            // Attack only when in range and enough fall distance
             if (dist <= attackRange.getValue() && deltaY < -0.1 && customFallDistance >= minFallDist.getValue()) {
                 if (canAttack()) {
-                    performAttack();
+                    performAttack(); // switches to mace just before hitting
                 }
             }
         }
-    }
-
-    private void handleMlg() {
-        if (mlgDelayTicks > 0) {
-            mlgDelayTicks--;
-            return;
-        }
-
-        if (mc.player == null || mc.level == null) return;
-        if (currentTarget != null) return;
-        if (mc.player.onGround()) {
-            mlgTriggered = false;
-            return;
-        }
-
-        double fallSpeed = -mc.player.getDeltaMovement().y;
-        double distanceToGround = getDistanceToGround();
-
-
-        boolean dangerousFall = (fallSpeed > 1.0 && distanceToGround < 5.0 && distanceToGround > 0.5);
-        boolean tooHigh = (distanceToGround > 200.0);
-        if (!dangerousFall || tooHigh) return;
-
-        int mlgSlot = -1;
-        for (int i = 0; i < 9; i++) {
-            var stack = mc.player.getInventory().getItem(i);
-            if (stack.isEmpty()) continue;
-            var item = stack.getItem();
-
-            if (item == Items.WATER_BUCKET) {
-                mlgSlot = i;
-                break;
-            }
-            if (item == Items.POWDER_SNOW_BUCKET) {
-                mlgSlot = i;
-                break;
-            }
-            if (item == Items.TWISTING_VINES || item == Items.WEEPING_VINES) {
-                mlgSlot = i;
-                break;
-            }
-        }
-
-        if (mlgSlot == -1 || mlgTriggered) return;
-
-        int prevSlot = mc.player.getInventory().selected;
-        setHotbarSlot(mlgSlot);
-
-        mc.gameMode.useItem(mc.player, mc.player.getUsedItemHand());
-
-        setHotbarSlot(prevSlot);
-
-        mlgTriggered = true;
-        mlgDelayTicks = 20;
-    }
-
-    private double getDistanceToGround() {
-        if (mc.player == null || mc.level == null) return 0;
-        Vec3 pos = mc.player.position();
-        double startY = pos.y;
-
-        for (double y = startY; y > startY - 100; y -= 0.5) {
-            if (mc.level.getBlockState(new BlockPos((int)pos.x, (int)y, (int)pos.z)).isSolid()) {
-                return startY - y;
-            }
-        }
-        return 100.0;
     }
 
     private void performAttack() {
+        // 1. Switch to mace right before the attack
         int maceSlot = findMaceSlot();
         if (maceSlot == -1) return;
-
         setHotbarSlot(maceSlot);
+
+        // 2. Set fall distance for mace smash damage
         mc.player.fallDistance = (float) customFallDistance;
 
+        // 3. Attack
         if (mc.getConnection() != null && mc.player.isFallFlying()) {
             mc.getConnection().send(new ServerboundPlayerCommandPacket(mc.player, ServerboundPlayerCommandPacket.Action.START_FALL_FLYING));
         }
-
         mc.gameMode.attack(mc.player, currentTarget);
         mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
         lastAttackTime = System.currentTimeMillis();
 
+        // 4. Optionally switch back to sword after attack (for next loop)
         int swordSlot = findSwordSlot();
         if (swordSlot != -1) {
             setHotbarSlot(swordSlot);
-            hasSwitchedToMace = false;
         }
 
         if (upwardBoost.get()) {
@@ -230,7 +157,6 @@ public class MaceElytraMode {
         isBoostingUp = true;
         isDiving = false;
         hasLockedAim = false;
-        hasSwitchedToMace = false;
         customFallDistance = 0;
         mc.player.fallDistance = 0;
 
@@ -250,7 +176,6 @@ public class MaceElytraMode {
         if (rocketSlot == -1) return;
 
         mc.player.setXRot(-90f);
-
         int prev = mc.player.getInventory().selected;
         setHotbarSlot(rocketSlot);
         mc.gameMode.useItem(mc.player, mc.player.getUsedItemHand());
@@ -279,7 +204,7 @@ public class MaceElytraMode {
         if (respectCooldown.get()) {
             return mc.player.getAttackStrengthScale(0.5f) >= 0.85f;
         }
-        return (System.currentTimeMillis() - lastAttackTime) >= 150;
+        return (System.currentTimeMillis() - lastAttackTime) >= 25;
     }
 
     private void setHotbarSlot(int slot) {
@@ -288,13 +213,14 @@ public class MaceElytraMode {
     }
 
     private void ensureSwordEquipped() {
-        if (hasSwitchedToMace) return;
         int swordSlot = findSwordSlot();
         if (swordSlot != -1) setHotbarSlot(swordSlot);
     }
 
     private int findMaceSlot() {
-        for (int i = 0; i < 9; i++) if (mc.player.getInventory().getItem(i).is(Items.MACE)) return i;
+        for (int i = 0; i < 9; i++) {
+            if (mc.player.getInventory().getItem(i).is(Items.MACE)) return i;
+        }
         return -1;
     }
 
@@ -307,7 +233,9 @@ public class MaceElytraMode {
     }
 
     private int findRocketSlot() {
-        for (int i = 0; i < 9; i++) if (mc.player.getInventory().getItem(i).is(Items.FIREWORK_ROCKET)) return i;
+        for (int i = 0; i < 9; i++) {
+            if (mc.player.getInventory().getItem(i).is(Items.FIREWORK_ROCKET)) return i;
+        }
         return -1;
     }
 
@@ -316,7 +244,6 @@ public class MaceElytraMode {
         isBoostingUp = false;
         isDiving = false;
         hasLockedAim = false;
-        hasSwitchedToMace = false;
         waitingForBoost = false;
         customFallDistance = 0;
         if (mc.player != null) mc.player.fallDistance = 0;

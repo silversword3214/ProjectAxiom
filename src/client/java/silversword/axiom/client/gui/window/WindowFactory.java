@@ -82,9 +82,9 @@ public final class WindowFactory {
         ModuleListView list = new ModuleListView(
                 WindowIds.MAIN,
                 modulesSupplier,
-                searchText,
                 selectedCategory,
-                onOpenSettings
+                onOpenSettings,
+                null
         );
 
         main.clearChildren();
@@ -134,7 +134,6 @@ public final class WindowFactory {
         ModuleListView list = new ModuleListView(
                 id,
                 supplier,
-                () -> "",
                 () -> "All",
                 mod -> openSettingsWindow(mod, screenW, screenH),
                 moduleId -> data.remove(moduleId)

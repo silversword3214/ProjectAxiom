@@ -30,11 +30,10 @@ public final class IndentedRow implements UiComponent {
 
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
-        // Piirrä pieni vertikaalinen viiva hierarkian osoittamiseksi
         int lineX = bounds.x + 4;
         int lineY1 = bounds.y;
         int lineY2 = bounds.y + bounds.h;
-        ui.fill(lineX, lineY1, 1, lineY2 - lineY1, 0x44FFFFFF);
+        ui.fill(lineX, lineY1, 1, lineY2 - lineY1, ui.theme.accent);
 
         inner.render(ui, mouseX, mouseY, delta);
     }

@@ -36,12 +36,11 @@ import silversword.axiom.client.setting.*;
 
 import java.util.*;
 
-import static net.minecraft.world.level.ClipContext.Block.OUTLINE;
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
-public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindConfigurable {
+public class AutoMine extends AxiomMod implements BlockSelectable, KeybindConfigurable {
 
-    public static TunnelMiner INSTANCE;
+    public static AutoMine INSTANCE;
 
     // Asetukset
     private final SettingBoolean enabled = new SettingBoolean("Enabled", true);
@@ -110,8 +109,8 @@ public class TunnelMiner extends AxiomMod implements BlockSelectable, KeybindCon
 
     private Entity collectItem = null;
 
-    public TunnelMiner() {
-        super("TunnelMiner", "Digs tunnel to target block (experimemtal)", ModuleCategory.MISC);
+    public AutoMine() {
+        super("Auto Mine", "Digs tunnel to target block (experimemtal)", ModuleCategory.MISC);
         INSTANCE = this;
 
         blockListSetting = new Setting("TargetBlocks") {

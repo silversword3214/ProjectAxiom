@@ -39,7 +39,7 @@ public abstract class GameRendererMixin {
     @Inject(method = "bobHurt", at = @At("HEAD"), cancellable = true)
     private void axiom$cancelHurtTilt(PoseStack matrices, float tickDelta, CallbackInfo ci) {
         NoViewBobbingTilt m = ModuleManager.getInstance().getModule(NoViewBobbingTilt.class);
-        if (m != null && m.isEnabled() && m.disableHurtTilt.get()) {
+        if (m != null && m.isEnabled()) {
             ci.cancel();
         }
 

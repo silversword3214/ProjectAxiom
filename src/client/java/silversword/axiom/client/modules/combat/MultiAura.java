@@ -1,5 +1,6 @@
 package silversword.axiom.client.modules.combat;
 
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import silversword.axiom.client.event.player.PreMotionEvent;
@@ -29,8 +30,8 @@ public class MultiAura extends AxiomMod implements KeybindConfigurable {
 
     // ---------- Settings ----------
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
-    private final SettingSlider attackRange = new SettingSlider("Range", new double[]{3.0, 4.0, 5.0, 6.0}, 4.5);
-    private final SettingSlider maxTargets = new SettingSlider("Max Targets", new double[]{2, 3, 4, 5, 10}, 3);
+    private final SettingSlider attackRange = new SettingSlider("Range", new double[]{3.0, 4.0, 5.0, 6.0}, 3);
+    private final SettingSlider maxTargets = new SettingSlider("Max Targets", new double[]{2, 3, 4, 5, 10, 15, 20, 30, 40}, 3);
     private final SettingMode targetMode = new SettingMode("Targets", new String[]{"Players", "Mobs", "Both"}, "Both");
     private final SettingBoolean renderBoxes = new SettingBoolean("Draw Boxes", true);
     private final SettingColor boxColor = new SettingColor("Target Color", Color.RED);
@@ -123,10 +124,27 @@ public class MultiAura extends AxiomMod implements KeybindConfigurable {
     @Subscribe
     public void onRender3D(Render3DEvent event) {
         if (!isEnabled() || currentTargets == null || !renderBoxes.get()) return;
+
+        float tickDelta = event.tickDelta;
         Renderer3D renderer = event.getRenderer();
+
         for (LivingEntity target : currentTargets) {
-            AABB box = target.getBoundingBox();
-            renderer.boxOutline(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, boxColor.getCurrentColor().getARGB(), 0);
+            double x = Mth.lerp(tickDelta, target.xOld, target.getX());
+            double y = Mth.lerp(tickDelta, target.yOld, target.getY());
+            double z = Mth.lerp(tickDelta, target.zOld, target.getZ());
+
+            double halfWidth = target.getBbWidth() / 2.0;
+            double height = target.getBbHeight();
+
+            double minX = x - halfWidth;
+            double minY = y;
+            double minZ = z - halfWidth;
+            double maxX = x + halfWidth;
+            double maxY = y + height;
+            double maxZ = z + halfWidth;
+
+            renderer.boxOutline(minX, minY, minZ, maxX, maxY, maxZ,
+                    boxColor.getCurrentColor().getARGB(), 0);
         }
     }
 }

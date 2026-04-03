@@ -1,9 +1,6 @@
 package silversword.axiom.mixin.client.entity;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -18,7 +15,6 @@ import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import silversword.axiom.client.managers.ModuleManager;
@@ -138,9 +134,5 @@ public abstract class LivingEntityMixin {
         // Palautetaan nopeus (kerrotaan 2:lla, koska travelInLava kertoi 0.5:llä)
         self.setDeltaMovement(self.getDeltaMovement().scale(2.0));
     }
-
-
-
-
 
 }

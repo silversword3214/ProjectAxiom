@@ -1,9 +1,6 @@
 package silversword.axiom.client.modules.combat;
 
-import net.minecraft.core.BlockPos;
-import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -18,6 +15,7 @@ import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.moduleutils.TargetManager;
 import silversword.axiom.client.modules.moduleutils.bettermace.MaceElytraMode;
+import silversword.axiom.client.modules.moduleutils.bettermace.MlgHandler;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingNumber;
 import silversword.axiom.client.setting.SettingSlider;
@@ -39,12 +37,12 @@ public final class BetterMace extends AxiomMod {
 
     private final SettingBoolean respectCooldown = new SettingBoolean("Respect Cooldown", true);
     private final SettingNumber  range           = new SettingNumber("Range", 1, 6, 0.1, 4.0);
-    private final SettingNumber  targetRange     = new SettingNumber("Target Range", 1, 30, 0.5, 30.0);
+    private final SettingNumber  targetRange     = new SettingNumber("Target Range", 1, 100, 0.5, 50.0);
     private final SettingMode    targetMode      = new SettingMode("Target Mode", new String[]{"Players", "Mobs", "Both"}, "Both");
 
     private final SettingNumber maxHorizontalDist = new SettingNumber("Max Horizontal Dist", 1, 20, 0.5, 7.0);
 
-    private final SettingBoolean elytraMode = new SettingBoolean("Elytra Mode", false);
+
     private final MaceElytraMode maceElytraMode = new MaceElytraMode();
 
     private long lastAttackTime = 0;
@@ -53,9 +51,7 @@ public final class BetterMace extends AxiomMod {
     private boolean wasMoving = false;
     private boolean hasAttackedThisFall = false;
 
-    // MLG-apumuuttujat
-    private boolean mlgTriggered = false;
-    private int mlgDelayTicks = 0;
+    private final MlgHandler mlgHandler = new MlgHandler();
 
     public BetterMace() {
         super("BetterMace", "Wind Charge + Mace Swapper", ModuleCategory.COMBAT);
@@ -63,6 +59,19 @@ public final class BetterMace extends AxiomMod {
         moveToTarget.setParent(enableAutoSwap);
         aimSpeed.setParent(enableAimAssist);
         maxAngle.setParent(enableAimAssist);
+
+
+        addSetting(maceElytraMode.enabled);
+        addSetting(maceElytraMode.minHeight);
+        addSetting(maceElytraMode.targetRange);
+        addSetting(maceElytraMode.attackRange);
+        addSetting(maceElytraMode.aimSpeed);
+        addSetting(maceElytraMode.respectCooldown);
+        addSetting(maceElytraMode.autoRocket);
+        addSetting(maceElytraMode.upwardBoost);
+        addSetting(maceElytraMode.diveBoostDist);
+        addSetting(maceElytraMode.minFallDist);
+        addSetting(maceElytraMode.targetMode);
 
         addSetting(enableAutoSwap);
         addSetting(infiniteWindBurst);
@@ -76,29 +85,19 @@ public final class BetterMace extends AxiomMod {
         addSetting(targetMode);
         addSetting(maxHorizontalDist);
 
-        addSetting(elytraMode);
-        addSetting(maceElytraMode.enabled);
-        maceElytraMode.enabled.setParent(elytraMode);
-        addSetting(maceElytraMode.minHeight);
-        addSetting(maceElytraMode.targetRange);
-        addSetting(maceElytraMode.attackRange);
-        addSetting(maceElytraMode.aimSpeed);
-        addSetting(maceElytraMode.respectCooldown);
-        addSetting(maceElytraMode.autoRocket);
-        addSetting(maceElytraMode.upwardBoost);
-        addSetting(maceElytraMode.diveBoostDist);
-        addSetting(maceElytraMode.minFallDist);
+
     }
 
     @Override
     protected void onEnable() {
         resetState();
+        mlgHandler.reset();
         maceElytraMode.resetState();
     }
 
     @Override
     protected void onDisable() {
-        releaseMovementKeys();
+        releaseModMovement();
         resetState();
         maceElytraMode.resetState();
     }
@@ -109,8 +108,7 @@ public final class BetterMace extends AxiomMod {
         isSlamming = false;
         wasMoving = false;
         hasAttackedThisFall = false;
-        mlgTriggered = false;
-        mlgDelayTicks = 0;
+        releaseModMovement();
     }
 
     @Subscribe
@@ -118,16 +116,7 @@ public final class BetterMace extends AxiomMod {
         if (!isEnabled()) return;
         if (mc.player == null || mc.level == null) return;
 
-        // MLG-turva (vain kun ei targettia ja ilmassa)
-        if (currentTarget == null && !mc.player.onGround()) {
-            handleMlg();
-        } else {
-            mlgTriggered = false;
-            mlgDelayTicks = 0;
-        }
-
-        // Elytra mode
-        if (elytraMode.get()) {
+        if (maceElytraMode.enabled.get()) {
             maceElytraMode.enabled.set(true);
             maceElytraMode.onPreMotion();
             return;
@@ -135,9 +124,40 @@ public final class BetterMace extends AxiomMod {
             maceElytraMode.enabled.set(false);
         }
 
-        if (!enableAutoSwap.get()) return;
+        if (!mc.player.onGround()) {
+            boolean isPowerfulJump = mc.player.getDeltaMovement().y > 0.45;
+            boolean isHighEnough = isMinimumHeight(2.0);
+            if (isPowerfulJump || isHighEnough || (isSlamming && mc.player.getDeltaMovement().y > -0.5)) {
+                isSlamming = true;
+            }
+        } else {
+            isSlamming = false;
+            hasAttackedThisFall = false;
+        }
 
-        currentTarget = findTargetWithHorizontalLimit();
+        boolean shouldFindTarget = enableAutoSwap.get() && !maceElytraMode.enabled.get() && !mc.player.onGround()
+                && (isSlamming || mc.player.getDeltaMovement().y < -0.3);
+        if (shouldFindTarget) {
+            currentTarget = findTargetWithHorizontalLimit();
+        } else {
+            currentTarget = null;
+        }
+
+
+        if (currentTarget == null || mc.player.onGround()) {
+            releaseModMovement();
+        }
+
+
+        boolean isMaceAttackImminent = (currentTarget != null && mc.player.getDeltaMovement().y < -0.1);
+        if (!isMaceAttackImminent) {
+            if (mlgHandler.tick() || mlgHandler.isMlgActive()) {
+                return;
+            }
+        }
+
+
+        if (!enableAutoSwap.get()) return;
 
         if (mc.player.onGround()) {
             isSlamming = false;
@@ -156,8 +176,8 @@ public final class BetterMace extends AxiomMod {
 
         if (moveToTarget.get() && isSlamming && !mc.player.onGround() && currentTarget != null) {
             handleMoveToTarget();
-        } else if (wasMoving) {
-            releaseMovementKeys();
+        } else {
+            releaseModMovement();
         }
 
         if (!isSlamming || mc.player.onGround()) return;
@@ -207,8 +227,22 @@ public final class BetterMace extends AxiomMod {
                 entity -> entity != mc.player && entity.isAlive() &&
                         TargetManager.isValidTarget(entity, targetMode.getMode()) &&
                         mc.player.distanceTo(entity) <= maxRange &&
-                        Math.hypot(entity.getX() - mc.player.getX(), entity.getZ() - mc.player.getZ()) <= maxHor
+                        Math.hypot(entity.getX() - mc.player.getX(), entity.getZ() - mc.player.getZ()) <= maxHor &&
+                        hasLineOfSight(entity)
         ).stream().min(Comparator.comparingDouble(e -> mc.player.distanceTo(e))).orElse(null);
+    }
+
+    private boolean hasLineOfSight(LivingEntity target) {
+        if (mc.player == null || mc.level == null || target == null) return false;
+        Vec3 start = mc.player.getEyePosition(1.0f);
+        Vec3 end = target.getEyePosition(1.0f);
+        BlockHitResult result = mc.level.clip(new ClipContext(start, end,
+                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mc.player));
+        if (result.getType() == HitResult.Type.MISS) return true;
+        Vec3 hitVec = result.getLocation();
+        double distToHit = start.distanceTo(hitVec);
+        double distToTarget = start.distanceTo(end);
+        return distToHit >= distToTarget - 0.5;
     }
 
     private void handleMoveToTarget() {
@@ -220,23 +254,26 @@ public final class BetterMace extends AxiomMod {
             Vec3 lookVec = mc.player.getLookAngle().normalize();
             double dot = lookVec.dot(toTarget);
             if (dot > 0) {
-                mc.options.keyUp.setDown(true);
+                if (!wasMoving) {
+                    mc.options.keyUp.setDown(true);
+                    wasMoving = true;
+                }
                 mc.player.setSprinting(true);
-                wasMoving = true;
-            } else if (wasMoving) {
-                mc.options.keyUp.setDown(false);
-                wasMoving = false;
+            } else {
+                releaseModMovement();
             }
-        } else if (wasMoving) {
-            mc.options.keyUp.setDown(false);
-            wasMoving = false;
+        } else {
+            releaseModMovement();
         }
     }
 
-    private void releaseMovementKeys() {
-        if (mc.options == null) return;
-        mc.options.keyUp.setDown(false);
-        wasMoving = false;
+    private void releaseModMovement() {
+        if (wasMoving) {
+            if (mc.options != null) {
+                mc.options.keyUp.setDown(false);
+            }
+            wasMoving = false;
+        }
     }
 
     private void performAttack(LivingEntity target) {
@@ -287,23 +324,31 @@ public final class BetterMace extends AxiomMod {
     @Subscribe
     public void onMouseUpdate(MouseUpdateEvent event) {
         if (!isEnabled()) return;
-        if (elytraMode.get()) return;
+        if (maceElytraMode.enabled.get()) return;
         if (currentTarget == null || !enableAimAssist.get() || mc.player == null) return;
         if (mc.player.distanceTo(currentTarget) > targetRange.getValue()) return;
+
         boolean isHighFall = mc.player.fallDistance > 2.5f;
         boolean isSlammingAndFalling = isSlamming && !mc.player.onGround() && mc.player.getDeltaMovement().y < -0.1;
+
         if (!isHighFall && !isSlammingAndFalling) return;
         if (mc.player.onGround() || mc.player.getDeltaMovement().y >= 0) return;
+
         Vec3 targetPos = currentTarget.getEyePosition(1.0f);
         Vec3 playerPos = mc.player.getEyePosition(1.0f);
+
         Vec3 delta = targetPos.subtract(playerPos);
+
         double yawTarget = Math.toDegrees(Math.atan2(delta.z, delta.x)) - 90;
         double pitchTarget = -Math.toDegrees(Math.atan2(delta.y, Math.sqrt(delta.x * delta.x + delta.z * delta.z)));
+
         double diffYaw = wrapAngle(yawTarget - mc.player.getYRot());
         double diffPitch = pitchTarget - mc.player.getXRot();
+
         if (Math.abs(diffYaw) <= maxAngle.getValue()) {
             double sensitivity = mc.options.sensitivity().get() * 0.6 + 0.2;
             double mult = (sensitivity * sensitivity * sensitivity * 8.0) * 0.15;
+
             event.setDeltaX((diffYaw / mult) * (aimSpeed.getValue() / 10.0));
             event.setDeltaY((diffPitch / mult) * (aimSpeed.getValue() / 10.0));
         }
@@ -314,74 +359,6 @@ public final class BetterMace extends AxiomMod {
         if (angle >= 180) angle -= 360;
         if (angle < -180) angle += 360;
         return angle;
-    }
-
-    // ---------- YKSIVAIHEINEN VÄLITÖN MLG ----------
-    private void handleMlg() {
-        if (mlgDelayTicks > 0) {
-            mlgDelayTicks--;
-            return;
-        }
-        if (mc.player == null || mc.level == null) return;
-        if (mc.player.onGround()) {
-            mlgTriggered = false;
-            return;
-        }
-
-        double fallSpeed = -mc.player.getDeltaMovement().y;
-        double distanceToGround = getDistanceToGround();
-
-        if (fallSpeed < 0.8 || distanceToGround > 4.0 || distanceToGround < 0.5) return;
-
-        int slot = findMlgSlot();
-        if (slot == -1 || mlgTriggered) return;
-
-        int prev = mc.player.getInventory().selected;
-        setHotbarSlot(slot);
-        mc.player.setXRot(90.0f);
-
-        // Pakotetaan oikea klikkaus
-        assert mc.gameMode != null;
-        mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
-
-        setHotbarSlot(prev);
-
-        mlgTriggered = true;
-        mlgDelayTicks = 0;
-        System.out.println("[BetterMace] MLG used! (fallSpeed=" + fallSpeed + ", distToGround=" + distanceToGround + ")");
-    }
-
-    private double getDistanceToGround() {
-        if (mc.player == null || mc.level == null) return 0;
-        Vec3 pos = mc.player.position();
-        double startY = pos.y;
-        for (double y = startY; y > startY - 100.0; y -= 0.1) {
-            BlockPos checkPos = new BlockPos((int) Math.floor(pos.x), (int) Math.floor(y), (int) Math.floor(pos.z));
-            if (mc.level.getBlockState(checkPos).isSolid()) {
-                return startY - y;
-            }
-        }
-        return 100.0;
-    }
-
-    private int findMlgSlot() {
-        for (int i = 0; i < 9; i++) {
-            var stack = mc.player.getInventory().getItem(i);
-            if (stack.isEmpty()) continue;
-            var item = stack.getItem();
-            if (item == Items.WATER_BUCKET ||
-                    item == Items.POWDER_SNOW_BUCKET ||
-                    item == Items.TWISTING_VINES ||
-                    item == Items.WEEPING_VINES) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private void setHotbarSlot(int slot) {
-        if (mc.player == null || mc.player.getInventory().selected == slot) return;
-        mc.player.getInventory().selected = slot;
     }
 
     @Override
