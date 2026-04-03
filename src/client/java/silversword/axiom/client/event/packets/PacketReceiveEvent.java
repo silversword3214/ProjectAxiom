@@ -6,7 +6,7 @@ import silversword.axiom.client.eventbus.ICancellable;
 public class PacketReceiveEvent implements ICancellable {
 
     private Packet<?> packet;
-    private boolean cancelled = false; // ← tämä puuttui
+    private boolean cancelled = false; //
 
     public PacketReceiveEvent(Packet<?> packet) {
         this.packet = packet;

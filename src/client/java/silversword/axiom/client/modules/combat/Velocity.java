@@ -5,6 +5,7 @@ import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.event.packets.PacketReceiveEvent;
 import silversword.axiom.client.eventbus.Subscribe;
+import silversword.axiom.client.main.AxiomInitialize; // Tarvitaan EVENT_BUS:ia varten
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -15,7 +16,6 @@ public final class Velocity extends AxiomMod implements KeybindConfigurable {
     private final Minecraft mc = Minecraft.getInstance();
 
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
-
     private final SettingMode   mode;
     private final SettingNumber horizontal;
     private final SettingNumber vertical;
@@ -33,11 +33,23 @@ public final class Velocity extends AxiomMod implements KeybindConfigurable {
         addSetting(vertical);
     }
 
-    @Override
-    public SettingKeybind getKeybind() { return toggleKey; }
 
     @Override
-    protected void onTick() {}
+    protected void onEnable() {
+    }
+
+
+    @Override
+    protected void onDisable() {
+    }
+
+    @Override
+    protected void onTick() {
+
+    }
+
+    @Override
+    public SettingKeybind getKeybind() { return toggleKey; }
 
     @Subscribe
     private void onPacket(PacketReceiveEvent event) {
@@ -46,27 +58,21 @@ public final class Velocity extends AxiomMod implements KeybindConfigurable {
         if (!(event.getPacket() instanceof ClientboundSetEntityMotionPacket pkt)) return;
         if (pkt.getId() != mc.player.getId()) return;
 
-        switch (mode.getMode()) {
+        if (mode.getMode().equals("Cancel")) {
+            event.setCancelled(true);
+        } else if (mode.getMode().equals("Reduce")) {
+            double h = horizontal.getValue() / 100.0;
+            double v = vertical.getValue() / 100.0;
 
-            case "Cancel" -> {
-                event.setCancelled(true);
-            }
+            Vec3 original = pkt.getMovement();
+            Vec3 modified = new Vec3(
+                    original.x * h,
+                    original.y * v,
+                    original.z * h
+            );
 
-            case "Reduce" -> {
-                double h = horizontal.getValue() / 100.0;
-                double v = vertical.getValue() / 100.0;
-
-                Vec3 original = pkt.getMovement();
-                Vec3 modified = new Vec3(
-                        original.x * h,
-                        original.y * v,
-                        original.z * h
-                );
-
-                event.setPacket(new ClientboundSetEntityMotionPacket(pkt.getId(), modified));
-                mc.player.setDeltaMovement(modified);
-                event.setCancelled(true);
-            }
+            // Käytetään event.setPacket(), ei mc.player.setDeltaMovement()
+            event.setPacket(new ClientboundSetEntityMotionPacket(pkt.getId(), modified));
         }
     }
 }

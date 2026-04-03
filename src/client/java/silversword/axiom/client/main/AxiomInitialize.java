@@ -59,9 +59,7 @@ public final class AxiomInitialize implements ClientModInitializer {
         // Rekisteröidään eventbus ja moduulit
         EVENT_BUS.register(this);
         ModuleManager.getInstance().init();
-        for (var module : ModuleManager.getInstance().getModules()) {
-            EVENT_BUS.register(module);
-        }
+
         ResourcePackBlockerConfig.load();
         SettingsConfigManager.loadAll();
         ModuleKeybindManager.register();

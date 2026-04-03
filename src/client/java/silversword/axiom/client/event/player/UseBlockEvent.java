@@ -3,10 +3,6 @@ package silversword.axiom.client.event.player;
 import net.minecraft.world.phys.BlockHitResult;
 import silversword.axiom.client.eventbus.ICancellable;
 
-/**
- * Laukaistaan kun pelaaja yrittää käyttää (klikata) lohkoa.
- * Peruuttamalla tapahtuma estetään alkuperäinen toiminta.
- */
 public class UseBlockEvent implements ICancellable {
     public final BlockHitResult hitResult;
     private boolean cancelled;

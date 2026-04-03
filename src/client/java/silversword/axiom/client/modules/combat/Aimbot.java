@@ -29,7 +29,6 @@ public class Aimbot extends AxiomMod implements KeybindConfigurable {
     public final SettingSlider range = new SettingSlider("Range", new double[]{3.0, 4.0, 5.0, 6.0}, 5.0);
     public final SettingMode bodyPart = new SettingMode("Body Part", new String[]{"Head", "Body", "Feet"}, "Body");
 
-    // Uusi smooth: maksimi asteet per tick (0 = välitön, 30 = hidas)
     public final SettingSlider maxTurnSpeed = new SettingSlider("Max Turn Speed (deg/tick)", new double[]{0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 80}, 40.0);
 
     public final SettingBoolean onlyOnHold = new SettingBoolean("Only on Hold", true);

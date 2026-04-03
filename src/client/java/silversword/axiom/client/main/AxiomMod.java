@@ -68,10 +68,12 @@ public abstract class AxiomMod {
         this.enabled = enabled;
 
         if (enabled) {
+            // Rekisteröidään väylään vain kerran tässä
             AxiomInitialize.EVENT_BUS.register(this);
             onEnable();
         } else {
-            AxiomInitialize.EVENT_BUS.register(this);
+            // TÄRKEÄ KORJAUS: Käytetään unregister, kun moduuli sammuu
+            AxiomInitialize.EVENT_BUS.unregister(this);
             onDisable();
         }
     }
@@ -88,13 +90,15 @@ public abstract class AxiomMod {
      * Called ONCE when module is enabled.
      * Register events, store old values, etc.
      */
-    protected void onEnable() {}
 
-    /**
-     * Called ONCE when module is disabled.
-     * Unregister events, restore values, etc.
-     */
-    protected void onDisable() {}
+    protected void onEnable() {
+
+    }
+
+
+    protected void onDisable() {
+
+    }
 
     // ------------------------------------------------------------
     // Tick handling (ENFORCED)

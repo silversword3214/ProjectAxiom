@@ -6,7 +6,7 @@ public class MouseScrollEvent implements ICancellable {
     private static final MouseScrollEvent INSTANCE = new MouseScrollEvent();
     private boolean cancelled;
 
-    public double value; // scroll amount (positive = up, negative = down)
+    public double value;
 
     public static MouseScrollEvent get(double value) {
         INSTANCE.cancelled = false;

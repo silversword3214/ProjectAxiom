@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import silversword.axiom.client.event.player.SwingEvent;
+
 import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.combat.KillAura;
@@ -19,27 +19,15 @@ import silversword.axiom.client.utils.Rotations;
 @Mixin(LocalPlayer.class)
 public class LocalPlayerMixin {
 
-    // LocalPlayerMixin.java sisällä
     @Inject(method = "sendPosition", at = @At("HEAD"))
     private void onPreSendMovementPackets(CallbackInfo ci) {
         AxiomInitialize.EVENT_BUS.post(new silversword.axiom.client.event.player.PreMotionEvent());
-
         Rotations.onPreSendMovementPackets();
     }
 
     @Inject(method = "sendPosition", at = @At("TAIL"))
     private void onPostSendMovementPackets(CallbackInfo ci) {
         Rotations.onPostSendMovementPackets();
-    }
-
-
-    @Inject(method = "swing", at = @At("HEAD"), cancellable = true)
-    private void onSwing(InteractionHand hand, CallbackInfo ci) {
-        SwingEvent event = new SwingEvent(hand);
-        AxiomInitialize.EVENT_BUS.post(event);
-        if (event.isCancelled()) {
-            ci.cancel();
-        }
     }
 
     @Inject(method = "itemUseSpeedMultiplier", at = @At("RETURN"), cancellable = true)

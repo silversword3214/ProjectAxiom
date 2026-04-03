@@ -66,9 +66,11 @@ public final class ModuleManager {
 
     private void registerModules() {
         // Combat
+        safeAdd(new BetterMace());
         safeAdd(new Velocity());
         safeAdd(new KillAura());
         safeAdd(new CrystalAura());
+        safeAdd(new MultiAura());
         safeAdd(new TPAura());
         safeAdd(new TriggerBot());
         safeAdd(new Criticals());
@@ -92,6 +94,7 @@ public final class ModuleManager {
         safeAdd(new AutoSprint());
         safeAdd(new Step());
         safeAdd(new Jesus());
+        safeAdd(new Spider());
         safeAdd(new LeatherBoots());
         safeAdd(new ClickTP());
         safeAdd(new Scaffold());
