@@ -301,52 +301,62 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
         if (state.isAir()) return;
 
         // 1. Haetaan blokin nimi
-        String blockName = Component.translatable(state.getBlock().getDescriptionId()).getString();
+        String blockName = state.getBlock().getName().getString();
 
-        // 2. Lasketaan maailman koordinaatit (keskellä blockia, yläpinnan päällä + offset)
-        AABB box = state.getShape(mc.level, pos).bounds();
+        // 2. Lasketaan maailman koordinaatit
+        VoxelShape shape = state.getShape(mc.level, pos);
+        double maxY = shape.isEmpty() ? 1.0 : shape.bounds().maxY;
+
         double worldX = pos.getX() + 0.5;
-        double worldY = pos.getY() + box.maxY + nametagOffset.getValue();
+        double worldY = pos.getY() + maxY + nametagOffset.getValue();
         double worldZ = pos.getZ() + 0.5;
 
-        // 3. Muunnos ruudulle NametagUtilsilla
+        // 3. Muunnos ruudulle
         Vec3 screenPos = silversword.axiom.client.render.rendersystem.utils.render.NametagUtils.worldToScreen(new Vec3(worldX, worldY, worldZ));
-
         if (screenPos == null) return;
 
-        double screenX = screenPos.x;
-        double screenY = screenPos.y;
-        double distance = screenPos.z; // w-arvo eli etäisyys
+        double distance = screenPos.z; // w-arvo
 
-        // 4. Skaalaus (pienennetään etäisyyden mukaan, mutta pidetään järkevissä rajoissa)
-        double distanceScale = 1.0 / Math.max(1.0, distance * 0.2); // Säädä 0.2 jos haluat pienenemisen olevan hitaampaa
+        // 4. Skaalaus etäisyyden mukaan
+        double distanceScale = 1.0 / Math.max(1.0, distance * 0.2);
         double finalScale = nametagScale.getValue() * distanceScale;
-        finalScale = Math.max(finalScale, 0.4); // Minimikoko ettei teksti katoa
+        finalScale = Math.max(finalScale, 0.4);
 
-        // 5. Mitat käyttäen sinun TextUtils-luokkaasi
-        // Lasketaan leveys: merkkien määrä * vakioleveys
-        double textWidth = blockName.length() * TextUtils.CHAR_WIDTH;
-        double textHeight = TextUtils.FONT_HEIGHT;
+        // 5. Mitat dynaamisella TextUtilsilla
+        // Huom: TextUtils palauttaa koon skaalalla 1.0, joten kerrotaan se finalScalella
+        double textWidth = TextUtils.getWidth(blockName) * finalScale;
+        double textHeight = TextUtils.getHeight() * finalScale;
 
-        double padding = 2.0;
-        double bgWidth = (textWidth + padding * 2) * finalScale;
-        double bgHeight = (textHeight + padding * 2) * finalScale;
+        double padding = 4.0 * finalScale; // Skaalataan myös padding
+        double bgWidth = textWidth + (padding * 2);
+        double bgHeight = textHeight + (padding * 2);
 
-        // Keskitys
-        double renderX = screenX - (bgWidth / 2.0);
-        double renderY = screenY - (bgHeight / 2.0);
+        // Keskitys ruudulla
+        double renderX = screenPos.x - (bgWidth / 2.0);
+        double renderY = screenPos.y - (bgHeight / 2.0);
 
         // 6. Piirtäminen
-        // Varmistetaan että käytetään HUD-kerroksen oikeita mittoja matriisissa
-        core.beginFrame(new Matrix4f().setOrtho(0, event.getScreenWidth(), event.getScreenHeight(), 0, -1000, 1000), new Matrix4f().identity());
+        // Asetetaan ortografinen matriisi koko ruudun kokoiseksi
+        core.beginFrame(new Matrix4f().setOrtho(0, (float)event.getScreenWidth(), (float)event.getScreenHeight(), 0, -1000, 1000), new Matrix4f().identity());
 
+        // Piirretään tausta (oletetaan että drawBackground käyttää näitä koordinaatteja)
         drawBackground(renderX, renderY, bgWidth, bgHeight, finalScale);
 
-        TextRenderer text = TextRenderer.get();
-        // Aloitetaan tekstin piirto finalScalella
-        text.begin(finalScale, true, true); // Ei skaalausta tekstimoottorissa
-        text.render(blockName, (float)(renderX + padding * finalScale), (float)(renderY + padding * finalScale), textColor.getCurrentColor(), false);
-        text.end();
+        // Piirretään teksti
+        TextRenderer tr = TextRenderer.get();
+
+        // Käytetään tr.begin(finalScale), jolloin TextRenderer hoitaa tekstin koon.
+        // Koska textWidth/Height laskettiin TextUtilsilla (joka huomioi 1.5/2.3 eron),
+        // teksti istuu täydellisesti laatikon sisään.
+        tr.begin(finalScale, false, true);
+
+        // Piirretään teksti paddingin verran sisäänpäin.
+        // Huom: Koska tr.begin hoitaa skaalauksen, render-kutsun koordinaattien
+        // on oltava "maailman" koordinaatteja suhteessa skaalaan TAI meidän on
+        // annettava ne suoraan ruutupisteinä.
+        tr.render(blockName, (float)(renderX + padding), (float)(renderY + padding), textColor.getCurrentColor(), false);
+
+        tr.end();
     }
 
     private void drawBackground(double x, double y, double width, double height, double finalScale) {

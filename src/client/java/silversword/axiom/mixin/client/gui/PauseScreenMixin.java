@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import silversword.axiom.client.gui.screen.AxiomConfigScreen;
+import silversword.axiom.client.gui.screen.PauseMenuSettings;
 import silversword.axiom.client.gui.core.ThemeManager;
 
 @Mixin(PauseScreen.class)
@@ -47,7 +47,7 @@ public abstract class PauseScreenMixin extends Screen {
 
         this.addRenderableWidget(
                 Button.builder(buttonText, button -> {
-                            Minecraft.getInstance().setScreen(new AxiomConfigScreen(this));
+                            Minecraft.getInstance().setScreen(new PauseMenuSettings(this));
                         })
                         .bounds(x, y, width, height)
                         .build()

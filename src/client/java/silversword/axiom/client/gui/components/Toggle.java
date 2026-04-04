@@ -68,8 +68,8 @@ public final class Toggle implements UiComponent {
         int knobX = (int) (minKnobX + (maxKnobX - minKnobX) * eased);
         int knobY = sy + 2 + knobRadius;
 
-        ui.fillCircle(knobX, knobY, knobRadius, ui.theme.panel);
-        ui.fillCircle(knobX, knobY, knobRadius - 2, ui.theme.textDim);
+        ui.fillCircle(knobX, knobY, knobRadius, ui.theme.textDim);
+        ui.fillCircle(knobX, knobY, knobRadius - 1, ui.theme.panel);
     }
 
     private int interpolateColor(int color1, int color2, float t) {

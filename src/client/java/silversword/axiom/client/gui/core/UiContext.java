@@ -114,8 +114,6 @@ public class UiContext {
         uiText.render(s, x, y, new silversword.axiom.client.render.rendersystem.utils.color.Color(argb), false);
     }
 
-
-
     public void addTexture(Identifier textureId, double x, double y, double width, double height, Color color) {
         renderer.drawTexture(textureId, (float) x, (float) y, (float) width, (float) height, color.getARGB());
     }
@@ -126,6 +124,31 @@ public class UiContext {
 
     public void textShadow(String s, int x, int y, int argb) {
         uiText.render(s, x, y, new silversword.axiom.client.render.rendersystem.utils.color.Color(argb), true);
+    }
+
+    public void drawRainbowText(String text, float x, float y, int rowIndex) {
+        float speed = silversword.axiom.client.config.ClickGuiConfigManager.getRainbowWaveSpeed();
+        silversword.axiom.client.render.rendersystem.utils.color.rainbow.RainbowPalette palette =
+                silversword.axiom.client.config.ClickGuiConfigManager.getRainbowPalette();
+        long now = System.currentTimeMillis();
+
+        float currentX = x;
+
+        for (int i = 0; i < text.length(); i++) {
+            String ch = String.valueOf(text.charAt(i));
+            int colorArgb = palette.getColorForPosition(now, speed, i, rowIndex, currentX, y);
+
+            // 1. Piirretään ilman varjoa (käyttää sisäisesti scale / 2.3)
+            uiText.render(ch, currentX, y, new silversword.axiom.client.render.rendersystem.utils.color.Color(colorArgb), false);
+
+            // 2. KORJAUS: Lasketaan leveys samalla 2.3 jakajalla kuin render
+            // Haetaan raaka leveys ilman rendererin omaa skaalausta ja lasketaan se itse
+            double rawWidth = uiText.getWidth(ch, false);
+
+            // Koska CustomTextRenderer.getWidth käyttää jakajaa 1.5, meidän pitää "kumota" se
+            // ja käyttää 2.3 jakajaa, jotta väli täsmää piirrettyyn jälkeen.
+            currentX += (rawWidth * 1.5) / 2.3;
+        }
     }
 
     public int textWidth(String s) {

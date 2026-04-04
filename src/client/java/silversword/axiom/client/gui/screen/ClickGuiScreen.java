@@ -94,22 +94,18 @@ public final class ClickGuiScreen extends Screen {
 
         TextRenderer.get().begin(1.0, false, false);
 
-        // 1. Piirretään ikkunat
         if (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen()) {
             windowManager.render(lastUi, mouseX, mouseY);
         }
 
-        // 2. Piirretään yläpalkki ja hakupalkki vain, jos overlay ei peitä niitä
         if (!windowManager.isOverlayOpen()) {
             drawTopBar(lastUi, mouseX, mouseY);
             drawSearchBar(lastUi, mouseX, mouseY, delta);
         }
 
         TextRenderer.get().end();
-        RenderAPI.getInstance().getCore().flush();
         super.render(ctx, mouseX, mouseY, delta);
 
-        // Scissor‑testit, tekstuurit, tooltipit
         RenderCore core = RenderAPI.getInstance().getCore();
         boolean wasScissor = core.isScissorEnabled();
         int sx = core.getScissorX();
@@ -122,7 +118,6 @@ public final class ClickGuiScreen extends Screen {
         }
 
         DrawTexture.renderAll();
-        core.flush();
 
         if (wasScissor) {
             core.enableScissor(sx, sy, sw, sh);
@@ -276,10 +271,17 @@ public final class ClickGuiScreen extends Screen {
     }
 
     public void resetWindows() {
+
+        WINDOW_MANAGER.clear();
         windowManager.clear();
         windowManager.closeOverlay();
+
+
         createCategoryWindows(this.width, this.height);
+
         UiConfigManager.saveGui(windowManager);
+
+        this.init();
     }
 
     private void createCategoryWindows(int screenW, int screenH) {

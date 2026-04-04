@@ -152,6 +152,7 @@ public final class ModuleManager {
         add(new DeathLocationModule());
         add(new AutoClicker());
         add(new PingSpoof());
+        add(new BedFucker());
 
         // World
         add(new FastBreak());

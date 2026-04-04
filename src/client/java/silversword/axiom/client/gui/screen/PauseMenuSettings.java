@@ -7,10 +7,10 @@ import net.minecraft.network.chat.Component;
 import silversword.axiom.client.config.ResourcePackBlockerConfig;
 import silversword.axiom.client.gui.core.ThemeManager;
 
-public class AxiomConfigScreen extends Screen {
+public class PauseMenuSettings extends Screen {
     private final Screen parent;
 
-    public AxiomConfigScreen(Screen parent) {
+    public PauseMenuSettings(Screen parent) {
         super(Component.literal("Axiom Settings"));
         this.parent = parent;
     }

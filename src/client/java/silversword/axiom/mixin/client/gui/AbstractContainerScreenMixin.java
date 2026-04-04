@@ -58,11 +58,16 @@ public abstract class AbstractContainerScreenMixin {
 
         // Teksti (käyttää uutta TextRenderer-rajapintaa)
         TextRenderer textRenderer = TextRenderer.get();
-        textRenderer.begin(0.90, false, true);
         String text = "Steal";
-        int textWidth = (int) textRenderer.getWidth(text, false);
-        int textX = buttonX + (BUTTON_WIDTH - textWidth) / 2 - 4;
-        int textY = buttonY + (BUTTON_HEIGHT - TextUtils.FONT_HEIGHT) / 2;
+        double scale = 0.90;
+
+        int textWidth = (int) (TextUtils.getWidth(text) * scale);
+        int fontHeight = (int) (TextUtils.getHeight() * scale);
+
+        int textX = buttonX + (BUTTON_WIDTH - textWidth) / 2;
+        int textY = buttonY + (BUTTON_HEIGHT - fontHeight) / 2;
+
+        textRenderer.begin(scale, false, true);
         textRenderer.render(text, textX, textY, new Color(255, 255, 255, 255), false);
         textRenderer.end();
     }

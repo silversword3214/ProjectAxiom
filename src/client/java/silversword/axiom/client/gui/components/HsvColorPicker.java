@@ -4,7 +4,7 @@ import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
-import silversword.axiom.client.render.rendersystem.utils.color.RainbowColor;
+import silversword.axiom.client.render.rendersystem.utils.color.rainbow.RainbowColor;
 
 public class HsvColorPicker implements UiComponent {
 
@@ -35,6 +35,8 @@ public class HsvColorPicker implements UiComponent {
     private int[][] gradientCache;
     private boolean gradientDirty = true;
 
+    private Rect paletteSelectorRect;
+
     public HsvColorPicker(SettingColor setting, Runnable onColorChanged) {
         this.setting = setting;
         this.onColorChanged = onColorChanged;
@@ -59,7 +61,7 @@ public class HsvColorPicker implements UiComponent {
 
         int padding = 10;
         int hueWidth = 12;
-        int bottomPanelHeight = 70; // korkeampi, jotta mahtuu kaksi riviä
+        int bottomPanelHeight = 80;
 
         svRect = new Rect(
                 bounds.x + padding,
@@ -111,6 +113,7 @@ public class HsvColorPicker implements UiComponent {
                 sliderWidth,
                 30
         );
+
 
         gradientDirty = true;
     }
@@ -257,6 +260,7 @@ public class HsvColorPicker implements UiComponent {
             int speedTextY = speedSliderRect.y + 2;
             ui.text(speedText, speedTextX, speedTextY, ui.theme.textDim);
         }
+
     }
 
 
@@ -295,6 +299,8 @@ public class HsvColorPicker implements UiComponent {
             updateAlpha(mouseX);
             return true;
         }
+
+
 
         return false;
     }

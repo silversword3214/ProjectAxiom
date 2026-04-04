@@ -127,7 +127,7 @@ public class HudComponentsList implements UiComponent {
 
                 float rotation = gearRotations.get(i);
                 if (gearHover) {
-                    rotation += delta * 150f; // Nopeampi animaatio hoverissa
+                    rotation += delta * 5f; // Nopeampi animaatio hoverissa
                 } else if (rotation > 0) {
                     rotation = Math.max(0, rotation - delta * 200f);
                 }
@@ -137,10 +137,9 @@ public class HudComponentsList implements UiComponent {
                 ui.fillRounded(gearRect, gearHover ? ui.theme.buttonHover : ui.theme.panel, 3);
 
                 if (gearTexture != null) {
-                    // Huom: Käytetään projektisi omaa renderöintitapaa tekstuurille
                     ui.renderer.core.addRotatedTexture(GEAR_TEXTURE, gearRect.x + 2, gearRect.y + 2, gearRect.w - 4, gearRect.h - 4, rotation, 0xFFFFFFFF);
                 } else {
-                    ui.text("*", gearRect.x + 5, gearRect.y + 4, ui.theme.textDim);
+                    ui.text("...", gearRect.x + 5, gearRect.y + 4, ui.theme.textDim);
                 }
             }
         }

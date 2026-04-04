@@ -87,23 +87,26 @@ public final class WaypointModule extends AxiomMod {
     }
 
     private void renderWaypointPin(RenderCore core, Waypoint wp, double screenX, double screenY, double dist, double finalScale) {
-        // 1. Lasketaan mitat skaalaamattomana
-        double textWidth = TextUtils.CHAR_UNIT;
-        double textHeight = TextUtils.FONT_HEIGHT;
-        double padding = 2.0;
+        // 1. Haetaan dynaamiset mitat (skaalalla 1.0)
+        String letter = wp.name.isEmpty() ? "?" : wp.name.substring(0, 1).toUpperCase();
+        double textWidth = TextUtils.getWidth(letter);
+        double textHeight = TextUtils.getHeight();
+        double padding = 2.0 * finalScale;
 
         double pinWidth, pinHeight;
         if (wp.shape.equals("Circle")) {
-            pinWidth = pinHeight = (Math.max(textWidth, textHeight) + 2 * padding) * finalScale;
+            // Ympyrän halkaisija suurimman mitan mukaan
+            double baseSize = Math.max(textWidth, textHeight) * finalScale;
+            pinWidth = pinHeight = baseSize + padding * 2;
         } else {
-            pinWidth = (textWidth + 2 * padding) * finalScale;
-            pinHeight = (textHeight + 2 * padding) * finalScale;
+            pinWidth = (textWidth * finalScale) + padding * 2;
+            pinHeight = (textHeight * finalScale) + padding * 2;
         }
 
         double pinX = screenX - pinWidth / 2;
         double pinY = screenY - pinHeight / 2;
 
-        // 2. Tausta ja reunus (käyttäen skaalattuja mittoja)
+        // 2. Tausta ja reunus
         if (wp.showBg) {
             if (wp.shape.equals("Circle")) {
                 core.addCircle((float) screenX, (float) screenY, (float) (pinWidth / 2), wp.bgColor);
@@ -127,29 +130,30 @@ public final class WaypointModule extends AxiomMod {
             }
         }
 
-        // 3. Pääkirjain (skaalattuna oikeaan paikkaan)
-        String letter = wp.name.isEmpty() ? "?" : wp.name.substring(0, 1).toUpperCase();
+        // 3. Pääkirjain (Keskitetty pinniin)
         TextRenderer text = TextRenderer.get();
         text.begin(finalScale, false, true);
 
-        // Jaetaan koordinaatit scalella, koska text.begin skaalaa ne takaisin
-        float letterX = (float) ((screenX - (textWidth * finalScale) / 2) / finalScale);
-        float letterY = (float) ((screenY - (textHeight * finalScale) / 2) / finalScale);
+        // Lasketaan tekstin alkuperä niin että se keskittyy täsmälleen screenX/Y pisteeseen
+        float letterX = (float) (screenX - (textWidth * finalScale) / 2.0);
+        float letterY = (float) (screenY - (textHeight * finalScale) / 2.0);
 
+        // Kääritään wp.color (int) Color-olioon virheiden välttämiseksi
         text.render(letter, letterX, letterY, new Color(wp.color), true);
         text.end();
 
         // 4. Etäisyysteksti
         if (showDistance.get()) {
             String distText = (int) Math.round(dist) + "m";
-            double distScale = finalScale * 0.7; // Suhteellinen skaalaus waypointin kokoon
+            double distScale = finalScale * 0.8;
+
+            double distW = TextUtils.getWidth(distText) * distScale;
+            double distH = TextUtils.getHeight() * distScale;
+
+            float dX = (float) (screenX - distW / 2.0);
+            float dY = (float) (pinY + pinHeight + 2 * finalScale);
 
             text.begin(distScale, false, false);
-            // Lasketaan leveys ja paikka
-            float distW = (float) (distText.length() * TextUtils.CHAR_WIDTH);
-            float dX = (float) ((screenX - (distW * distScale) / 2) / distScale);
-            float dY = (float) ((screenY + pinHeight / 2 + 2 * finalScale) / distScale);
-
             text.render(distText, dX, dY, new Color(0xFFFFFFFF), true);
             text.end();
         }

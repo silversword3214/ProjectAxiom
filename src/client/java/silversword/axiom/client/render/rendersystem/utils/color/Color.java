@@ -2,9 +2,6 @@ package silversword.axiom.client.render.rendersystem.utils.color;
 
 import net.minecraft.nbt.CompoundTag;
 
-/**
- * Represents a color with red, green, blue, and alpha components (0-255).
- */
 public class Color {
 
     public static final Color WHITE = new Color(255, 255, 255, 255);
@@ -58,8 +55,9 @@ public class Color {
     }
 
     /**
-     * Sets all components and returns this (for chaining).
+     * Sets all components and returns this.
      */
+
     public Color set(int r, int g, int b, int a) {
         this.r = clamp(r);
         this.g = clamp(g);
@@ -71,6 +69,7 @@ public class Color {
     /**
      * Creates a copy of this color.
      */
+
     public Color copy() {
         return new Color(this);
     }
@@ -78,6 +77,7 @@ public class Color {
     /**
      * Saves this color to an NBT compound tag.
      */
+
     public CompoundTag toTag() {
         CompoundTag tag = new CompoundTag();
         tag.putInt("r", r);
@@ -90,6 +90,7 @@ public class Color {
     /**
      * Loads this color from an NBT compound tag and returns this.
      */
+
     public Color fromTag(CompoundTag tag) {
         this.r = tag.getInt("r").orElse(0);
         this.g = tag.getInt("g").orElse(0);
@@ -102,6 +103,7 @@ public class Color {
      * Converts this color to HSV components.
      * @return float array: [hue (0-360), saturation (0-1), value (0-1)]
      */
+
     public float[] toHsv() {
         float rNorm = r / 255f;
         float gNorm = g / 255f;

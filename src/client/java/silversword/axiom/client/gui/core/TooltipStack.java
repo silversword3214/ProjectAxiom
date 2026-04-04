@@ -1,5 +1,6 @@
 package silversword.axiom.client.gui.core;
 
+import silversword.axiom.client.render.font.TextRenderer;
 import silversword.axiom.client.utils.render.TextUtils;
 
 import java.util.ArrayList;
@@ -39,15 +40,19 @@ public final class TooltipStack {
         String[] lines = text.split("\n");
         int lineCount = lines.length;
 
-        // Lasketaan maksimileveys käyttäen TextUtils.CHAR_WIDTH:ä
-        int maxWidth = 0;
+        // Lasketaan maksimileveys käyttäen TextRendererin getWidth-metodia
+        double maxWidth = 0;
         for (String line : lines) {
-            int lineWidth = line.length() * TextUtils.CHAR_UNIT;
+            // Käytetään samaa korjauskerrointa (1.5 / 2.3) kuin sateenkaaressa,
+            // jotta laatikko vastaa piirrettyä tekstiä
+            double lineWidth = (TextRenderer.get().getWidth(line, false) * 1.5) / 2.3;
             if (lineWidth > maxWidth) maxWidth = lineWidth;
         }
 
-        int boxWidth = maxWidth + PADDING;
-        int boxHeight = lineCount * TextUtils.FONT_HEIGHT + 2 * PADDING;
+        double fontHeight = (TextRenderer.get().getHeight(false) * 1.5) / 2.3;
+
+        int boxWidth = (int) maxWidth + (PADDING * 2);
+        int boxHeight = (int) (lineCount * fontHeight + (PADDING * 2));
 
         double x = mouseX + 12;
         double y = mouseY - 12;
@@ -64,15 +69,15 @@ public final class TooltipStack {
         if (y < 2) y = 2;
 
         // Tausta
-        ui.fillRounded((int) x, (int) y, boxWidth, boxHeight, ui.theme.panel, RADIUS);
+        ui.fillRounded((int) x, (int) y, boxWidth, boxHeight,0xFF1A1A1A, RADIUS);
         ui.drawRoundedOutline(new Rect((int) x, (int) y, boxWidth, boxHeight), ui.theme.border, RADIUS, 1.0);
 
-        // Teksti – käytetään ui.text(), joka käyttää CHAR_UNIT-mittausta
+        // Teksti
         int textX = (int) x + PADDING;
         int textY = (int) y + PADDING;
         for (String line : lines) {
             ui.text(line, textX, textY, ui.theme.text);
-            textY += TextUtils.FONT_HEIGHT;
+            textY += (int) fontHeight;
         }
     }
 }

@@ -2,9 +2,7 @@ package silversword.axiom.client.gui.screen;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.CharacterEvent;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix4f;
@@ -20,7 +18,6 @@ import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Rende
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.texture.Texture;
 import silversword.axiom.client.render.rendersystem.utils.texture.TextureManager;
-import silversword.axiom.client.utils.render.DrawTexture;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,10 +34,8 @@ public final class FontSettingsScreen extends Screen {
     private String filterText = "";
 
     private static final Identifier CHECKBOX_OFF = Identifier.fromNamespaceAndPath("projectaxiom", "textures/icons/checkbox_off.png");
-    private static Texture texOff;
-
-    private static final int ENTRY_HEIGHT = 40;
-    private static final int SIDES_MARGIN = 20;
+    private static final Identifier CHECKBOX_ON = Identifier.fromNamespaceAndPath("projectaxiom", "textures/icons/checkbox_on.png");
+    private static Texture texOff, texOn;
 
     private UiContext lastUi = null;
 
@@ -51,9 +46,7 @@ public final class FontSettingsScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float deltaTicks) {
-        // tyhjä
-    }
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float deltaTicks) {}
 
     @Override
     protected void init() {
@@ -61,15 +54,15 @@ public final class FontSettingsScreen extends Screen {
         allFonts = Fonts.getAvailableFonts();
 
         if (texOff == null) texOff = TextureManager.getTexture(CHECKBOX_OFF);
+        if (texOn == null) texOn = TextureManager.getTexture(CHECKBOX_ON);
 
-        int containerWidth = Math.min(500, this.width - SIDES_MARGIN * 2);
+        int containerWidth = Math.min(560, this.width - 60);
         int containerX = (this.width - containerWidth) / 2;
-        int searchBarY = 45;
-        int searchBarHeight = 18;
-        int containerY = searchBarY + searchBarHeight + 8;
-        int containerHeight = this.height - containerY - 20;
+        int searchBarY = 55;
+        int searchBarHeight = 22;
+        int containerY = searchBarY + searchBarHeight + 10;
+        int containerHeight = this.height - containerY - 30;
 
-        // Hakupalkki
         searchBar = new SearchBar(
                 () -> filterText,
                 (newText) -> {
@@ -82,8 +75,8 @@ public final class FontSettingsScreen extends Screen {
         scrollContainer = new ScrollContainer();
         scrollContainer.setBounds(new Rect(containerX, containerY, containerWidth, containerHeight));
         scrollContainer.setDrawBackground(true);
-        scrollContainer.setGap(4);
-        scrollContainer.setInnerPadding(6);
+        scrollContainer.setGap(6);
+        scrollContainer.setInnerPadding(8);
 
         refreshFontList();
     }
@@ -115,7 +108,6 @@ public final class FontSettingsScreen extends Screen {
 
     @Override
     public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
-
         Matrix4f proj = new Matrix4f().setOrtho(0, width, height, 0, -1000, 1000);
         Renderer2D renderer = new Renderer2D(ctx, RenderAPI.getInstance().getCore(), proj);
         lastUi = new UiContext(this.minecraft, ctx, theme, delta, renderer);
@@ -124,62 +116,48 @@ public final class FontSettingsScreen extends Screen {
         try {
             TextRenderer.get().begin(1.0, false, false);
             textOk = true;
-        } catch (Exception e) {
-            // fonttia ei voitu alustaa, piirretään ilman tekstiä
-        }
+        } catch (Exception e) {}
 
         if (textOk) {
-            int titleY = 15;
+            lastUi.fill(0, 0, width, height, 0xDD000000);
+
             String title = "Font Settings";
-            lastUi.text(title, (width - lastUi.textWidth(title)) / 2, titleY, theme.text);
+            lastUi.text(title, (width - lastUi.textWidth(title)) / 2, 22, theme.text);
 
-            int backW = 60, backH = 18, backX = width - backW - 10, backY = 10;
-            boolean backHover = mouseX >= backX && mouseX <= backX + backW && mouseY >= backY && mouseY <= backY + backH;
-            lastUi.fillRounded(backX, backY, backW, backH, backHover ? theme.buttonHover : theme.button, theme.radius);
-            lastUi.text("Back", backX + (backW - lastUi.textWidth("Back")) / 2, backY + 5, theme.text);
-
-            // Hakupalkki
             searchBar.render(lastUi, mouseX, mouseY, delta);
-            // Scroll container
             scrollContainer.render(lastUi, mouseX, mouseY, delta);
         }
 
-        if (textOk) {
-            TextRenderer.get().end();
-        }
-        RenderAPI.getInstance().getCore().flush();
-
-
+        if (textOk) TextRenderer.get().end();
         super.render(ctx, mouseX, mouseY, delta);
     }
 
+
     @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
-        int mouseX = (int) click.x();
-        int mouseY = (int) click.y();
-
-        int backW = 60, backH = 18, backX = width - backW - 10, backY = 10;
-        if (click.button() == 0 && mouseX >= backX && mouseX <= backX + backW && mouseY >= backY && mouseY <= backY + backH) {
+        int mx = (int) click.x(), my = (int) click.y();
+        int btnW = 70, btnH = 24, btnX = width - btnW - 16, btnY = 12;
+        Rect btnRect = new Rect(btnX, btnY, btnW, btnH);
+        if (click.button() == 0 && btnRect.contains(mx, my)) {
             onClose();
             return true;
         }
-
         if (lastUi != null) {
-            if (searchBar.mouseClicked(lastUi, mouseX, mouseY, click.button())) return true;
-            if (scrollContainer != null && scrollContainer.mouseClicked(lastUi, mouseX, mouseY, click.button())) return true;
+            if (searchBar.mouseClicked(lastUi, mx, my, click.button())) return true;
+            if (scrollContainer != null && scrollContainer.mouseClicked(lastUi, mx, my, click.button())) return true;
         }
         return super.mouseClicked(click, doubled);
     }
 
     @Override
     public boolean keyPressed(KeyEvent input) {
-        if (lastUi != null) {
-            if (searchBar.keyPressed(lastUi, input.input(), input.scancode(), input.modifiers())) return true;
-            if (scrollContainer != null && scrollContainer.keyPressed(lastUi, input.input(), input.scancode(), input.modifiers())) return true;
-        }
         if (input.input() == 256) {
             onClose();
             return true;
+        }
+        if (lastUi != null) {
+            if (searchBar.keyPressed(lastUi, input.input(), input.scancode(), input.modifiers())) return true;
+            if (scrollContainer != null && scrollContainer.keyPressed(lastUi, input.input(), input.scancode(), input.modifiers())) return true;
         }
         return super.keyPressed(input);
     }
@@ -188,14 +166,9 @@ public final class FontSettingsScreen extends Screen {
     public boolean charTyped(CharacterEvent input) {
         if (lastUi != null && input.isAllowedChatCharacter()) {
             String s = input.codepointAsString();
-            for (int i = 0; i < s.length(); i++) {
-                if (searchBar.charTyped(lastUi, s.charAt(i), input.modifiers())) return true;
-            }
-        }
-        if (lastUi != null && scrollContainer != null && input.isAllowedChatCharacter()) {
-            String s = input.codepointAsString();
-            for (int i = 0; i < s.length(); i++) {
-                if (scrollContainer.charTyped(lastUi, s.charAt(i), input.modifiers())) return true;
+            for (char c : s.toCharArray()) {
+                if (searchBar.charTyped(lastUi, c, input.modifiers())) return true;
+                if (scrollContainer != null && scrollContainer.charTyped(lastUi, c, input.modifiers())) return true;
             }
         }
         return super.charTyped(input);
@@ -233,15 +206,9 @@ public final class FontSettingsScreen extends Screen {
     }
 
     @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
+    public boolean isPauseScreen() { return false; }
 
     private static class FontEntryComponent implements UiComponent {
-        // Vain päälle-kuvake (checkbox_on)
-        private static final Identifier CHECKBOX_ON = Identifier.fromNamespaceAndPath("projectaxiom", "textures/icons/checkbox_on.png");
-        private static Texture texOn;
-
         private final String fontName;
         private boolean selected;
         private final Runnable onClick;
@@ -251,7 +218,6 @@ public final class FontSettingsScreen extends Screen {
             this.fontName = fontName;
             this.selected = selected;
             this.onClick = onClick;
-            if (texOn == null) texOn = TextureManager.getTexture(CHECKBOX_ON);
         }
 
         public String getFontName() { return fontName; }
@@ -259,12 +225,10 @@ public final class FontSettingsScreen extends Screen {
 
         @Override
         public Rect getBounds() { return bounds; }
-
         @Override
         public void setBounds(Rect bounds) { this.bounds = bounds; }
-
         @Override
-        public int getPreferredHeight() { return 40; }
+        public int getPreferredHeight() { return 52; }
 
         @Override
         public void render(UiContext ui, int mouseX, int mouseY, float delta) {
@@ -275,28 +239,26 @@ public final class FontSettingsScreen extends Screen {
             else if (hover) bgColor = ui.theme.buttonHover;
             else bgColor = ui.theme.button;
 
-            ui.fillRounded(bounds, bgColor, 4);
-
-            // Fontin nimi
-            ui.text(fontName, bounds.x + 8, bounds.y + 6, ui.theme.text);
-
-            // Piirrä checkbox vain jos valittu
+            ui.fillRounded(new Rect(bounds.x + 2, bounds.y + 2, bounds.w, bounds.h), 0x33000000, 6);
+            ui.fillRounded(bounds, bgColor, 6);
             if (selected) {
-                int checkSize = 12;
-                int checkX = bounds.x + bounds.w - checkSize - 8;
-                int checkY = bounds.y + 6;
-                if (texOn != null) {
-                    ui.addTexture(CHECKBOX_ON, checkX, checkY, checkSize, checkSize, 0f, new Color(0xFFFFFFFF));
-                } else {
-                    // Fallback tekstimerkki
-                    ui.text("✓", checkX + 2, checkY - 1, ui.theme.text);
-                }
+                ui.drawRoundedOutline(bounds, ui.theme.text, 6, 2);
+            } else if (hover) {
+                ui.drawRoundedOutline(bounds, ui.theme.textDim, 6, 1);
             }
 
-            // Esikatseluteksti
+            ui.text(fontName, bounds.x + 12, bounds.y + 8, ui.theme.text);
+
+            int checkSize = 16;
+            int checkX = bounds.x + bounds.w - checkSize - 12;
+            int checkY = bounds.y + 6;
+            if (selected && texOn != null) {
+                ui.addTexture(CHECKBOX_ON, checkX, checkY, checkSize, checkSize, new Color(0xFFFFFFFF));
+            }
+
             String previewText = "The quick brown fox jumps over the lazy dog. 1234567890";
-            int previewY = bounds.y + bounds.h - 6 - ui.fontHeight();
-            ui.text(previewText, bounds.x + 8, previewY, ui.theme.textDim);
+            int previewY = bounds.y + bounds.h - 14;
+            ui.text(previewText, bounds.x + 12, previewY, ui.theme.textDim);
         }
 
         @Override

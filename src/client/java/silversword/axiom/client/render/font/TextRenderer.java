@@ -15,7 +15,9 @@ public interface TextRenderer {
     default void beginBig() { begin(1, false, true); }
 
     double getWidth(String text, int length, boolean shadow);
+
     default double getWidth(String text, boolean shadow) { return getWidth(text, text.length(), shadow); }
+
     default double getWidth(String text) { return getWidth(text, text.length(), false); }
 
     double getHeight(boolean shadow);

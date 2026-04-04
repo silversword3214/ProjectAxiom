@@ -121,34 +121,38 @@ public class Blink extends AxiomMod implements KeybindConfigurable {
             text = String.format("Blink: %dms [%d]", elapsed, packetCount);
         }
 
-        TextRenderer tr = TextRenderer.get();
         double scale = textScale.getValue();
 
-        double textWidth = text.length() * TextUtils.CHAR_UNIT * scale;
-        double textHeight = TextUtils.FONT_HEIGHT * scale;
+        // Käytetään uutta TextUtils-logiikkaa.
+        // Kerrotaan TextUtils-arvot käyttäjän asetuksella (scale).
+        double textWidth = TextUtils.getWidth(text) * scale;
+        double textHeight = TextUtils.getHeight() * scale;
 
         // Haetaan ruudun koko eventistä
         int scaledWidth = event.getScreenWidth();
         int scaledHeight = event.getScreenHeight();
 
-        // Hotbar on yleensä 22px korkea ja sijaitsee 3px pohjasta
+        // Sijoittelu (keskitetty x-akselilla, hotbarin yläpuolella)
         int hotbarY = scaledHeight - 22;
         int x = (int) ((scaledWidth - textWidth) / 2);
         int y = hotbarY - (int) textHeight - 30;
 
+        // Taustalaatikon mitat
         double padding = 4 * scale;
         double bgX = x - padding;
         double bgY = y - padding;
         double bgWidth = textWidth + padding * 2;
         double bgHeight = textHeight + padding * 2;
         double radius = 3 * scale;
-        double thickness = Math.max(1.0, scale);
 
-        // Piirrä tausta coren kautta
+        // Piirrä tausta coren kautta (Alpha 150)
         int bgArgb = new Color(0, 0, 0, 150).getARGB();
         core.addRoundedRect((float) bgX, (float) bgY, (float) bgWidth, (float) bgHeight, (float) radius, bgArgb);
 
         // Piirrä teksti
+        // HUOM: Jos käytät 'big'-fonttia (true), varmista että koko täsmää TextUtilsiin.
+        // Jos teksti näyttää liian pieneltä/isotla, vaihda 'true' -> 'false'.
+        TextRenderer tr = TextRenderer.get();
         tr.begin(scale, false, true);
         tr.render(text, x, y, Color.WHITE, false);
         tr.end();

@@ -17,7 +17,8 @@ public class KeybindEditor implements UiComponent {
     private static final int BUTTON_WIDTH = 60;
     private static final int BUTTON_HEIGHT = 20;
     private static final int BUTTON_Y_OFFSET = 30;
-    private static final int BOX_HEIGHT = 18; // kiinteä korkeus, vastaa TextUtils.FONT_HEIGHT * 2
+
+    // Poistettu BOX_HEIGHT vakiokorkeus, käytetään dynaamista TextUtils.getHeight() + padding
 
     public KeybindEditor(List<SettingKeybind> keybinds) {
         this.keybinds = keybinds;
@@ -36,9 +37,9 @@ public class KeybindEditor implements UiComponent {
 
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
-
         int y = bounds.y + 10;
         int radius = ui.theme.radius;
+        int fontHeight = TextUtils.getHeight();
 
         for (int i = 0; i < keybinds.size(); i++) {
             SettingKeybind kb = keybinds.get(i);
@@ -48,38 +49,39 @@ public class KeybindEditor implements UiComponent {
             Rect rowRect = new Rect(bounds.x + 5, y, bounds.w - 10, ROW_HEIGHT - 2);
             ui.fillRounded(rowRect, ui.theme.button, radius);
 
-            // Nimen teksti
+            // Nimen teksti (keskitetty riville)
             String name = kb.getName();
-            int textY = rowRect.y + (rowRect.h - TextUtils.FONT_HEIGHT) / 2;
+            int textY = rowRect.y + (rowRect.h - fontHeight) / 2;
             ui.text(name, rowRect.x + 10, textY, ui.theme.text);
 
-            // Keybind-laatikko (korkeus kiinteä, leveys tekstin mukaan)
+            // Keybind-laatikon dynaaminen mitoitus
             String keyText = getKeyText(kb);
-            int keyWidth = keyText.length() * TextUtils.CHAR_UNIT; // arvio
-            int boxWidth = keyWidth + 12; // 6px padding molemmin puolin
-            int boxHeight = BOX_HEIGHT;
-            int boxX = bounds.right() - boxWidth - 10; // 10px marginaali oikeasta reunasta
+            int keyWidth = TextUtils.getWidth(keyText); // Dynaaminen leveys
+
+            int boxPaddingX = 12;
+            int boxPaddingY = 4;
+            int boxWidth = keyWidth + boxPaddingX;
+            int boxHeight = fontHeight + boxPaddingY;
+
+            int boxX = bounds.right() - boxWidth - 10;
             int boxY = rowRect.y + (rowRect.h - boxHeight) / 2;
             Rect boxRect = new Rect(boxX, boxY, boxWidth, boxHeight);
 
-            // Tausta
+            // Laatikon taustaväri
             int boxBg;
             if (w) {
-                // Odotustilassa korostus
                 boxBg = (ui.theme.accent & 0x00FFFFFF) | 0x30000000;
             } else {
-                // Normaalisti tummempi
                 boxBg = (ui.theme.buttonHover & 0x00FFFFFF) | 0x80000000;
             }
             ui.fill(boxRect, boxBg);
-
             ui.drawRectOutline(boxRect, 0xFFFFFFFF, 1.0);
 
-            // Teksti laatikon sisällä
-            int textX = boxRect.x + (boxRect.w - keyWidth) / 2;
-            int textY2 = boxRect.y + (boxRect.h - TextUtils.FONT_HEIGHT) / 2 ;
+            // Teksti laatikon sisällä (täydellinen keskitys)
+            int innerTextX = boxRect.x + (boxRect.w - keyWidth) / 2;
+            int innerTextY = boxRect.y + (boxRect.h - fontHeight) / 2;
             int textColor = w ? ui.theme.accent : ui.theme.text;
-            ui.text(keyText, textX, textY2, textColor);
+            ui.text(keyText, innerTextX, innerTextY, textColor);
 
             y += ROW_HEIGHT;
         }
@@ -91,12 +93,14 @@ public class KeybindEditor implements UiComponent {
         boolean hover = btnRect.contains(mouseX, mouseY);
         int bgColor = hover ? ui.theme.buttonHover : ui.theme.button;
 
-
         ui.fillRounded(btnRect.x, btnRect.y, btnRect.w, btnRect.h, ui.theme.border, radius);
         ui.fillRounded(btnRect.x + 1, btnRect.y + 1, btnRect.w - 2, btnRect.h - 2, bgColor, Math.max(0, radius - 1));
 
-        int textY = btnY + BUTTON_HEIGHT / 2 - TextUtils.FONT_HEIGHT / 2;
-        ui.text("Reset", btnX + 10, textY, ui.theme.text);
+        // Reset-tekstin keskitys
+        int resetTextW = TextUtils.getWidth("Reset");
+        int resetX = btnRect.x + (btnRect.w - resetTextW) / 2;
+        int resetY = btnRect.y + (btnRect.h - fontHeight) / 2;
+        ui.text("Reset", resetX, resetY, ui.theme.text);
     }
 
     @Override
@@ -116,7 +120,6 @@ public class KeybindEditor implements UiComponent {
             Rect rowRect = new Rect(bounds.x + 5, y, bounds.w - 10, ROW_HEIGHT - 2);
             if (rowRect.contains(mouseX, mouseY)) {
                 if (waiting.get(i)) {
-                    // Jos klikataan uudelleen odotustilassa, peruutetaan odotus
                     waiting.set(i, false);
                 } else {
                     for (int j = 0; j < waiting.size(); j++) waiting.set(j, false);
@@ -133,7 +136,7 @@ public class KeybindEditor implements UiComponent {
     public boolean keyPressed(UiContext ui, int keyCode, int scanCode, int modifiers) {
         for (int i = 0; i < waiting.size(); i++) {
             if (waiting.get(i)) {
-                if (keyCode == 256) waiting.set(i, false);
+                if (keyCode == 256) waiting.set(i, false); // ESC
                 else {
                     keybinds.get(i).set(keyCode);
                     waiting.set(i, false);

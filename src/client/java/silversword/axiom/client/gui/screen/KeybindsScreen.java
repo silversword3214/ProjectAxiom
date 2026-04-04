@@ -4,6 +4,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
+import silversword.axiom.client.config.SettingsConfigManager;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.hidden.Keybinds;
 import silversword.axiom.client.utils.KeyNames;
@@ -54,6 +55,9 @@ public class KeybindsScreen extends Screen {
             keybinds.clickGuiKey.set(input.key());
             waitingForKey = false;
             clickGuiKeyButton.setMessage(Component.literal("ClickGUI Key: " + KeyNames.get(input.key())));
+
+            SettingsConfigManager.saveAll();
+
             return true;
         }
         return super.keyPressed(input);

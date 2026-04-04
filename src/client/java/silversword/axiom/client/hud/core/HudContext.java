@@ -102,7 +102,6 @@ public final class HudContext {
         item(stack, x, y);
     }
 
-    // --- Tekstin lisäys listaan (ei piirretä heti) ---
     public void text(String s, int x, int y, int argb, boolean shadow) {
         addText(s, x, y, argb, shadow, 1.0f);
     }
@@ -140,7 +139,6 @@ public final class HudContext {
         textEntries.clear();
     }
 
-    // --- Vanhat apumetodit ---
     public int textWidth(String s) {
         return (int) TextRenderer.get().getWidth(s);
     }
@@ -153,7 +151,6 @@ public final class HudContext {
         return (int) TextRenderer.get().getAscent();
     }
 
-    // --- Vanilla-tekstinpiirto (vain hätätapauksissa) ---
     public void drawVanillaText(String s, int x, int y, int argb, boolean shadow) {
         if (shadow) {
             draw.drawString(mc.font, s, x, y, argb);

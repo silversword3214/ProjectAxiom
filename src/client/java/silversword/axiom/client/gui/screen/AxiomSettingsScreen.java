@@ -29,77 +29,57 @@ public class AxiomSettingsScreen extends Screen {
         super.init();
         scroll = new ScrollContainer();
         scroll.setDrawBackground(true);
-        scroll.setInnerPadding(8);
-        scroll.setGap(10);
+        scroll.setInnerPadding(12);
+        scroll.setGap(12);
         rebuild();
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float deltaTicks) {
-        // tyhjä
-    }
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float deltaTicks) {}
 
     private void rebuild() {
         scroll.clear();
 
-        // HUD Edit -painike
-        Button hudEditBtn = new Button("HUD Edit", () -> {
-            if (minecraft != null) {
-                minecraft.setScreen(new HudEditScreen());
-            }
-        });
-        scroll.add(hudEditBtn);
+        scroll.add(new Button("HUD Edit", () -> {
+            if (minecraft != null) minecraft.setScreen(new HudEditScreen());
+        }));
 
-        // Components -painike
-        // Components -painike
-        Button componentsBtn = new Button("HUD Components", () -> {
-            // Tyhjennetään nykyiset napit ja ladataan tilalle lista + takaisin-nappi
+        scroll.add(new Button("HUD Components", () -> {
             scroll.clear();
             scroll.add(new HudComponentsList());
-            scroll.add(new Button("Back", this::rebuild)); // Palauttaa päävalikon
-        });
-        scroll.add(componentsBtn);
+            scroll.add(new Button("Back to Main", this::rebuild));
+        }));
 
+        scroll.add(new Button("Theme Settings", () -> {
+            if (minecraft != null) minecraft.setScreen(new ThemePickerScreen(() -> minecraft.setScreen(this)));
+        }));
 
+        scroll.add(new Button("Font Settings", () -> {
+            if (minecraft != null) minecraft.setScreen(new FontSettingsScreen(() -> minecraft.setScreen(this)));
+        }));
 
-// Theme Settings -painike
-        Button themeBtn = new Button("Theme Settings", () -> {
-            if (minecraft != null) {
-                minecraft.setScreen(new ThemePickerScreen(() -> minecraft.setScreen(this)));
-            }
-        });
-        scroll.add(themeBtn);
+        // Etsi AxiomSettingsScreen.java:n rebuild() -metodista tämä kohta:
+        scroll.add(new Button("Reset Windows", () -> {
+            ClickGuiScreen gui = new ClickGuiScreen();
+            gui.init(this.width, this.height);
+            gui.resetWindows();
 
-        // Font Settings -painike
-        Button fontBtn = new Button("Font Settings", () -> {
-            if (minecraft != null) {
-                minecraft.setScreen(new FontSettingsScreen(() -> minecraft.setScreen(this)));
-            }
-        });
-        scroll.add(fontBtn);
+            if (minecraft != null) minecraft.setScreen(new ClickGuiScreen());
+        }));
 
-        // Reset -painike (nollaa ikkunat)
-        Button resetBtn = new Button("Reset Windows", () -> {
-            ClickGuiScreen.getWindowManager().clear();
-            // Tarvitaan uudelleenluonti – tallennetaan nykyinen screen ja avataan uusi ClickGuiScreen
-            if (minecraft != null) {
-                minecraft.setScreen(new ClickGuiScreen());
-            }
-        });
-        scroll.add(resetBtn);
-
-        // Rainbow wave -asetukset (valinnainen)
-        Toggle rainbowToggle = new Toggle("Rainbow wave (modules)",
+        scroll.add(new Toggle("Rainbow wave for modules",
                 ClickGuiConfigManager::isRainbowWaveEnabled,
-                val -> ClickGuiConfigManager.setRainbowWaveEnabled(val));
-        scroll.add(rainbowToggle);
+                val -> {
+                    ClickGuiConfigManager.setRainbowWaveEnabled(val);
+                    rebuild();
+                }));
 
-        Slider speedSlider = new Slider("Wave speed", 0.1, 5.0, 0.05,
-                () -> (double) ClickGuiConfigManager.getRainbowWaveSpeed(),
-                val -> ClickGuiConfigManager.setRainbowWaveSpeed((float) val),
-                val -> String.format("%.2f", val));
-        scroll.add(speedSlider);
-
+        if (ClickGuiConfigManager.isRainbowWaveEnabled()) {
+            scroll.add(new Slider("Wave speed", 0.1, 5.0, 0.05,
+                    () -> (double) ClickGuiConfigManager.getRainbowWaveSpeed(),
+                    val -> ClickGuiConfigManager.setRainbowWaveSpeed((float) val),
+                    val -> String.format("%.2f", val)));
+        }
     }
 
     @Override
@@ -109,28 +89,35 @@ public class AxiomSettingsScreen extends Screen {
         lastUi = new UiContext(minecraft, ctx, theme, delta, renderer);
 
         TextRenderer.get().begin(1.0, false, false);
-        lastUi.fill(0, 0, width, height, 0xCC000000);
+        lastUi.fill(0, 0, width, height, 0xDD000000);
 
-        String title = "Axiom Settings";
+        String title = "Settings";
         int titleW = lastUi.textWidth(title);
-        lastUi.text(title, (width - titleW) / 2, 20, theme.text);
+        lastUi.text(title, (width - titleW) / 2, 22, theme.text);
 
-        int containerW = Math.min(400, width - 80);
+        int containerW = Math.min(440, width - 100);
         int containerX = (width - containerW) / 2;
-        int containerY = 50;
+        int containerY = 55;
         int containerH = height - containerY - 30;
         scroll.setBounds(new Rect(containerX, containerY, containerW, containerH));
         scroll.render(lastUi, mouseX, mouseY, delta);
 
         TextRenderer.get().end();
-        RenderAPI.getInstance().getCore().flush();
         super.render(ctx, mouseX, mouseY, delta);
     }
 
+
     @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
+        int mx = (int) click.x(), my = (int) click.y();
+        int btnW = 70, btnH = 24, btnX = width - btnW - 16, btnY = 12;
+        Rect btnRect = new Rect(btnX, btnY, btnW, btnH);
+        if (click.button() == 0 && btnRect.contains(mx, my)) {
+            onClose();
+            return true;
+        }
         if (lastUi != null && scroll != null) {
-            return scroll.mouseClicked(lastUi, click.x(), click.y(), click.button());
+            return scroll.mouseClicked(lastUi, mx, my, click.button());
         }
         return super.mouseClicked(click, doubled);
     }
@@ -163,8 +150,7 @@ public class AxiomSettingsScreen extends Screen {
     @Override
     public boolean keyPressed(KeyEvent input) {
         if (input.input() == 256) {
-            if (onClose != null) onClose.run();
-            else onClose();
+            onClose();
             return true;
         }
         if (lastUi != null && scroll != null) {

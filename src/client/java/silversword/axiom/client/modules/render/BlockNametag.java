@@ -59,9 +59,9 @@ public final class BlockNametag extends AxiomMod implements ColorConfigurable, K
     public BlockNametag() {
         super("BlockNametag", "Shows the name of the block you're looking at", ModuleCategory.RENDER);
 
-        scale = new SettingNumber("Scale", 0.1, 3.0, 0.1, 1.5);
+        scale = new SettingNumber("Scale", 0.1, 3.0, 0.1, 1);
         renderDistance = new SettingSlider("Render Distance", new double[]{16, 32, 64, 96, 128, 256, 512}, 96);
-        nameOffset = new SettingNumber("Name Offset", -1.0, 5.0, 0.1, 0.5);
+        nameOffset = new SettingNumber("Name Offset", -1.0, 5.0, 0.1, -0.5);
 
         textColor = new SettingColor("Text Color", new Color(255, 255, 255, 255));
         background = new SettingColor("Background", new Color(0, 0, 0, 75));
@@ -138,22 +138,28 @@ public final class BlockNametag extends AxiomMod implements ColorConfigurable, K
         double screenY = screenPos.y;
         double finalScale = scale.getValue();
 
-        TextRenderer text = TextRenderer.get();
-        text.begin(1.0, false, true);
-        double textWidth = text.getWidth(currentBlockName, false) * finalScale;
-        double textHeight = text.getHeight(false) * finalScale;
-        text.end();
+        double textWidth = TextUtils.getWidth(currentBlockName) * finalScale;
+        double textHeight = TextUtils.getHeight() * finalScale;
 
-        double padding = 2.0 * finalScale;
-        double bgWidth = textWidth + padding * 2;
-        double bgHeight = textHeight + padding * 2;
-        double bgX = screenX - bgWidth / 2;
-        double bgY = screenY - bgHeight / 2;
+        double padding = 4.0 * finalScale;
+        double bgWidth = textWidth + (padding * 2);
+        double bgHeight = textHeight + (padding * 2);
+
+        double bgX = screenX - (bgWidth / 2.0);
+        double bgY = screenY - (bgHeight / 2.0);
 
         drawBackground(bgX, bgY, bgWidth, bgHeight, finalScale);
 
-        text.begin(1.0, false, true);
-        text.render(currentBlockName, bgX + padding, bgY + padding, textColor.getCurrentColor(), false);
+        TextRenderer text = TextRenderer.get();
+        text.begin(finalScale, false, true);
+        text.render(
+                currentBlockName,
+                (float)(bgX + padding),
+                (float)(bgY + padding),
+                textColor.getCurrentColor(),
+                false
+        );
+
         text.end();
     }
 

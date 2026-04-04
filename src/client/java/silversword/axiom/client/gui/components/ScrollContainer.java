@@ -10,17 +10,23 @@ public final class ScrollContainer implements UiComponent {
 
     private Rect bounds = new Rect(0, 0, 10, 10);
     private final List<UiComponent> children = new ArrayList<>();
-    private int scrollY = 0;
+
+    // Interpoloiva vieritys
+    private double scrollY = 0;        // Nykyinen näkyvä sijainti
+    private double targetScrollY = 0;  // Kohdesijainti, jota kohti liu'utaan
+    private float scrollSpeed = 0.3f;   // Säädä tätä (pienempi = hitaampi/pehmeämpi)
+
     private int contentHeight = 0;
     private int gap = 4;
     private int innerPadding = 4;
 
     private boolean draggingScrollbar = false;
     private int dragStartY = 0;
-    private int scrollStartY = 0;
+    private double scrollStartY = 0;
 
     private static final int SCROLLBAR_WIDTH = 4;
     private static final int SCROLLBAR_PADDING = 1;
+    private boolean showScrollBar = true;
 
     private boolean drawBackground = true;
 
@@ -37,7 +43,12 @@ public final class ScrollContainer implements UiComponent {
     public void clear() {
         children.clear();
         scrollY = 0;
+        targetScrollY = 0;
         updateContentHeight();
+    }
+
+    public void setShowScrollBar(boolean show) {
+        this.showScrollBar = show;
     }
 
     public List<UiComponent> getChildren() { return children; }
@@ -59,8 +70,13 @@ public final class ScrollContainer implements UiComponent {
 
     private void clampScroll() {
         int max = maxScroll();
-        if (scrollY < 0) scrollY = 0;
-        if (scrollY > max) scrollY = max;
+        if (targetScrollY < 0) targetScrollY = 0;
+        if (targetScrollY > max) targetScrollY = max;
+
+        // Jos ollaan hyvin lähellä kohdetta, hypätään suoraan siihen
+        if (Math.abs(scrollY - targetScrollY) < 0.1) {
+            scrollY = targetScrollY;
+        }
     }
 
     private void updateContentHeight() {
@@ -79,7 +95,8 @@ public final class ScrollContainer implements UiComponent {
 
     private void layoutChildren() {
         int x = bounds.x + innerPadding;
-        int y = bounds.y + innerPadding - scrollY;
+        // Käytetään visuaalista scrollY:tä asettelussa
+        int y = bounds.y + innerPadding - (int) scrollY;
         int w = bounds.w - innerPadding * 2;
 
         for (UiComponent c : children) {
@@ -102,31 +119,42 @@ public final class ScrollContainer implements UiComponent {
 
         Rect track = getScrollbarTrackRect();
         int thumbH = Math.max(14, (int) ((track.h * (float) bounds.h / contentHeight)));
+        // Palkki seuraa visuaalista scrollY:tä
         int thumbY = track.y + (int) ((track.h - thumbH) * (scrollY / (float) max));
         return new Rect(track.x, thumbY, track.w, thumbH);
     }
 
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
-        // Päivitetään sisällön korkeus ja asetellaan lapset ennen scissoria
+        // Interpolointi logiikka
+        if (scrollY != targetScrollY) {
+            // Lineaarinen interpolaatio (lerp) delta-ajalla
+            double difference = targetScrollY - scrollY;
+            scrollY += difference * (delta * scrollSpeed);
+
+            // Estetään "ylilyönnit" tai ikuinen hidas liuku
+            if (Math.abs(targetScrollY - scrollY) < 0.1) {
+                scrollY = targetScrollY;
+            }
+        }
+
         updateContentHeight();
         layoutChildren();
 
-
-        // Ota scissor käyttöön (leikataan bounds-aluetta)
         ui.enableScissor(bounds.x, bounds.y, bounds.w, bounds.h);
 
-        // Piirrä kaikki lapset (scissor hoitaa leikkaamisen automaattisesti)
         for (UiComponent c : children) {
-            c.render(ui, mouseX, mouseY, delta);
+            // Piirretään vain jos on näkyvissä (optimointi)
+            Rect r = c.getBounds();
+            if (r.y + r.h > bounds.y && r.y < bounds.y + bounds.h) {
+                c.render(ui, mouseX, mouseY, delta);
+            }
         }
 
-        // Poista scissor
         ui.disableScissor();
 
-        // Piirrä vierityspalkki, jos tarvitaan
         int max = maxScroll();
-        if (max > 0 && bounds.contains(mouseX, mouseY)) {
+        if (showScrollBar && max > 0 && (bounds.contains(mouseX, mouseY) || draggingScrollbar)) {
             Rect thumb = getScrollbarThumbRect();
             ui.fillRounded(thumb.x, thumb.y, thumb.w, thumb.h, ui.theme.accent, thumb.w / 2.0);
         }
@@ -137,25 +165,21 @@ public final class ScrollContainer implements UiComponent {
         if (!bounds.contains(mouseX, mouseY)) return false;
         updateContentHeight();
 
-        int step = 18;
-        int oldScroll = scrollY;
-
-        scrollY -= (int) Math.signum(amount) * step;
+        int step = 40; // Suurempi askel tuntuu paremmalta interpoloinnin kanssa
+        targetScrollY -= (int) Math.signum(amount) * step;
         clampScroll();
 
-        if (scrollY != oldScroll) {
-            snapToNearestRow();
-        }
         return true;
     }
 
+    // Snap-logiikka päivitetty käyttämään targetScrollY:tä
     private void snapToNearestRow() {
         if (children.isEmpty()) return;
 
         int viewTop = bounds.y + innerPadding;
         int viewBottom = bounds.bottom() - innerPadding;
 
-        int bestScroll = scrollY;
+        double bestTarget = targetScrollY;
         int minDist = Integer.MAX_VALUE;
 
         int y = bounds.y + innerPadding;
@@ -164,26 +188,27 @@ public final class ScrollContainer implements UiComponent {
             int childTop = y;
             int childBottom = y + h;
 
+            // Jos lapsi on jo kokonaan näkyvissä, ei tarvitse snapata
             if (childTop >= viewTop && childBottom <= viewBottom) {
                 return;
             }
 
-            int scrollForTop = scrollY + (childTop - viewTop);
-            int scrollForBottom = scrollY + (childBottom - viewBottom);
+            double scrollForTop = targetScrollY + (childTop - viewTop);
+            double scrollForBottom = targetScrollY + (childBottom - viewBottom);
 
             int max = maxScroll();
             if (scrollForTop >= 0 && scrollForTop <= max) {
-                int dist = Math.abs(scrollForTop - scrollY);
+                int dist = (int) Math.abs(scrollForTop - targetScrollY);
                 if (dist < minDist) {
                     minDist = dist;
-                    bestScroll = scrollForTop;
+                    bestTarget = scrollForTop;
                 }
             }
             if (scrollForBottom >= 0 && scrollForBottom <= max) {
-                int dist = Math.abs(scrollForBottom - scrollY);
+                int dist = (int) Math.abs(scrollForBottom - targetScrollY);
                 if (dist < minDist) {
                     minDist = dist;
-                    bestScroll = scrollForBottom;
+                    bestTarget = scrollForBottom;
                 }
             }
 
@@ -191,7 +216,7 @@ public final class ScrollContainer implements UiComponent {
         }
 
         if (minDist != Integer.MAX_VALUE) {
-            scrollY = bestScroll;
+            targetScrollY = bestTarget;
         }
     }
 
@@ -204,7 +229,7 @@ public final class ScrollContainer implements UiComponent {
         if (thumb.contains(mouseX, mouseY)) {
             draggingScrollbar = true;
             dragStartY = (int) mouseY;
-            scrollStartY = scrollY;
+            scrollStartY = targetScrollY; // Lähtökohta kohdesijainnista
             return true;
         }
 
@@ -219,7 +244,11 @@ public final class ScrollContainer implements UiComponent {
 
     @Override
     public void mouseReleased(UiContext ui, double mouseX, double mouseY, int button) {
-        if (button == 0) draggingScrollbar = false;
+        if (button == 0) {
+            draggingScrollbar = false;
+            // Valinnainen: snapataan kun päästetään irti hiirestä
+            // snapToNearestRow();
+        }
         for (UiComponent c : children) {
             c.mouseReleased(ui, mouseX, mouseY, button);
         }
@@ -239,8 +268,10 @@ public final class ScrollContainer implements UiComponent {
                 if (available > 0) {
                     int deltaY = (int) mouseY - dragStartY;
                     float pct = deltaY / (float) available;
-                    int newScroll = scrollStartY + (int) (pct * max);
-                    scrollY = Math.max(0, Math.min(max, newScroll));
+                    targetScrollY = scrollStartY + (pct * max);
+                    clampScroll();
+                    // Vierityspalkilla vedettäessä halutaan yleensä välitön vaste
+                    scrollY = targetScrollY;
                 }
             }
             return true;
@@ -272,7 +303,9 @@ public final class ScrollContainer implements UiComponent {
     }
 
     public void scrollTo(int y) {
-        this.scrollY = y;
+        this.targetScrollY = y;
         clampScroll();
+        // Jos haluat välittömän hypön (ei interpolointia):
+        // this.scrollY = this.targetScrollY;
     }
 }

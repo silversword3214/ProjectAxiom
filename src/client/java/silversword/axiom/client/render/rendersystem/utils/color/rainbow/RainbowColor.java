@@ -1,7 +1,10 @@
-package silversword.axiom.client.render.rendersystem.utils.color;
+package silversword.axiom.client.render.rendersystem.utils.color.rainbow;
+
+import silversword.axiom.client.render.rendersystem.utils.color.Color;
+import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 
 public class RainbowColor extends Color {
-    private float speed; // cycles per second (sama kuin SettingColor.speed)
+    private float speed;
 
     public RainbowColor() {
         super(0, 0, 0, 255);
@@ -20,8 +23,6 @@ public class RainbowColor extends Color {
 
     @Override
     public int getARGB() {
-        // Käytetään samaa kaavaa kuin SettingColor.getCurrentColor()
-        // Hue vaihtelee jaksossa 5000 ms / speed
         long now = System.currentTimeMillis();
         float hue = (now % (long)(5000 / speed)) / (5000f / speed);
         int rgb = java.awt.Color.HSBtoRGB(hue, 1f, 1f);

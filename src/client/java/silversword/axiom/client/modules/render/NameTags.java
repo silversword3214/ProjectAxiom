@@ -282,8 +282,9 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
     // --------------------------- Player nametag with health (top) ----------
     private void renderPlayerNametag(Render2DEvent event, Player player, double screenX, double screenY, double finalScale) {
         TextRenderer text = TextRenderer.get();
+        int fontHeight = TextUtils.getHeight();
 
-        // ---- Line 0: Health (heart + number) ----
+        // ---- Rivi 0: Terveys (sydän + numero) ----
         String healthText = "";
         double healthLineWidth = 0;
         double healthLineHeight = 0;
@@ -291,15 +292,16 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         if (showHealth.get()) {
             float health = player.getHealth();
             healthText = String.valueOf(Math.round(health));
-            text.begin(finalScale, false, true);
-            double healthNumWidth = text.getWidth(healthText, false);
-            double healthNumHeight = text.getHeight(false);
-            text.end();
-            healthLineWidth = heartSize + 2 * finalScale + healthNumWidth;
+
+            // Käytetään TextUtilsia numeron leveyteen
+            double healthNumWidth = TextUtils.getWidth(healthText) * finalScale;
+            double healthNumHeight = fontHeight * finalScale;
+
+            healthLineWidth = heartSize + (2 * finalScale) + healthNumWidth;
             healthLineHeight = Math.max(heartSize, healthNumHeight);
         }
 
-        // ---- Line 1: Name with extras ----
+        // ---- Rivi 1: Nimi ja lisätiedot ----
         StringBuilder nameBuilder = new StringBuilder();
         if (showGamemode.get()) {
             GameType gm = getGameMode(player);
@@ -314,18 +316,18 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         }
         nameBuilder.append(player.getName().getString());
         if (showPing.get()) {
-            int ping = getPing(player);
-            nameBuilder.append(" [").append(ping).append("ms]");
+            nameBuilder.append(" [").append(getPing(player)).append("ms]");
         }
         if (showDistance.get()) {
             double dist = Math.round(distanceToCamera(player) * 10.0) / 10.0;
             nameBuilder.append(" ").append(dist).append("m");
         }
-        String nameLine = nameBuilder.toString();
-        double nameLineWidth = nameLine.length() * TextUtils.CHAR_UNIT * finalScale;
-        double nameLineHeight = TextUtils.FONT_HEIGHT * finalScale;
 
-        // ---- Line 2: Armor icons with durability bars ----
+        String nameLine = nameBuilder.toString();
+        double nameLineWidth = TextUtils.getWidth(nameLine) * finalScale;
+        double nameLineHeight = fontHeight * finalScale;
+
+        // ---- Rivi 2: Armor-ikonit ----
         List<ItemStack> armorStacks = new ArrayList<>();
         if (showArmor.get()) {
             for (EquipmentSlot slot : ARMOR_SLOTS) {
@@ -336,24 +338,23 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         int armorCount = armorStacks.size();
         double armorLineHeight = 0;
         double armorLineWidth = 0;
+        double iconSize = 16 * finalScale;
+        double armorGap = 2 * finalScale;
+
         if (armorCount > 0) {
-            double iconSize = 16 * finalScale;
-            double barHeight = 2 * finalScale;
-            double gapBetween = 2 * finalScale;
-            armorLineWidth = armorCount * iconSize + (armorCount - 1) * gapBetween;
-            armorLineHeight = iconSize + barHeight + 2 * finalScale;
+            armorLineWidth = armorCount * iconSize + (armorCount - 1) * armorGap;
+            armorLineHeight = iconSize + (2 * finalScale); // Ikoni + pieni tila durability-palkille
         }
 
-        // ---- Determine maximum width among lines ----
+        // ---- Lasketaan kokonaismitat ----
         double maxWidth = Math.max(healthLineWidth, Math.max(nameLineWidth, armorLineWidth));
+        double padding = 4.0 * finalScale;
+        double gap = 2.0 * finalScale;
 
-        // ---- Background dimensions ----
-        double padding = 2.0 * finalScale;
-        double gapBetweenLines = 2.0 * finalScale;
         double totalHeight = padding;
-        if (showHealth.get()) totalHeight += healthLineHeight + gapBetweenLines;
-        totalHeight += nameLineHeight + gapBetweenLines;
-        if (armorCount > 0) totalHeight += armorLineHeight;
+        if (showHealth.get()) totalHeight += healthLineHeight + gap;
+        totalHeight += nameLineHeight;
+        if (armorCount > 0) totalHeight += gap + armorLineHeight;
         totalHeight += padding;
 
         double bgWidth = maxWidth + padding * 2;
@@ -361,73 +362,50 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         double bgX = screenX - bgWidth / 2;
         double bgY = screenY - bgHeight / 2;
 
-        // Draw background
+        // Piirretään tausta
         drawBackground(bgX, bgY, bgWidth, bgHeight, finalScale);
 
-        // ---- Draw lines ----
+        // ---- Piirretään sisällöt ----
         double yCursor = bgY + padding;
 
-        // Health line
+        // 0. Terveysrivi
         if (showHealth.get()) {
             double healthX = bgX + padding;
-            double healthY = yCursor + (healthLineHeight - heartSize) / 2;
-            // Heart icon
-            core.addTexture(HEART_TEXTURE, (float) healthX, (float) healthY, (float) heartSize, (float) heartSize, 0xFFFFFFFF);
-            // Health number
-            double numX = healthX + heartSize + 2 * finalScale;
-            double numY = yCursor + (healthLineHeight - TextUtils.FONT_HEIGHT * finalScale) / 2;
+            double hTextY = yCursor + (healthLineHeight - nameLineHeight) / 2;
+
+            core.addTexture(HEART_TEXTURE, (float) healthX, (float) (yCursor + (healthLineHeight - heartSize) / 2), (float) heartSize, (float) heartSize, 0xFFFFFFFF);
+
             text.begin(finalScale, false, true);
-            text.render(healthText, numX, numY, getHealthColor(player), false);
+            text.render(healthText, (float)(healthX + heartSize + 2 * finalScale), (float)hTextY, getHealthColor(player), false);
             text.end();
-            yCursor += healthLineHeight + gapBetweenLines;
+
+            yCursor += healthLineHeight + gap;
         }
 
-        // Name line
-        double nameX = bgX + padding;
-        double nameY = yCursor + (nameLineHeight - TextUtils.FONT_HEIGHT * finalScale) / 2;
+        // 1. Nimirivi
         text.begin(finalScale, false, true);
-        text.render(nameLine, nameX, nameY, textColor.getCurrentColor(), false);
+        text.render(nameLine, bgX + padding, yCursor, textColor.getCurrentColor(), false);
         text.end();
-        yCursor += nameLineHeight + gapBetweenLines;
+        yCursor += nameLineHeight + gap;
 
-        // Armor line
+        // 2. Armorrivi
         if (armorCount > 0) {
-            double iconSize = 16 * finalScale;
-            double barHeight = 2 * finalScale;
-            double gapBetween = 2 * finalScale;
             double startX = bgX + padding;
-            double armorY = yCursor;
-
             for (int i = 0; i < armorStacks.size(); i++) {
                 ItemStack stack = armorStacks.get(i);
-                double iconX = startX + i * (iconSize + gapBetween);
+                double iconX = startX + i * (iconSize + armorGap);
 
-                // Draw item icon using vanilla GuiGraphics
-                event.getGuiGraphics().renderItem(stack, (int) iconX, (int) armorY);
+                // Item-ikoni (Vanilla GuiGraphics vaatii int-koordinaatit)
+                event.getGuiGraphics().renderItem(stack, (int) iconX, (int) yCursor);
 
-                // Draw durability bar below icon
+                // Durability-palkki
                 if (stack.isDamageableItem()) {
-                    int maxDurability = stack.getMaxDamage();
-                    int currentDurability = maxDurability - stack.getDamageValue();
-                    float percent = (float) currentDurability / maxDurability;
+                    float percent = (float) (stack.getMaxDamage() - stack.getDamageValue()) / stack.getMaxDamage();
+                    int barColor = (percent >= 0.7f) ? 0xFF19FC19 : (percent >= 0.5f) ? 0xFFFFFF19 : (percent >= 0.2f) ? 0xFFFF6919 : 0xFFFF1919;
 
-                    int barColor;
-                    if (percent >= 0.7f) {
-                        barColor = 0xFF19FC19; // green
-                    } else if (percent >= 0.5f) {
-                        barColor = 0xFFFFFF19; // yellow
-                    } else if (percent >= 0.2f) {
-                        barColor = 0xFFFF6919; // orange
-                    } else {
-                        barColor = 0xFFFF1919; // red
-                    }
-
-                    double barX = iconX;
-                    double barY = armorY + iconSize + 1 * finalScale;
-                    double barWidth = iconSize * percent;
-
-                    core.addRect2D((float) barX, (float) barY, (float) barWidth, (float) barHeight, 0x64000000); // background
-                    core.addRect2D((float) barX, (float) barY, (float) barWidth, (float) barHeight, barColor);
+                    double barY = yCursor + iconSize + 1 * finalScale;
+                    core.addRect2D((float) iconX, (float) barY, (float) iconSize, (float) (2 * finalScale), 0x64000000); // Tausta
+                    core.addRect2D((float) iconX, (float) barY, (float) (iconSize * percent), (float) (2 * finalScale), barColor);
                 }
             }
         }
@@ -442,75 +420,64 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         else return new Color(25, 252, 25);
     }
 
-    // Other entity types
     private void renderItemNametag(Render2DEvent event, ItemStack stack, double screenX, double screenY, double finalScale) {
         if (stack.isEmpty()) return;
 
-        TextRenderer text = TextRenderer.get();
         String name = stack.getHoverName().getString();
         String count = " x" + stack.getCount();
 
-        double nameWidth = name.length() * TextUtils.CHAR_UNIT * finalScale;
-        double countWidth = count.length() * TextUtils.CHAR_UNIT * finalScale;
-        double textHeight = TextUtils.FONT_HEIGHT * finalScale;
+        double nameWidth = TextUtils.getWidth(name) * finalScale;
+        double countWidth = TextUtils.getWidth(count) * finalScale;
+        double textHeight = TextUtils.getHeight() * finalScale;
 
-        double width = nameWidth + countWidth;
-        double padding = 2.0 * finalScale;
-        double bgWidth = width + padding * 2;
+        double padding = 4.0 * finalScale;
+        double bgWidth = (nameWidth + countWidth) + padding * 2;
         double bgHeight = textHeight + padding * 2;
         double bgX = screenX - bgWidth / 2;
         double bgY = screenY - bgHeight / 2;
 
         drawBackground(bgX, bgY, bgWidth, bgHeight, finalScale);
 
-        double textX = bgX + padding;
-        double textY = bgY + padding;
+        TextRenderer text = TextRenderer.get();
         text.begin(finalScale, false, true);
-        text.render(name, textX, textY, textColor.getCurrentColor(), false);
-        text.render(count, textX + nameWidth, textY, new Color(232, 185, 35), false);
+        text.render(name, bgX + padding, bgY + padding, textColor.getCurrentColor(), false);
+        text.render(count, (float)(bgX + padding + nameWidth), (float)(bgY + padding), new Color(0xFFE8B923), false);
         text.end();
     }
 
     private void renderLivingNametag(Render2DEvent event, LivingEntity entity, double screenX, double screenY, double finalScale) {
-        TextRenderer text = TextRenderer.get();
         String name = entity.getType().getDescription().getString();
-        float health = entity.getHealth();
-        String healthText = " " + Math.round(health);
+        String healthText = " " + Math.round(entity.getHealth());
 
-        double nameWidth = name.length() * TextUtils.CHAR_UNIT * finalScale;
-        double healthWidth = healthText.length() * TextUtils.CHAR_UNIT * finalScale;
-        double textHeight = TextUtils.FONT_HEIGHT * finalScale;
+        double nameWidth = TextUtils.getWidth(name) * finalScale;
+        double healthWidth = TextUtils.getWidth(healthText) * finalScale;
+        double textHeight = TextUtils.getHeight() * finalScale;
 
-        double width = nameWidth + healthWidth;
-        double padding = 2.0 * finalScale;
-        double bgWidth = width + padding * 2;
+        double padding = 4.0 * finalScale;
+        double bgWidth = (nameWidth + healthWidth) + padding * 2;
         double bgHeight = textHeight + padding * 2;
         double bgX = screenX - bgWidth / 2;
         double bgY = screenY - bgHeight / 2;
 
         drawBackground(bgX, bgY, bgWidth, bgHeight, finalScale);
 
-        double healthPercentage = health / entity.getMaxHealth();
-        Color healthColor;
-        if (healthPercentage <= 0.333) healthColor = new Color(255, 25, 25);
-        else if (healthPercentage <= 0.666) healthColor = new Color(255, 105, 25);
-        else healthColor = new Color(25, 252, 25);
+        double healthPercentage = entity.getHealth() / entity.getMaxHealth();
+        int hColor = (healthPercentage <= 0.333) ? 0xFFFF1919 : (healthPercentage <= 0.666) ? 0xFFFF6919 : 0xFF19FC19;
 
-        double textX = bgX + padding;
-        double textY = bgY + padding;
+        TextRenderer text = TextRenderer.get();
         text.begin(finalScale, false, true);
-        text.render(name, textX, textY, textColor.getCurrentColor(), false);
-        text.render(healthText, textX + nameWidth, textY, healthColor, false);
+        text.render(name, bgX + padding, bgY + padding, textColor.getCurrentColor(), false);
+        text.render(healthText, (float)(bgX + padding + nameWidth), (float)(bgY + padding), new Color(hColor), false);
         text.end();
     }
 
     private void renderGenericNametag(Render2DEvent event, Entity entity, double screenX, double screenY, double finalScale) {
-        TextRenderer text = TextRenderer.get();
         String name = entity.getType().getDescription().getString();
 
-        double textWidth = name.length() * TextUtils.CHAR_UNIT * finalScale;
-        double textHeight = TextUtils.FONT_HEIGHT * finalScale;
-        double padding = 2.0 * finalScale;
+        double textWidth = TextUtils.getWidth(name) * finalScale;
+        double textHeight = TextUtils.getHeight() * finalScale;
+        double padding = 4.0 * finalScale;
+
         double bgWidth = textWidth + padding * 2;
         double bgHeight = textHeight + padding * 2;
         double bgX = screenX - bgWidth / 2;
@@ -518,20 +485,19 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
 
         drawBackground(bgX, bgY, bgWidth, bgHeight, finalScale);
 
-        double textX = bgX + padding;
-        double textY = bgY + padding;
+        TextRenderer text = TextRenderer.get();
         text.begin(finalScale, false, true);
-        text.render(name, textX, textY, textColor.getCurrentColor(), false);
+        text.render(name, bgX + padding, bgY + padding, textColor.getCurrentColor(), false);
         text.end();
     }
 
     private void renderTntNametag(Render2DEvent event, int fuseTicks, double screenX, double screenY, double finalScale) {
         String timeText = ticksToTime(fuseTicks);
-        TextRenderer text = TextRenderer.get();
 
-        double textWidth = timeText.length() * TextUtils.CHAR_UNIT * finalScale;
-        double textHeight = TextUtils.FONT_HEIGHT * finalScale;
-        double padding = 2.0 * finalScale;
+        double textWidth = TextUtils.getWidth(timeText) * finalScale;
+        double textHeight = TextUtils.getHeight() * finalScale;
+        double padding = 4.0 * finalScale;
+
         double bgWidth = textWidth + padding * 2;
         double bgHeight = textHeight + padding * 2;
         double bgX = screenX - bgWidth / 2;
@@ -539,10 +505,9 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
 
         drawBackground(bgX, bgY, bgWidth, bgHeight, finalScale);
 
-        double textX = bgX + padding;
-        double textY = bgY + padding;
+        TextRenderer text = TextRenderer.get();
         text.begin(finalScale, false, true);
-        text.render(timeText, textX, textY, new Color(232, 185, 35), false);
+        text.render(timeText, (float)(bgX + padding), (float)(bgY + padding), new Color(0xFFE8B923), false);
         text.end();
     }
 

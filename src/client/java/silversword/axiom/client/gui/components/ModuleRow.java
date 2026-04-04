@@ -3,15 +3,17 @@ package silversword.axiom.client.gui.components;
 import net.minecraft.resources.Identifier;
 import silversword.axiom.client.config.ClickGuiConfigManager;
 import silversword.axiom.client.gui.core.*;
+import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.misc.DeathLocationModule;
 import silversword.axiom.client.modules.render.NoParticleModule;
 import silversword.axiom.client.modules.render.WaypointModule;
 import silversword.axiom.client.render.font.TextRenderer;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
+import silversword.axiom.client.render.rendersystem.utils.color.rainbow.RainbowPalette;
 import silversword.axiom.client.render.rendersystem.utils.texture.Texture;
 import silversword.axiom.client.render.rendersystem.utils.texture.TextureManager;
-import silversword.axiom.client.utils.render.DrawTexture;
+
 import java.util.function.Consumer;
 
 public final class ModuleRow implements UiComponent {
@@ -39,10 +41,12 @@ public final class ModuleRow implements UiComponent {
     private float enabledProgress = 0f;
     private static final float ANIM_SPEED = 0.15f;
 
-    // Highlight-efektiä varten
     private boolean highlighted = false;
     private long highlightEndTime = 0;
-    private static final int HIGHLIGHT_COLOR = 0x33FFFF00; // keltainen, 20% peitto
+    private static final int HIGHLIGHT_COLOR = 0x33FFFF00;
+
+    private float hoverTime = 0f;
+    private static final float TOOLTIP_DELAY = 20f;
 
     public ModuleRow(AxiomMod module, Consumer<AxiomMod> onOpenSettings, String ownerWindowId, int rowIndex, boolean isLast) {
         this.module = module;
@@ -50,7 +54,6 @@ public final class ModuleRow implements UiComponent {
         this.ownerWindowId = ownerWindowId;
         this.rowIndex = rowIndex;
         this.isLast = isLast;
-        if (gearTexture == null) gearTexture = TextureManager.getTexture(GEAR_TEXTURE);
     }
 
     public int getRowIndex() { return rowIndex; }
@@ -58,7 +61,6 @@ public final class ModuleRow implements UiComponent {
     @Override public void setBounds(Rect r) { bounds = r; }
     @Override public int getPreferredHeight() { return 16; }
 
-    // Highlight-metodi
     public void highlight(long durationMs) {
         highlighted = true;
         highlightEndTime = System.currentTimeMillis() + durationMs;
@@ -66,11 +68,13 @@ public final class ModuleRow implements UiComponent {
 
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
-        // Päivitä highlight-tila
+        if (gearTexture == null) {
+            gearTexture = TextureManager.getTexture(GEAR_TEXTURE);
+        }
+
         if (highlighted && System.currentTimeMillis() > highlightEndTime) {
             highlighted = false;
         }
-        // Piirrä highlight-korostus ennen muuta sisältöä
         if (highlighted) {
             ui.fill(bounds, HIGHLIGHT_COLOR);
         }
@@ -78,7 +82,6 @@ public final class ModuleRow implements UiComponent {
         boolean hover = bounds.contains(mouseX, mouseY);
         boolean enabled = module.isEnabled();
 
-        // --- ANIMAATIO JA PALKKI ---
         if (enabled) {
             enabledProgress = Math.min(1f, enabledProgress + delta * ANIM_SPEED);
         } else {
@@ -125,53 +128,37 @@ public final class ModuleRow implements UiComponent {
                 ui.fill(bounds.x, bounds.y, fillWidth, bounds.h, accentWithAlpha);
             }
         }
+
         int nameY = bounds.y + (bounds.h - ui.fontHeight()) / 2 + 3;
         int nameX = bounds.x + 2;
-        int maxNameWidth = gearRect.x - nameX - 4;
+
         String displayName = module.getName();
         if (displayName == null) displayName = "";
-        String truncated = truncateToFit(ui, displayName, maxNameWidth);
 
+        // TruncateToFit poistettu kokonaan! Piirretään suoraan displayName.
         if (ClickGuiConfigManager.isRainbowWaveEnabled()) {
-            drawRainbowText(ui, truncated, nameX, nameY, rowIndex);
+            // x ja y ovat ne samat nameX ja nameY kuin tavallisella tekstillä
+            ui.drawRainbowText(displayName, nameX, nameY, rowIndex);
         } else {
-            ui.text(truncated, nameX, nameY, ui.theme.text);
+            ui.text(displayName, nameX, nameY, ui.theme.text);
         }
 
         if (hover && !gearHover) {
-            String description = module.getDescription();
-            if (description != null && !description.isEmpty()) TooltipStack.push(description, mouseX, mouseY);
-        }
-    }
+            // Lisätään aikaa deltan verran (delta on yleensä sekunnin murto-osa)
+            hoverTime += delta;
 
-    private void drawRainbowText(UiContext ui, String text, int x, int y, int rowIndex) {
-        float speed = ClickGuiConfigManager.getRainbowWaveSpeed();
-        long now = System.currentTimeMillis();
-        float timeHue = (now % (long)(5000 / speed)) / (5000f / speed) * 360f;
-        float xStep = 12f;
-        float yStep = 18f;
-        float currentX = x;
-        for (int i = 0; i < text.length(); i++) {
-            String ch = String.valueOf(text.charAt(i));
-            float hue = (timeHue + i * xStep + rowIndex * yStep) % 360;
-            Color color = Color.fromHsv(hue, 1.0f, 1.0f);
-            ui.text(ch, (int) currentX, y, color.getARGB());
-            currentX += TextRenderer.get().getWidth(ch);
-        }
-    }
-
-    private String truncateToFit(UiContext ui, String text, int maxWidth) {
-        if (ui.textWidth(text) <= maxWidth) return text;
-        String ellipsis = "...";
-        int ellipsisW = ui.textWidth(ellipsis);
-        for (int len = text.length(); len > 0; len--) {
-            String sub = text.substring(0, len);
-            if (ui.textWidth(sub) + ellipsisW <= maxWidth) {
-                return sub + ellipsis;
+            if (hoverTime >= TOOLTIP_DELAY) {
+                String description = module.getDescription();
+                if (description != null && !description.isEmpty()) {
+                    TooltipStack.push(description, mouseX, mouseY);
+                }
             }
+        } else {
+            // Nollataan laskuri heti, kun hiiri poistuu tai siirtyy rattaan päälle
+            hoverTime = 0f;
         }
-        return ellipsis;
     }
+
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {

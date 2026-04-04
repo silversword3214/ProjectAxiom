@@ -51,9 +51,13 @@ public class TextField implements UiComponent {
         ui.fill(bounds, bgColor);
 
         int textX = bounds.x + 4;
-        int textY = bounds.y + (bounds.h - TextUtils.FONT_HEIGHT) / 2;
+        // Haetaan dynaaminen korkeus
+        int fontHeight = TextUtils.getHeight();
+        int textY = bounds.y + (bounds.h - fontHeight) / 2;
+
         String displayText = text;
         boolean usePlaceholder = displayText.isEmpty() && !focused;
+
         if (usePlaceholder) {
             displayText = placeholder;
             ui.text(displayText, textX, textY, ui.theme.textDim);
@@ -61,14 +65,14 @@ public class TextField implements UiComponent {
             ui.text(displayText, textX, textY, ui.theme.text);
         }
 
-        // Kursori
+        // KURSORIN KORJAUS
         if (focused && !usePlaceholder && ((int)(blinkTimer / BLINK_INTERVAL) % 2 == 0)) {
-            int realTextX = text.length() * TextUtils.CHAR_UNIT;
-
-
+            // Lasketaan kursorin X-paikka tekstin alun perusteella
             String beforeCursor = text.substring(0, cursorPos);
-            int cursorX = textX + realTextX;
-            ui.fill(cursorX, textY, 1, TextUtils.FONT_HEIGHT, ui.theme.text);
+            int cursorOffset = TextUtils.getWidth(beforeCursor);
+            int cursorX = textX + cursorOffset;
+
+            ui.fill(cursorX, textY, 1, fontHeight, ui.theme.text);
         }
     }
 
@@ -76,26 +80,28 @@ public class TextField implements UiComponent {
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
         if (button != 0) return false;
         boolean nowFocused = bounds.contains(mouseX, mouseY);
+
         if (nowFocused) {
-            // Poista fokus edelliseltä
             if (focusedField != null && focusedField != this) {
                 focusedField.setFocused(false);
             }
-            // Laske kursorin paikka klikkauksen perusteella (pikselitarkkuus)
+
             int textX = bounds.x + 4;
-            String currentText = text;
             int clickX = (int) mouseX;
             int bestPos = 0;
             int bestDist = Integer.MAX_VALUE;
-            for (int i = 0; i <= currentText.length(); i++) {
-                String before = currentText.substring(0, i);
-                int charX = textX + ui.textWidth(before);
+
+            // Käytetään TextUtils.getWidth() jokaiselle pituudelle, jotta klikkaus on tarkka
+            for (int i = 0; i <= text.length(); i++) {
+                String before = text.substring(0, i);
+                int charX = textX + TextUtils.getWidth(before);
                 int dist = Math.abs(clickX - charX);
                 if (dist < bestDist) {
                     bestDist = dist;
                     bestPos = i;
                 }
             }
+
             cursorPos = bestPos;
             focused = true;
             focusedField = this;

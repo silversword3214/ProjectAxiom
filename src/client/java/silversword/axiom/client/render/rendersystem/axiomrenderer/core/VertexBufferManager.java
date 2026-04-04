@@ -8,8 +8,8 @@ import java.nio.ByteBuffer;
 import static com.mojang.text2speech.Narrator.LOGGER;
 
 public class VertexBufferManager implements AutoCloseable {
-    private static final int BUFFER_COUNT = 10;
-    private static final int INITIAL_SIZE = 2 * 1024 * 1024;   // 2 MB per buffer
+    private static final int BUFFER_COUNT = 64;
+    private static final int INITIAL_SIZE = 8 * 1024 * 1024;
     private static final String[] BUFFER_NAMES = {
             "axiomrenderer_vertex_buffer_1",
             "axiomrenderer_vertex_buffer_2",
@@ -21,6 +21,61 @@ public class VertexBufferManager implements AutoCloseable {
             "axiomrenderer_vertex_buffer_8",
             "axiomrenderer_vertex_buffer_9",
             "axiomrenderer_vertex_buffer_10",
+            "axiomrenderer_vertex_buffer_11",
+            "axiomrenderer_vertex_buffer_12",
+            "axiomrenderer_vertex_buffer_13",
+            "axiomrenderer_vertex_buffer_14",
+            "axiomrenderer_vertex_buffer_15",
+            "axiomrenderer_vertex_buffer_16",
+            "axiomrenderer_vertex_buffer_17",
+            "axiomrenderer_vertex_buffer_18",
+            "axiomrenderer_vertex_buffer_19",
+            "axiomrenderer_vertex_buffer_20",
+            "axiomrenderer_vertex_buffer_21",
+            "axiomrenderer_vertex_buffer_22",
+            "axiomrenderer_vertex_buffer_23",
+            "axiomrenderer_vertex_buffer_24",
+            "axiomrenderer_vertex_buffer_25",
+            "axiomrenderer_vertex_buffer_26",
+            "axiomrenderer_vertex_buffer_27",
+            "axiomrenderer_vertex_buffer_28",
+            "axiomrenderer_vertex_buffer_29",
+            "axiomrenderer_vertex_buffer_30",
+            "axiomrenderer_vertex_buffer_31",
+            "axiomrenderer_vertex_buffer_32",
+            "axiomrenderer_vertex_buffer_33",
+            "axiomrenderer_vertex_buffer_34",
+            "axiomrenderer_vertex_buffer_35",
+            "axiomrenderer_vertex_buffer_36",
+            "axiomrenderer_vertex_buffer_37",
+            "axiomrenderer_vertex_buffer_38",
+            "axiomrenderer_vertex_buffer_39",
+            "axiomrenderer_vertex_buffer_40",
+            "axiomrenderer_vertex_buffer_41",
+            "axiomrenderer_vertex_buffer_42",
+            "axiomrenderer_vertex_buffer_43",
+            "axiomrenderer_vertex_buffer_44",
+            "axiomrenderer_vertex_buffer_45",
+            "axiomrenderer_vertex_buffer_46",
+            "axiomrenderer_vertex_buffer_47",
+            "axiomrenderer_vertex_buffer_48",
+            "axiomrenderer_vertex_buffer_49",
+            "axiomrenderer_vertex_buffer_50",
+            "axiomrenderer_vertex_buffer_51",
+            "axiomrenderer_vertex_buffer_52",
+            "axiomrenderer_vertex_buffer_53",
+            "axiomrenderer_vertex_buffer_54",
+            "axiomrenderer_vertex_buffer_55",
+            "axiomrenderer_vertex_buffer_56",
+            "axiomrenderer_vertex_buffer_57",
+            "axiomrenderer_vertex_buffer_58",
+            "axiomrenderer_vertex_buffer_59",
+            "axiomrenderer_vertex_buffer_60",
+            "axiomrenderer_vertex_buffer_61",
+            "axiomrenderer_vertex_buffer_62",
+            "axiomrenderer_vertex_buffer_63",
+            "axiomrenderer_vertex_buffer_64",
+
     };
 
     private final GpuBuffer[] buffers = new GpuBuffer[BUFFER_COUNT];
@@ -73,10 +128,17 @@ public class VertexBufferManager implements AutoCloseable {
 
         // All buffers are busy – fallback (should almost never happen)
         LOGGER.warn("All vertex buffers busy, waiting for index {}", currentIndex);
+        // Korvaa odottava osa tällä:
         if (fences[currentIndex] != null) {
-            fences[currentIndex].awaitCompletion(16_000_000L); // 16 ms timeout
-            fences[currentIndex].close();
-            fences[currentIndex] = null;
+            fences[currentIndex].awaitCompletion(16_000_000L); // non-blocking
+            if (fences[currentIndex].awaitCompletion(0)) {
+                fences[currentIndex].close();
+                fences[currentIndex] = null;
+            } else {
+                // Kaikki puskurit varattuja – kasvata tilapäisesti puskurien määrää?
+                // Tai yksinkertaisesti lisää BUFFER_COUNT arvoa.
+                LOGGER.warn("All vertex buffers busy, consider increasing BUFFER_COUNT");
+            }
         }
         // Resize if needed (same logic)
         if (bufferSizes[currentIndex] < requiredSize) {

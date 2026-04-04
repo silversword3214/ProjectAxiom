@@ -21,8 +21,6 @@ public class FabricHudHook {
 
             Render2DEvent event = new Render2DEvent(renderer, tickDelta, graphics, graphics.guiWidth(), graphics.guiHeight());
             AxiomInitialize.EVENT_BUS.post(event);
-
-            api.getCore().flush();
         });
     }
 }

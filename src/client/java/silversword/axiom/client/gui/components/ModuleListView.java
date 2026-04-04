@@ -44,6 +44,7 @@ public final class ModuleListView implements UiComponent {
         scroll.setDrawBackground(false);
         scroll.setInnerPadding(2);
         scroll.setGap(0);
+        scroll.setShowScrollBar(false);
     }
 
     @Override public Rect getBounds() { return bounds; }

@@ -47,6 +47,10 @@ public final class AxiomInitialize implements ClientModInitializer {
 
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
             Fonts.refresh();
+            String savedFont = FontConfigManager.loadFont();
+            if (savedFont != null) {
+                silversword.axiom.client.render.font.Fonts.setFont(savedFont);
+            }
         });
 
         // Rekisteröidään hookit
@@ -59,7 +63,6 @@ public final class AxiomInitialize implements ClientModInitializer {
         ResourcePackBlockerConfig.load();
         SettingsConfigManager.loadAll();
         ModuleKeybindManager.register();
-        FontConfigManager.loadFont();
         InputListener.register();
         AxiomHudBootstrap.init();
         HudConfigManager.load(HudManager.get());

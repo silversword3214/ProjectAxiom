@@ -3,6 +3,8 @@ package silversword.axiom.client.config;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
+import silversword.axiom.client.render.rendersystem.utils.color.rainbow.RainbowPalette;
+import silversword.axiom.client.render.rendersystem.utils.color.rainbow.RainbowPalettes;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,19 +30,28 @@ public class ClickGuiConfigManager {
 
     public static float getRainbowWaveSpeed() { return getConfig().rainbowWaveSpeed; }
     public static void setRainbowWaveSpeed(float speed) { getConfig().rainbowWaveSpeed = Math.max(0.1f, Math.min(5.0f, speed)); save(); }
+    private static final String KEY_RAINBOW_PALETTE = "rainbow_palette";
+    private static RainbowPalette rainbowPalette = RainbowPalettes.NEON;
+    public static RainbowPalette getRainbowPalette() { return rainbowPalette; }
 
     private static ClickGuiConfig getConfig() {
         if (config == null) load();
         return config;
     }
 
-
+    public static void setRainbowPalette(RainbowPalette palette) {
+        rainbowPalette = palette;
+        save();
+    }
 
     private static void load() {
         if (Files.exists(CONFIG_PATH)) {
             try {
                 String json = Files.readString(CONFIG_PATH);
                 config = GSON.fromJson(json, ClickGuiConfig.class);
+
+                String palName = config.rainbowPaletteName;
+                if (palName != null) rainbowPalette = RainbowPalettes.getByName(palName);
 
             } catch (Exception e) { e.printStackTrace(); }
         }
@@ -51,6 +62,9 @@ public class ClickGuiConfigManager {
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
             Files.writeString(CONFIG_PATH, GSON.toJson(config), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
+            config.rainbowPaletteName = rainbowPalette.getName();
+
         } catch (Exception e) { e.printStackTrace(); }
     }
 
@@ -60,5 +74,6 @@ public class ClickGuiConfigManager {
         int globalAlpha = 100;
         boolean rainbowWaveEnabled = false;
         float rainbowWaveSpeed = 1.0f;
+        String rainbowPaletteName = "Neon";
     }
 }

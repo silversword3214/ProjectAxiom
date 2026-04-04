@@ -5,13 +5,9 @@ import silversword.axiom.client.setting.Setting;
 
 import java.util.List;
 
-/**
- * SettingColor on itsessään Color (extends Color),
- * mutta se sisältää sisäisen Setting-luokan, jotta se voidaan lisätä moduuleihin.
- */
 public class SettingColor extends Color {
     public boolean rainbow;
-    public float speed; // 0.001 - 5.0, oletus 1.0
+    public float speed;
     private final Setting internalSetting;
     private String name;
 
@@ -20,9 +16,9 @@ public class SettingColor extends Color {
         this.rainbow = false;
         this.speed = 1.0f;
 
-        // Luodaan "silta" asetusjärjestelmään
+
         this.internalSetting = new Setting(name) {
-            private boolean hidden = true;  // Piilotetaan oletuksena
+            private boolean hidden = true;
             @Override
             public double getValue() { return 0; }
 
@@ -31,14 +27,13 @@ public class SettingColor extends Color {
 
             @Override
             public int getHeight() {
-                return hidden ? 0 : 14;  // Ei vie tilaa jos piilotettu
+                return hidden ? 0 : 14;
             }
 
             @Override
             public void render(int x, int y, int mouseX, int mouseY) {
-                // Ei piirretä mitään jos piilotettu
                 if (hidden) return;
-                // Tänne mahdollinen piirto jos haluat joskus näyttää
+
             }
 
             @Override
@@ -78,7 +73,6 @@ public class SettingColor extends Color {
                         }
                     } catch (Exception ignored) {}
                 } else if (v instanceof Object[] arr) {
-                    // JSON deserialisaatio Gsonilla voi tuottaa Object[]:n
                     try {
                         int r = ((Number) arr[0]).intValue();
                         int g = ((Number) arr[1]).intValue();
@@ -98,15 +92,12 @@ public class SettingColor extends Color {
         };
     }
 
-    // Metodi, jolla moduuli saa lisättyä tämän asetuksiinsa
     public Setting getSetting() {
         return internalSetting;
     }
 
-    // Tämä metodi palauttaa nykyisen värin (joko sateenkaaren tai normaalin)
     public Color getCurrentColor() {
         if (rainbow) {
-            // Käytetään tallennettua nopeutta
             float hue = (System.currentTimeMillis() % (int)(5000 / speed)) / (5000f / speed);
             int rgb = java.awt.Color.HSBtoRGB(hue, 1f, 1f);
             return new Color((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF, this.a);
