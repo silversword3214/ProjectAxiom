@@ -114,6 +114,8 @@ public class UiContext {
         uiText.render(s, x, y, new silversword.axiom.client.render.rendersystem.utils.color.Color(argb), false);
     }
 
+
+
     public void addTexture(Identifier textureId, double x, double y, double width, double height, Color color) {
         renderer.drawTexture(textureId, (float) x, (float) y, (float) width, (float) height, color.getARGB());
     }

@@ -1,8 +1,10 @@
 package silversword.axiom.client.gui.screen;
 
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Checkbox;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import silversword.axiom.client.config.ResourcePackBlockerConfig;
 import silversword.axiom.client.gui.core.ThemeManager;
 
 public class AxiomConfigScreen extends Screen {
@@ -18,7 +20,7 @@ public class AxiomConfigScreen extends Screen {
         int centerX = this.width / 2;
         int y = this.height / 4;
 
-        // Keybinds
+        // Keybinds-nappi
         this.addRenderableWidget(Button.builder(
                         Component.literal("Keybinds"),
                         button -> {
@@ -29,18 +31,23 @@ public class AxiomConfigScreen extends Screen {
                 .bounds(centerX - 50, y, 100, 20)
                 .build());
 
-        // ClickGui Settings
-        this.addRenderableWidget(Button.builder(
-                        Component.literal("ClickGui Settings"),
-                        button -> {
-                            if (this.minecraft != null) {
-                                this.minecraft.setScreen(new ClickGuiSettingsScreen(this));
-                            }
-                        })
-                .bounds(centerX - 50, y + 30, 100, 20)
-                .build());
+        // Minecraftin oma Checkbox Resource Pack Blockerille
+        // Parametrit: x, y, leveys, korkeus, teksti, valittu-tila
+        Checkbox resourcePackCheckbox = Checkbox.builder(
+                        Component.literal("Block Resource Packs"),
+                        this.font
+                )
+                .pos(centerX - 100, y + 30)
+                .selected(ResourcePackBlockerConfig.isEnabled())
+                .onValueChange((checkbox, selected) -> {
+                    // Päivitetään config ja tallennetaan
+                    ResourcePackBlockerConfig.setEnabled(selected);
+                })
+                .build();
 
-        // Back – käyttää accent-väriä
+        this.addRenderableWidget(resourcePackCheckbox);
+
+        // Takaisin-painike
         int accentColor = ThemeManager.getCurrentTheme().accent;
         this.addRenderableWidget(Button.builder(
                 Component.literal("Back").withStyle(style -> style.withColor(accentColor)),

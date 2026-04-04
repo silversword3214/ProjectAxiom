@@ -259,6 +259,7 @@ public class HsvColorPicker implements UiComponent {
         }
     }
 
+
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
         if (button != 0) return false;

@@ -6,9 +6,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-
 public final class Fonts {
-    public static final String[] BUILTIN_FONTS = { "jetbrains_mono" };
+    public static final String[] BUILTIN_FONTS = { "jetbrains_mono", "freedom" };
+
+    public static String currentFontName = BUILTIN_FONTS[0]; // "jetbrains_mono"
 
     public static String DEFAULT_FONT_FAMILY;
     public static FontFace DEFAULT_FONT;
@@ -17,6 +18,15 @@ public final class Fonts {
     private static TextRenderer renderer;
 
     private Fonts() {}
+
+    public static List<String> getAvailableFonts() {
+        List<String> list = new ArrayList<>();
+        // Lisätään kaikki fontit FONT_FAMILIES:sta
+        for (FontFamily f : FONT_FAMILIES) {
+            list.add(f.getName());
+        }
+        return list;
+    }
 
     public static void refresh() {
         FONT_FAMILIES.clear();
@@ -31,30 +41,46 @@ public final class Fonts {
 
         FONT_FAMILIES.sort(Comparator.comparing(FontFamily::getName));
 
-        // Get the builtin font info – handle null
-        FontInfo info = FontUtils.getBuiltinFontInfo(BUILTIN_FONTS[0]);
-        if (info != null) {
-            DEFAULT_FONT_FAMILY = info.family();
-            DEFAULT_FONT = getFamily(DEFAULT_FONT_FAMILY).get(FontInfo.Type.Regular);
-        } else {
-            // Fallback to first available font family
-            if (!FONT_FAMILIES.isEmpty()) {
-                DEFAULT_FONT_FAMILY = FONT_FAMILIES.get(0).getName();
-                DEFAULT_FONT = getFamily(DEFAULT_FONT_FAMILY).get(FontInfo.Type.Regular);
-            } else {
-                // No fonts at all – fallback to vanilla
-                renderer = VanillaTextRenderer.INSTANCE;
-                return;
+        if (!FONT_FAMILIES.isEmpty()) {
+            DEFAULT_FONT_FAMILY = FONT_FAMILIES.get(0).getName();
+            DEFAULT_FONT = FONT_FAMILIES.get(0).get(FontInfo.Type.Regular);
+            // Tarkista, onko currentFontName olemassa
+            boolean found = false;
+            for (FontFamily f : FONT_FAMILIES) {
+                if (f.getName().equalsIgnoreCase(currentFontName)) {
+                    found = true;
+                    break;
+                }
             }
+            if (!found) {
+                currentFontName = DEFAULT_FONT_FAMILY;
+            }
+        } else {
+            throw new RuntimeException("Ei yhtään fonttia ladattu!");
         }
 
-        // attempt to load our custom renderer; if it fails, fall back to vanilla
         try {
-            load(DEFAULT_FONT);
+            setFont(currentFontName);
         } catch (Exception e) {
-            System.err.println("Fonts.refresh: unable to load custom font, using vanilla renderer");
+            System.err.println("Fonts.refresh: unable to load custom font, using default");
+            load(DEFAULT_FONT);
             e.printStackTrace();
-            renderer = VanillaTextRenderer.INSTANCE;
+        }
+    }
+
+    public static void setFont(String familyName) {
+        currentFontName = familyName;
+        FontFamily family = getFamily(familyName);
+        if (family != null && family.hasType(FontInfo.Type.Regular)) {
+            load(family.get(FontInfo.Type.Regular));
+        } else {
+            System.err.println("Fonttia " + familyName + " ei löytynyt. Palautetaan oletusfonttiin.");
+            if (DEFAULT_FONT != null) {
+                load(DEFAULT_FONT);
+                currentFontName = DEFAULT_FONT.info.family();
+            } else {
+                throw new IllegalStateException("Ei oletusfonttia!");
+            }
         }
     }
 

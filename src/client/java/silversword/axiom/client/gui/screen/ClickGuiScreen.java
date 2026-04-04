@@ -29,7 +29,7 @@ import java.util.List;
 public final class ClickGuiScreen extends Screen {
 
     private final Theme theme;
-    private enum TopMode { CLICKGUI, SETTINGS }
+    private enum TopMode { CLICKGUI }
     private static final WindowManager WINDOW_MANAGER = new WindowManager();
     private final WindowManager windowManager = WINDOW_MANAGER;
     public static UiContext lastUi = null;
@@ -94,20 +94,22 @@ public final class ClickGuiScreen extends Screen {
 
         TextRenderer.get().begin(1.0, false, false);
 
+        // 1. Piirretään ikkunat
         if (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen()) {
             windowManager.render(lastUi, mouseX, mouseY);
         }
 
-        boolean isPopup = windowManager.isOverlayOpen() || topMode == TopMode.SETTINGS;
-        if (!isPopup) {
+        // 2. Piirretään yläpalkki ja hakupalkki vain, jos overlay ei peitä niitä
+        if (!windowManager.isOverlayOpen()) {
             drawTopBar(lastUi, mouseX, mouseY);
+            drawSearchBar(lastUi, mouseX, mouseY, delta);
         }
-        drawSearchBar(lastUi, mouseX, mouseY, delta);
 
         TextRenderer.get().end();
         RenderAPI.getInstance().getCore().flush();
         super.render(ctx, mouseX, mouseY, delta);
 
+        // Scissor‑testit, tekstuurit, tooltipit
         RenderCore core = RenderAPI.getInstance().getCore();
         boolean wasScissor = core.isScissorEnabled();
         int sx = core.getScissorX();
@@ -120,7 +122,6 @@ public final class ClickGuiScreen extends Screen {
         }
 
         DrawTexture.renderAll();
-
         core.flush();
 
         if (wasScissor) {
@@ -157,32 +158,9 @@ public final class ClickGuiScreen extends Screen {
         ui.text("ClickGUI", clickGuiX + 8, topY + 4, ui.theme.text);
 
         boolean hoverSettings = mouseX >= settingsX && mouseX <= settingsX + toggleW && mouseY >= topY && mouseY <= topY + toggleH;
-        int settingsBg = (topMode == TopMode.SETTINGS) ? theme.accent : (hoverSettings ? theme.buttonHover : theme.button);
+        int settingsBg = hoverSettings ? theme.buttonHover : theme.button;
         drawRoundedButton(ui, settingsX, topY, toggleW, toggleH, settingsBg, theme.border, radius);
         ui.text("Settings", settingsX + 10, topY + 4, ui.theme.text);
-
-        if (topMode == TopMode.SETTINGS) {
-            int btnY = topY + toggleH + 6;
-            int spacing = 6;
-            int totalW = RESET_BTN_W + BTN_W * 2 + spacing * 2;
-            int startX = (this.width - totalW) / 2;
-
-            int hudEditX = startX;
-            int hudCompX = hudEditX + BTN_W + spacing;
-            int resetX = hudCompX + BTN_W + spacing;
-
-            boolean hoverEdit = mouseX >= hudEditX && mouseX <= hudEditX + BTN_W && mouseY >= btnY && mouseY <= btnY + BTN_H;
-            drawRoundedButton(ui, hudEditX, btnY, BTN_W, BTN_H, hoverEdit ? theme.buttonHover : theme.button, theme.border, radius);
-            ui.text("HUD Edit", hudEditX + 12, btnY + 5, ui.theme.text);
-
-            boolean hoverComp = mouseX >= hudCompX && mouseX <= hudCompX + BTN_W && mouseY >= btnY && mouseY <= btnY + BTN_H;
-            drawRoundedButton(ui, hudCompX, btnY, BTN_W, BTN_H, hoverComp ? theme.buttonHover : theme.button, theme.border, radius);
-            ui.text("Components", hudCompX + 8, btnY + 5, ui.theme.text);
-
-            boolean resetHover = mouseX >= resetX && mouseX <= resetX + RESET_BTN_W && mouseY >= btnY && mouseY <= btnY + RESET_BTN_H;
-            drawRoundedButton(ui, resetX, btnY, RESET_BTN_W, RESET_BTN_H, resetHover ? theme.buttonHover : theme.button, theme.border, radius);
-            ui.text("Reset", resetX + 12, btnY + 5, ui.theme.text);
-        }
     }
 
     private void drawSearchBar(UiContext ui, int mouseX, int mouseY, float delta) {
@@ -243,39 +221,15 @@ public final class ClickGuiScreen extends Screen {
                 return true;
             }
             if (mouseX >= settingsX && mouseX <= settingsX + toggleW && mouseY >= topY && mouseY <= topY + toggleH) {
-                topMode = TopMode.SETTINGS;
+                // Avaa asetusscreen
+                this.minecraft.setScreen(new AxiomSettingsScreen(() -> {
+                    this.minecraft.setScreen(new ClickGuiScreen());
+                }));
                 return true;
             }
 
-            if (topMode == TopMode.SETTINGS) {
-                int btnY = topY + toggleH + 6;
-                int spacing = 6;
-                int totalW = RESET_BTN_W + BTN_W * 2 + spacing * 2;
-                int startX = (this.width - totalW) / 2;
-                int hudEditX = startX;
-                int hudCompX = hudEditX + BTN_W + spacing;
-                int resetX = hudCompX + BTN_W + spacing;
-
-                if (mouseX >= hudEditX && mouseX <= hudEditX + BTN_W && mouseY >= btnY && mouseY <= btnY + BTN_H) {
-                    this.onClose();
-                    this.minecraft.setScreen(new HudEditScreen());
-                    return true;
-                }
-                if (mouseX >= hudCompX && mouseX <= hudCompX + BTN_W && mouseY >= btnY && mouseY <= btnY + BTN_H) {
-                    HudComponentsList list = new HudComponentsList();
-                    windowFactory.openCustomWindow("hud_components", "HUD Components", this.width, this.height, list);
-                    return true;
-                }
-                if (mouseX >= resetX && mouseX <= resetX + RESET_BTN_W && mouseY >= btnY && mouseY <= btnY + RESET_BTN_H) {
-                    resetWindows();
-                    return true;
-                }
-            }
-
-            // Hakupalkin klikkaus - käytä moduleSearchBar
-            // Etsi tämä kohta ClickGuiScreen.java -tiedostosta:
+            // Hakupalkin klikkaus
             if (topMode == TopMode.CLICKGUI) {
-
                 if (moduleSearchBar.mouseClicked(lastUi, mouseX, mouseY, click.button())) return true;
             }
         }
@@ -321,7 +275,7 @@ public final class ClickGuiScreen extends Screen {
         return false;
     }
 
-    private void resetWindows() {
+    public void resetWindows() {
         windowManager.clear();
         windowManager.closeOverlay();
         createCategoryWindows(this.width, this.height);
@@ -329,18 +283,17 @@ public final class ClickGuiScreen extends Screen {
     }
 
     private void createCategoryWindows(int screenW, int screenH) {
-        String[] categories = new String[] { "Movement", "Combat", "Player", "World", "Render", "Misc" };
-        int count = categories.length;
-        int winW = 100;
-        int winH = Math.max(160, screenH - 70);
-        int margin = 6;
-        int gapBetweenWindows = 4;
-        int startY = 40;
+        String[] categories = new String[] { "Movement", "Combat", "Render", "World", "Player", "Misc" };
+        int[] xCoords = { 5, 119, 236, 610, 725, 837 };
 
-        for (int i = 0; i < count; i++) {
+        int winW = 110;
+        int winH = 250;
+        int startY = 50;
+
+        for (int i = 0; i < categories.length; i++) {
             String cat = categories[i];
             String id = "category:" + cat.toLowerCase();
-            int x = margin + i * (winW + gapBetweenWindows);
+            int x = xCoords[i];
 
             Window win = new Window(id, cat, x, startY, winW, winH);
             win.setClosable(false);
@@ -387,7 +340,6 @@ public final class ClickGuiScreen extends Screen {
                 return true;
             }
         }
-        // Käytä moduleSearchBar
         if (topMode == TopMode.CLICKGUI && moduleSearchBar.keyPressed(lastUi, input.input(), input.scancode(), input.modifiers())) {
             return true;
         }
@@ -399,7 +351,6 @@ public final class ClickGuiScreen extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent input) {
-        // Käytä moduleSearchBar
         if (topMode == TopMode.CLICKGUI && moduleSearchBar.charTyped(lastUi, input.codepointAsString().charAt(0), input.modifiers())) {
             return true;
         }

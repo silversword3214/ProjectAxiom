@@ -1,5 +1,6 @@
 package silversword.axiom.client.gui.components;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import silversword.axiom.client.config.HudConfigManager;
 import silversword.axiom.client.gui.core.Rect;
@@ -8,10 +9,8 @@ import silversword.axiom.client.gui.window.WindowFactory;
 import silversword.axiom.client.gui.screen.ClickGuiScreen;
 import silversword.axiom.client.hud.HudElement;
 import silversword.axiom.client.hud.HudManager;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.texture.Texture;
 import silversword.axiom.client.render.rendersystem.utils.texture.TextureManager;
-import silversword.axiom.client.utils.render.DrawTexture;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +25,7 @@ public class HudComponentsList implements UiComponent {
     private final List<Toggle> toggles = new ArrayList<>();
     private final List<Runnable> gearActions = new ArrayList<>();
     private final List<Rect> gearRects = new ArrayList<>();
-    private final List<Float> gearRotations = new ArrayList<>(); // per gear rotation
+    private final List<Float> gearRotations = new ArrayList<>();
     private int scrollOffset = 0;
     private static final int ROW_HEIGHT = 20;
     private static final int PADDING = 4;
@@ -52,21 +51,35 @@ public class HudComponentsList implements UiComponent {
             );
             toggles.add(toggle);
 
+            // GEAR ACTION: Tämän korjaus varmistaa, että asetusikkuna aukeaa oikein
             gearActions.add(() -> {
+                Minecraft mc = Minecraft.getInstance();
+
+                // 1. Vaihdetaan näyttö ENSIN ClickGuiScreeniin
+                ClickGuiScreen clickGui = new ClickGuiScreen();
+                mc.setScreen(clickGui);
+
+                // 2. Haetaan factory vasta nyt (uusi näyttö on asettanut sen)
                 WindowFactory factory = ClickGuiScreen.lastFactory;
+
                 if (factory != null) {
                     HudComponentSettingsPanel panel = new HudComponentSettingsPanel(e);
+
+                    int screenW = mc.getWindow().getGuiScaledWidth();
+                    int screenH = mc.getWindow().getGuiScaledHeight();
+
+                    // 3. Avataan ikkuna vasta kun factory on varmasti valmis
                     factory.openCustomWindow(
                             "hud_settings_" + e.id(),
                             e.id() + " Settings",
-                            ClickGuiScreen.lastUi.mc.getWindow().getGuiScaledWidth(),
-                            ClickGuiScreen.lastUi.mc.getWindow().getGuiScaledHeight(),
+                            screenW,
+                            screenH,
                             panel
                     );
                 }
             });
 
-            gearRotations.add(0f); // initial rotation
+            gearRotations.add(0f);
         }
     }
 
@@ -99,28 +112,24 @@ public class HudComponentsList implements UiComponent {
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
         layoutGearRects();
-
-        // Käytä UiContext:n enableScissor, joka huolehtii pinosta ja oikeista parametreista
         ui.enableScissor(bounds.x, bounds.y, bounds.w, bounds.h);
 
         for (int i = 0; i < toggles.size(); i++) {
             Toggle toggle = toggles.get(i);
             Rect r = toggle.getBounds();
+
+            // Renderöidään vain jos rivi on näkyvissä
             if (r.y + r.h >= bounds.y && r.y <= bounds.y + bounds.h) {
                 toggle.render(ui, mouseX, mouseY, delta);
 
-                // Gear button
                 Rect gearRect = gearRects.get(i);
                 boolean gearHover = gearRect.contains(mouseX, mouseY);
 
-                // Update rotation
                 float rotation = gearRotations.get(i);
                 if (gearHover) {
-                    rotation += delta * 10f;
-                } else {
-                    if (rotation > 0) {
-                        rotation = Math.max(0, rotation - delta * 60f);
-                    }
+                    rotation += delta * 150f; // Nopeampi animaatio hoverissa
+                } else if (rotation > 0) {
+                    rotation = Math.max(0, rotation - delta * 200f);
                 }
                 rotation %= 360f;
                 gearRotations.set(i, rotation);
@@ -128,27 +137,23 @@ public class HudComponentsList implements UiComponent {
                 ui.fillRounded(gearRect, gearHover ? ui.theme.buttonHover : ui.theme.panel, 3);
 
                 if (gearTexture != null) {
-                    // Suora piirto rendererillä (ei DrawTexture)
+                    // Huom: Käytetään projektisi omaa renderöintitapaa tekstuurille
                     ui.renderer.core.addRotatedTexture(GEAR_TEXTURE, gearRect.x + 2, gearRect.y + 2, gearRect.w - 4, gearRect.h - 4, rotation, 0xFFFFFFFF);
                 } else {
-                    String gear = "...";
-                    int gearW = ui.textWidth(gear);
-                    int gearX = gearRect.x + (gearRect.w - gearW) / 2;
-                    int gearY = gearRect.y + (gearRect.h - ui.fontHeight()) / 2;
-                    ui.text(gear, gearX, gearY, ui.theme.textDim);
+                    ui.text("*", gearRect.x + 5, gearRect.y + 4, ui.theme.textDim);
                 }
             }
         }
 
         ui.disableScissor();
 
-        // Draw scroll bar (tämä piirretään scissorin ulkopuolelle, kuten ennenkin)
+        // Scrollbar renderöinti
         int totalHeight = elements.size() * ROW_HEIGHT;
         int visibleHeight = bounds.h - 2 * PADDING;
         if (totalHeight > visibleHeight) {
             int scrollBarHeight = (int) ((float) visibleHeight / totalHeight * visibleHeight);
             int scrollBarY = bounds.y + PADDING + (int) ((float) scrollOffset / totalHeight * visibleHeight);
-            ui.fill(bounds.x + bounds.w - 6, scrollBarY, 4, scrollBarHeight, ui.theme.accent);
+            ui.fill(bounds.x + bounds.w - 4, scrollBarY, 2, scrollBarHeight, ui.theme.accent);
         }
     }
 

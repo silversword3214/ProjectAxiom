@@ -24,25 +24,38 @@ public final class EnabledModulesHud extends BaseHudElement {
     private static final int PADDING = 4;
     private static final int BAR_WIDTH = 2;
     private static final int CORNER_RADIUS = 3;
-    private static final int CHAR_UNIT = 6;
 
     private final SettingNumber textScale;
+    private final SettingBoolean showBackground;
     private final SettingBoolean customColors;
     private final SettingColor textColor;
     private final SettingColor barColor;
     private final SettingColor backgroundColor;
 
+    private final SettingBoolean rainbowWave;
+    private final SettingNumber waveSpeed;
+
     public EnabledModulesHud() {
         super("Module list", 6, 20);
 
-        textScale = new SettingNumber("Scale", 0.5, 2, 0.05, 1);
+        textScale = new SettingNumber("Scale", 0.5, 2.0, 0.05, 1.0);
+        showBackground = new SettingBoolean("Show Background", false);
         customColors = new SettingBoolean("Custom Colors", false);
         textColor = new SettingColor("Text Color", new Color(0xFFFFFFFF));
         barColor = new SettingColor("Bar Color", new Color(ThemeManager.getCurrentTheme().accent));
         backgroundColor = new SettingColor("Background Color", new Color(ThemeManager.getCurrentTheme().panel));
 
+        waveSpeed = new SettingNumber("Wave Speed", 0.5, 5.0, 0.1, 1.0);
+        settings.addSetting(waveSpeed);
+        rainbowWave = new SettingBoolean("Rainbow Wave", false);
+        settings.addSetting(rainbowWave);
+
+        // Lisätään asetukset yksitellen, jotta 'addSettings' -virhe poistuu
         settings.addSetting(textScale);
+        settings.addSetting(showBackground);
         settings.addSetting(customColors);
+
+        // NamedColorit lisätään omalla metodillaan
         settings.addNamedColor(new NamedColor("Text Color", textColor));
         settings.addNamedColor(new NamedColor("Bar Color", barColor));
         settings.addNamedColor(new NamedColor("BG Color", backgroundColor));
@@ -55,127 +68,136 @@ public final class EnabledModulesHud extends BaseHudElement {
                 names.add(m.getName());
             }
         }
-        names.sort(Comparator.comparingInt((String s) -> (int) TextRenderer.get().getWidth(s)).reversed());
+        // Lajitellaan leveyden mukaan (levein ylhäällä)
+        names.sort(Comparator.comparingDouble((String s) -> TextRenderer.get().getWidth(s)).reversed());
         return names;
     }
 
     @Override
     public int width(Minecraft mc) {
         List<String> list = enabledNames();
-        if (list.isEmpty()) return 0;
-        float scale = (float) textScale.getValue();
-        int maxLen = 0;
+        double scale = textScale.getValue();
+        if (list.isEmpty()) return (int) (60 * scale);
+
+        double maxWidth = 0;
         for (String s : list) {
-            if (s.length() > maxLen) maxLen = s.length();
+            maxWidth = Math.max(maxWidth, TextRenderer.get().getWidth(s) * scale);
         }
-        int bgPoints = maxLen + 1; // jos 1 piste -> tausta 2 pistettä, jne.
-        int maxBoxWidth = (int) (bgPoints * CHAR_UNIT * scale);
-        int barWidthScaled = (int) (BAR_WIDTH * scale);
-        return barWidthScaled + maxBoxWidth;
+
+        int paddingTotal = showBackground.get() ? (int) (PADDING * 2 * scale) : 4;
+        return (int) (maxWidth + (BAR_WIDTH * scale) + paddingTotal + 4);
     }
 
     @Override
     public int height(Minecraft mc) {
-        int count = enabledNames().size();
+        List<String> list = enabledNames();
+        double scale = textScale.getValue();
+        int count = list.isEmpty() ? (Minecraft.getInstance().screen != null ? 1 : 0) : list.size();
         if (count == 0) return 0;
-        float scale = (float) textScale.getValue();
-        int itemHeight = (int) ((FONT_HEIGHT + 8 * PADDING) * scale);
+
+        int itemHeight = getItemHeight(scale);
         return count * itemHeight;
+    }
+
+    private int getItemHeight(double scale) {
+        if (showBackground.get()) {
+            return (int) ((FONT_HEIGHT + 2 * PADDING) * scale);
+        } else {
+            // Jos ei taustaa, korkeus on tekstin korkeus + 2px väli (gap)
+            return (int) (FONT_HEIGHT * scale + 3);
+        }
     }
 
     @Override
     public void render(HudContext ctx, DeltaTracker tickCounter) {
         List<String> list = enabledNames();
-        if (list.isEmpty()) return;
+        boolean isEditMode = (tickCounter == null);
 
-        float scale = (float) textScale.getValue();
-        int baseY = y;
+        if (list.isEmpty()) {
+            if (isEditMode) {
+                list = new ArrayList<>();
+                list.add("Module List");
+            } else {
+                return;
+            }
+        }
 
+        double scale = textScale.getValue();
+        boolean hasBg = showBackground.get();
         int paddingScaled = (int) (PADDING * scale);
         int barWidthScaled = (int) (BAR_WIDTH * scale);
         int radiusScaled = (int) (CORNER_RADIUS * scale);
-        int itemHeight = (int) ((FONT_HEIGHT + 2 * PADDING) * scale);
+        int itemHeight = getItemHeight(scale);
 
+        // Päätetään kummalla puolella palkki on (vasen/oikea) ruudun puolivälin mukaan
         boolean barOnLeft = x < ctx.mc.getWindow().getGuiScaledWidth() / 2;
 
-        int maxLen = 0;
+        double maxWidth = 0;
         for (String s : list) {
-            maxLen = Math.max(maxLen, s.length());
-        }
-        int maxBoxWidth = (int) ((maxLen + 1) * CHAR_UNIT * scale);
-
-        int[] boxWidths = new int[list.size()];
-        for (int i = 0; i < list.size(); i++) {
-            boxWidths[i] = (int) ((list.get(i).length() + 1) * CHAR_UNIT * scale);
+            maxWidth = Math.max(maxWidth, TextRenderer.get().getWidth(s) * scale);
         }
 
         int totalHeight = list.size() * itemHeight;
+        int currentBarColor = 0x0000000;
+        int currentBgColor = customColors.get() ? backgroundColor.getCurrentColor().getARGB() : ctx.theme.panel;
+        int currentTextColor = customColors.get() ? textColor.getCurrentColor().getARGB() : ctx.theme.text;
 
-        // Laske elementin kokonaisleveys (sama kuin width() palauttaa)
-        int elementWidth = barWidthScaled + maxBoxWidth;
+        // 1. Piirretään pystybaari
+        int barX = barOnLeft ? x : (int) (x + maxWidth + (hasBg ? paddingScaled * 2 : 6));
+        ctx.fillRounded(barX, y, barWidthScaled, totalHeight, radiusScaled, currentBarColor);
 
-        int screenWidth = ctx.mc.getWindow().getGuiScaledWidth();
-        int renderX = x; // alkuperäinen x, jota käytetään piirrossa
-
-        // Jos elementti menee oikealta yli, siirrä vasemmalle
-        if (renderX + elementWidth > screenWidth) {
-            renderX = screenWidth - elementWidth;
-        }
-        // Jos siirto vei vasemmalta yli, rajoita nollaan
-        if (renderX < 0) {
-            renderX = 0;
-        }
-
-        int accentColor = ThemeManager.getCurrentTheme().accent;
-        int defaultTextColor = accentColor;
-        int defaultBarColor = accentColor;
-        int defaultBgColor = ctx.theme.panel;
-
-        int currentTextColor, currentBarColor, currentBgColor;
-        if (customColors.get()) {
-            currentTextColor = textColor.getCurrentColor().getARGB();
-            currentBarColor = barColor.getCurrentColor().getARGB();
-            currentBgColor = backgroundColor.getCurrentColor().getARGB();
-        } else {
-            currentTextColor = defaultTextColor;
-            currentBarColor = defaultBarColor;
-            currentBgColor = defaultBgColor;
-        }
-
-        int barX = barOnLeft ? renderX : renderX + maxBoxWidth;
-        ctx.fillRounded(barX, baseY, barWidthScaled, totalHeight, radiusScaled, currentBarColor);
-
-        for (int i = 0; i < list.size(); i++) {
-            int yy = baseY + i * itemHeight;
-            int boxWidth = boxWidths[i];
-            int boxX;
-
-            if (barOnLeft) {
-                boxX = renderX + barWidthScaled;
-                ctx.fillRoundedCustom(boxX, yy, boxWidth, itemHeight, radiusScaled, currentBgColor,
-                        false, true, true, false);
-            } else {
-                boxX = barX - boxWidth;
-                ctx.fillRoundedCustom(boxX, yy, boxWidth, itemHeight, radiusScaled, currentBgColor,
-                        true, false, false, true);
-            }
-        }
-
+        // 2. Piirretään moduulit
         for (int i = 0; i < list.size(); i++) {
             String name = list.get(i);
-            int yy = baseY + i * itemHeight;
-            int boxWidth = boxWidths[i];
-            int textY = yy + (itemHeight - (int) (FONT_HEIGHT * scale)) / 2;
-            int textWidth = (int) (name.length() * CHAR_UNIT * scale);
+            int yy = y + i * itemHeight;
+            double textW = TextRenderer.get().getWidth(name) * scale;
+            int boxWidth = (int) (textW + (hasBg ? paddingScaled * 2 : 4));
+
+            int boxX;
             int textX;
+            int textY = yy + (itemHeight - (int) (FONT_HEIGHT * scale)) / 2 - 3;
 
             if (barOnLeft) {
-                textX = renderX + barWidthScaled + paddingScaled;
+                boxX = barX + barWidthScaled;
+                textX = boxX + (hasBg ? paddingScaled : 2);
+                if (hasBg) {
+                    ctx.fillRoundedCustom(boxX, yy, boxWidth, itemHeight, radiusScaled, currentBgColor, false, true, true, false);
+                }
             } else {
-                textX = barX - textWidth - paddingScaled;
+                boxX = barX - boxWidth;
+                textX = barX - (int) textW - (hasBg ? paddingScaled : 2);
+                if (hasBg) {
+                    ctx.fillRoundedCustom(boxX, yy, boxWidth, itemHeight, radiusScaled, currentBgColor, true, false, false, true);
+                }
             }
 
-            ctx.drawScaledText(name, textX, textY, currentTextColor, false, scale);
+            if (rainbowWave.get()) {
+                // Välitetään mukaan rivin indeksi i ja y-koordinaatti (tai vain i)
+                drawRainbowText(ctx, name, textX, textY, scale, i);
+            } else {
+                ctx.drawScaledText(name, textX, textY, currentTextColor, true, (float) scale);
+            }
+        }
+    }
+
+    private void drawRainbowText(HudContext ctx, String text, int x, int y, double scale, int rowIndex) {
+        float speed = waveSpeed != null ? (float) waveSpeed.getValue() : 1.0f;
+        long now = System.currentTimeMillis();
+        // Ajan mukaan muuttuva perushue (0-360)
+        float timeHue = (now % (long)(5000 / speed)) / (5000f / speed) * 360f;
+
+        // Askeleet: kuinka paljon hue muuttuu per merkki (x) ja per rivi (y)
+        float xStep = 12f;   // astetta per merkki
+        float yStep = 18f;   // astetta per rivi (voit säätää haluamaksesi)
+
+        float currentX = x;
+        for (int charIndex = 0; charIndex < text.length(); charIndex++) {
+            String ch = String.valueOf(text.charAt(charIndex));
+            // Diagonaalinen hue: aika + (x-paikka) + (rivi * yStep)
+            float hue = (timeHue + charIndex * xStep + rowIndex * yStep) % 360;
+            Color color = Color.fromHsv(hue, 1.0f, 1.0f);
+            ctx.drawScaledText(ch, (int) currentX, y, color.getARGB(), true, (float) scale);
+            currentX += TextRenderer.get().getWidth(ch) * scale;
         }
     }
 

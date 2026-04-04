@@ -1,11 +1,13 @@
 package silversword.axiom.client.gui.components;
 
 import net.minecraft.resources.Identifier;
+import silversword.axiom.client.config.ClickGuiConfigManager;
 import silversword.axiom.client.gui.core.*;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.misc.DeathLocationModule;
 import silversword.axiom.client.modules.render.NoParticleModule;
 import silversword.axiom.client.modules.render.WaypointModule;
+import silversword.axiom.client.render.font.TextRenderer;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.texture.Texture;
 import silversword.axiom.client.render.rendersystem.utils.texture.TextureManager;
@@ -123,19 +125,52 @@ public final class ModuleRow implements UiComponent {
                 ui.fill(bounds.x, bounds.y, fillWidth, bounds.h, accentWithAlpha);
             }
         }
-
-        int nameX = bounds.x + 2;
-        int rightLimit = gearRect.x;
-        if (nameX > rightLimit) nameX = rightLimit;
-        String name = module.getName();
-        if (name == null) name = "";
         int nameY = bounds.y + (bounds.h - ui.fontHeight()) / 2 + 3;
-        ui.text(name, nameX, nameY, ui.theme.text);
+        int nameX = bounds.x + 2;
+        int maxNameWidth = gearRect.x - nameX - 4;
+        String displayName = module.getName();
+        if (displayName == null) displayName = "";
+        String truncated = truncateToFit(ui, displayName, maxNameWidth);
+
+        if (ClickGuiConfigManager.isRainbowWaveEnabled()) {
+            drawRainbowText(ui, truncated, nameX, nameY, rowIndex);
+        } else {
+            ui.text(truncated, nameX, nameY, ui.theme.text);
+        }
 
         if (hover && !gearHover) {
             String description = module.getDescription();
             if (description != null && !description.isEmpty()) TooltipStack.push(description, mouseX, mouseY);
         }
+    }
+
+    private void drawRainbowText(UiContext ui, String text, int x, int y, int rowIndex) {
+        float speed = ClickGuiConfigManager.getRainbowWaveSpeed();
+        long now = System.currentTimeMillis();
+        float timeHue = (now % (long)(5000 / speed)) / (5000f / speed) * 360f;
+        float xStep = 12f;
+        float yStep = 18f;
+        float currentX = x;
+        for (int i = 0; i < text.length(); i++) {
+            String ch = String.valueOf(text.charAt(i));
+            float hue = (timeHue + i * xStep + rowIndex * yStep) % 360;
+            Color color = Color.fromHsv(hue, 1.0f, 1.0f);
+            ui.text(ch, (int) currentX, y, color.getARGB());
+            currentX += TextRenderer.get().getWidth(ch);
+        }
+    }
+
+    private String truncateToFit(UiContext ui, String text, int maxWidth) {
+        if (ui.textWidth(text) <= maxWidth) return text;
+        String ellipsis = "...";
+        int ellipsisW = ui.textWidth(ellipsis);
+        for (int len = text.length(); len > 0; len--) {
+            String sub = text.substring(0, len);
+            if (ui.textWidth(sub) + ellipsisW <= maxWidth) {
+                return sub + ellipsis;
+            }
+        }
+        return ellipsis;
     }
 
     @Override

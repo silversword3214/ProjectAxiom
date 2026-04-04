@@ -19,7 +19,10 @@ public final class WatermarkHud extends BaseHudElement {
 
     private final SettingNumber logoScale;
     private final SettingNumber textScale;
-    private final SettingNumber backgroundPadding;
+    private final SettingNumber boxOffsetX; // UUSI: Etäisyys logosta
+    private final SettingNumber boxOffsetY; // UUSI: Pystysuuntainen siirtymä
+    private final SettingNumber paddingX;   // UUSI: Laatikon leveyssuuntainen koko
+    private final SettingNumber paddingY;   // UUSI: Laatikon korkeussuuntainen koko
     private final SettingNumber backgroundRadius;
     private final SettingNumber outlineThickness;
     private final SettingColor textColor;
@@ -28,9 +31,15 @@ public final class WatermarkHud extends BaseHudElement {
 
     public WatermarkHud() {
         super("Watermark", 6, 6);
-        this.logoScale = new SettingNumber("Logo Scale", 0.01, 0.1, 0.01, 0.05);
+        this.logoScale = new SettingNumber("Logo Scale", 0.01, 1, 0.01, 0.2);
         this.textScale = new SettingNumber("Text Scale", 0.2, 3.0, 0.1, 0.80);
-        this.backgroundPadding = new SettingNumber("Background Padding", 0, 20, 1, 3);
+
+        // Uudet asetukset offsetille ja koolle
+        this.boxOffsetX = new SettingNumber("Box Offset X", -50, 100, 1, 5);
+        this.boxOffsetY = new SettingNumber("Box Offset Y", -50, 50, 1, 0);
+        this.paddingX = new SettingNumber("Padding X", 0, 30, 1, 6);
+        this.paddingY = new SettingNumber("Padding Y", 0, 20, 1, 3);
+
         this.backgroundRadius = new SettingNumber("Background Radius", 0, 10, 1, 6);
         this.outlineThickness = new SettingNumber("Outline Thickness", 0.5, 5.0, 0.5, 2.0);
         this.textColor = new SettingColor("Text Color", new Color(0xFFFFFFFF));
@@ -39,7 +48,10 @@ public final class WatermarkHud extends BaseHudElement {
 
         settings.addSetting(logoScale);
         settings.addSetting(textScale);
-        settings.addSetting(backgroundPadding);
+        settings.addSetting(boxOffsetX);
+        settings.addSetting(boxOffsetY);
+        settings.addSetting(paddingX);
+        settings.addSetting(paddingY);
         settings.addSetting(backgroundRadius);
         settings.addSetting(outlineThickness);
         settings.addNamedColor(new NamedColor("Text Color", textColor));
@@ -52,15 +64,11 @@ public final class WatermarkHud extends BaseHudElement {
         Texture tex = TextureManager.getTexture(LOGO_ID);
         if (tex == null) return 0;
 
-        float lScale = (float) logoScale.getValue();
-        int logoW = (int) (tex.getWidth() * lScale);
+        int logoW = (int) (tex.getWidth() * (float) logoScale.getValue());
+        int textW = (int) (mc.font.width(VERSION_TEXT) * (float) textScale.getValue());
 
-        float tScale = (float) textScale.getValue();
-        int textW = (int) (mc.font.width(VERSION_TEXT) * tScale);
-
-        int padding = (int) backgroundPadding.getValue();
-
-        return logoW + padding + textW;
+        // Kokonaisleveys: Logo + Offset + Laatikon leveys (teksti + paddingit)
+        return logoW + (int) boxOffsetX.getValue() + textW + ((int) paddingX.getValue() * 2);
     }
 
     @Override
@@ -68,13 +76,12 @@ public final class WatermarkHud extends BaseHudElement {
         Texture tex = TextureManager.getTexture(LOGO_ID);
         if (tex == null) return 0;
 
-        float lScale = (float) logoScale.getValue();
-        int logoH = (int) (tex.getHeight() * lScale);
+        int logoH = (int) (tex.getHeight() * (float) logoScale.getValue());
+        int textH = (int) (mc.font.lineHeight * (float) textScale.getValue());
+        int boxH = textH + ((int) paddingY.getValue() * 2);
 
-        float tScale = (float) textScale.getValue();
-        int textH = (int) (mc.font.lineHeight * tScale);
-
-        return Math.max(logoH, textH);
+        // Korkeus on joko logon tai laatikon korkeus (huomioiden offsetin)
+        return Math.max(logoH, boxH + Math.abs((int) boxOffsetY.getValue()));
     }
 
     @Override
@@ -82,48 +89,54 @@ public final class WatermarkHud extends BaseHudElement {
         Texture tex = TextureManager.getTexture(LOGO_ID);
         if (tex == null) return;
 
-        Color textCol = textColor.getCurrentColor();
-        Color bgCol = backgroundColor.getCurrentColor();
-        Color outlineCol = outlineColor.getCurrentColor();
-
+        // Arvot asetuksista
         float lScale = (float) logoScale.getValue();
-        int logoW = (int) (tex.getWidth() * lScale);
-        int logoH = (int) (tex.getHeight() * lScale);
-
-        // Piirrä logo Renderer2D:llä
-        ctx.renderer.drawTexture(LOGO_ID, x, y, logoW, logoH);
-
         float tScale = (float) textScale.getValue();
-        String text = VERSION_TEXT;
-        int textW = (int) (ctx.textWidth(text) * tScale);
-        int textH = (int) (ctx.fontHeight() * tScale);
-
-        int padding = (int) backgroundPadding.getValue();
+        int offX = (int) boxOffsetX.getValue();
+        int offY = (int) boxOffsetY.getValue();
+        int pX = (int) paddingX.getValue();
+        int pY = (int) paddingY.getValue();
         int radius = (int) backgroundRadius.getValue();
         double thickness = outlineThickness.getValue();
 
-        int textX = x + logoW + padding - 20;
-        int textY = y + (logoH - textH) / 2;
+        // Logon mitat
+        int logoW = (int) (tex.getWidth() * lScale);
+        int logoH = (int) (tex.getHeight() * lScale);
 
-        int bgW = textW + padding * 2;
-        int bgH = textH + padding * 2;
-        int bgX = textX - padding;
-        int bgY = textY - padding;
+        // Tekstin mitat
+        int textW = (int) (ctx.textWidth(VERSION_TEXT) * tScale);
+        int textH = (int) (ctx.fontHeight() * tScale);
 
-        // Reunus (jos näkyvä)
+        // Laatikon mitat
+        int bgW = textW + pX * 2;
+        int bgH = textH + pY * 2;
+
+        // Sijoittelu
+        int boxX = x + logoW + offX;
+        int boxY = y + (logoH - bgH) / 2 + offY; // Keskistetty logoon nähden + offset
+
+        int textX = boxX + pX;
+        int textY = boxY + pY;
+
+        // 1. Piirretään logo
+        ctx.renderer.drawTexture(LOGO_ID, x, y, logoW, logoH);
+
+        // 2. Piirretään laatikon tausta ja reunus
+        Color bgCol = backgroundColor.getCurrentColor();
+        Color outlineCol = outlineColor.getCurrentColor();
+
         if (outlineCol.getAlpha() != 0 && thickness > 0) {
-            ctx.drawRoundedOutline(bgX, bgY, bgW, bgH, radius, outlineCol.getARGB(), thickness);
+            ctx.drawRoundedOutline(boxX, boxY, bgW, bgH, radius, outlineCol.getARGB(), thickness);
         }
 
-        // Tausta
         if (radius > 0) {
-            ctx.fillRounded(bgX, bgY, bgW, bgH, radius, bgCol.getARGB());
+            ctx.fillRounded(boxX, boxY, bgW, bgH, radius, bgCol.getARGB());
         } else {
-            ctx.fill(bgX, bgY, bgW, bgH, bgCol.getARGB());
+            ctx.fill(boxX, boxY, bgW, bgH, bgCol.getARGB());
         }
 
-        // Teksti
-        ctx.drawScaledText(text, textX, textY, textCol.getARGB(), true, tScale);
+        // 3. Piirretään teksti
+        ctx.drawScaledText(VERSION_TEXT, textX, textY, textColor.getCurrentColor().getARGB(), true, tScale);
     }
 
     @Override
