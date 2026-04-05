@@ -471,7 +471,6 @@ final class SettingPresetSliderRow extends SettingRowBase {
         this.presets = s.getPresets();
         int n = presets.length;
 
-        // Luodaan slider, joka liikkuu indeksien 0..n-1 välillä askeleella 1
         this.slider = new Slider(
                 s.getName(),
                 0,
