@@ -136,7 +136,7 @@ public final class EnabledModulesHud extends BaseHudElement {
             int barX = barOnLeft ? x : (int) (x + width(ctx.mc) - barWidthScaled - 4);
             int boxX = barOnLeft ? barX + barWidthScaled : barX - boxWidth;
             int textX = boxX + (hasBg ? paddingScaled : 2);
-            int textY = yy + (itemHeight - (int) (FONT_HEIGHT * scale)) / 2;
+            int textY = yy + (itemHeight - (int) (FONT_HEIGHT * scale)) / 2 - 3;
 
             // 1. Palkin piirto
             if (rainbowWave.get()) {

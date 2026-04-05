@@ -7,8 +7,9 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import silversword.axiom.client.event.mouse.MouseUpdateEvent;
-import silversword.axiom.client.event.player.PreMotionEvent; // TÄRKEÄ: Käytetään uutta eventtiä
+import silversword.axiom.client.event.player.PreMotionEvent;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
@@ -29,7 +30,6 @@ import silversword.axiom.client.utils.Rotations;
 import java.util.List;
 
 import static silversword.axiom.client.main.AxiomInitialize.mc;
-import static silversword.axiom.client.main.AxiomInitialize.EVENT_BUS;
 
 public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConfigurable {
     private static KillAura instance;
@@ -38,9 +38,21 @@ public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConf
     private final AttackController attackController = new AttackController();
 
     private LivingEntity currentTarget = null;
-
     private float targetYawForMouse, targetPitchForMouse;
     private boolean shouldSimulateMouse = false;
+
+    private boolean autoJumped = false;
+    private boolean autoWaitingForFall = false;
+    private int autoFallDelay = 0;
+
+    // Smart-tilan apumuuttujat
+    private int smartFallDelay = 0;
+
+
+
+    public boolean isAutoCritsActive() {
+        return isEnabled() && critsMode.getMode().equals("Auto");
+    }
 
     // ---------- Settings ----------
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
@@ -50,24 +62,24 @@ public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConf
     private final SettingSlider attackRange = new SettingSlider("Attack Range", new double[]{3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0}, 4.0);
     private final SettingBoolean checkWalls = new SettingBoolean("Check Walls", true);
     private final SettingBoolean ignoreBots = new SettingBoolean("Ignore Bots", true);
-    private final SettingSlider maxTurnSpeed = new SettingSlider("Turn Speed (deg/tick)", new double[]{5, 10, 15, 20, 25, 30, 35, 40, 60, 80}, 20);
+    private final SettingSlider maxTurnSpeed = new SettingSlider("Turn Speed (deg/tick)", new double[]{5, 10, 15, 20, 25, 30, 35, 40, 60, 80}, 40);
     private final SettingBoolean simulateJitter = new SettingBoolean("Simulate Jitter", true);
     private final SettingSlider jitterAmount = new SettingSlider("Jitter Amount", new double[]{0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0}, 2.0);
     private final SettingBoolean attackJitter = new SettingBoolean("Attack Jitter", true);
     private final SettingSlider attackJitterAmount = new SettingSlider("Attack Jitter Amount", new double[]{0.5, 1.0, 1.5, 2.0, 2.5, 3.0}, 1.5);
     private final SettingBoolean renderTargetBox = new SettingBoolean("Draw Box", true);
-
     private final SettingColor portalColor = new SettingColor("Portal Color", new Color(100, 0, 150, 180));
     private final SettingBoolean renderPortalEffect = new SettingBoolean("Portal Effect", false);
     private final SettingSlider portalRadius = new SettingSlider("Portal Radius", new double[]{0.5, 0.8, 1.0, 1.2, 1.5, 1.8, 2.0}, 1.2);
     private final SettingSlider portalVerticalSegments = new SettingSlider("Vertical Segments", new double[]{4, 8, 12, 16, 20, 24, 32}, 16);
     private final SettingSlider portalHorizontalSegments = new SettingSlider("Horizontal Segments", new double[]{8, 12, 16, 20, 24, 32, 48}, 24);
-
-
     private final SettingColor boxColor = new SettingColor("Box Color", Color.GREEN);
 
+    // Uusi asetus: Crits Mode
+    private final SettingMode critsMode = new SettingMode("Crits Mode", new String[]{"None", "Smart", "Silent", "Auto"}, "None");
+
     public KillAura() {
-        super("Kill Aura", "Kill Aura with smooth rotations", ModuleCategory.COMBAT);
+        super("Kill Aura", "Kill Aura with smooth rotations and crits", ModuleCategory.COMBAT);
         addSetting(mode);
         addSetting(targetMode);
         addSetting(priorityMode);
@@ -81,12 +93,12 @@ public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConf
         addSetting(attackJitterAmount);
         addSetting(renderTargetBox);
         addSetting(renderPortalEffect);
+        addSetting(critsMode);
 
         addHiddenSetting(portalColor.getSetting());
         addSetting(portalRadius);
         addSetting(portalVerticalSegments);
         addSetting(portalHorizontalSegments);
-
         addHiddenSetting(boxColor.getSetting());
         addHiddenSetting(toggleKey);
         instance = this;
@@ -101,25 +113,27 @@ public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConf
         attackController.reset();
         currentTarget = null;
         shouldSimulateMouse = false;
-
+        smartFallDelay = 0;
     }
+
     @Override
     protected void onDisable() {
         currentTarget = null;
         shouldSimulateMouse = false;
-        // Tyhjennetään puskuri heti kun moduuli sammuu
-        if (attackController != null) {
-            attackController.reset();
-        }
+        if (attackController != null) attackController.reset();
+        smartFallDelay = 0;
+        autoJumped = false;
+        autoWaitingForFall = false;
+        autoFallDelay = 0;
     }
 
     @Subscribe
     public void onMouseUpdate(MouseUpdateEvent event) {
+        if (mc.player == null) return;
         if (!isEnabled() || !mode.getMode().equals("Legit") || !shouldSimulateMouse) return;
 
         float currentYaw = mc.player.getYRot();
         float currentPitch = mc.player.getXRot();
-
         float yawDiff = Mth.wrapDegrees(targetYawForMouse - currentYaw);
         float pitchDiff = targetPitchForMouse - currentPitch;
 
@@ -128,9 +142,9 @@ public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConf
             return;
         }
 
-        float maxTurnSpeedF = (float) maxTurnSpeed.getValue();
-        float yawStep = Mth.clamp(yawDiff, -maxTurnSpeedF, maxTurnSpeedF);
-        float pitchStep = Mth.clamp(pitchDiff, -maxTurnSpeedF, maxTurnSpeedF);
+        float maxTurnPerTick = (float) maxTurnSpeed.getValue();
+        float yawStep = Mth.clamp(yawDiff, -maxTurnPerTick, maxTurnPerTick);
+        float pitchStep = Mth.clamp(pitchDiff, -maxTurnPerTick, maxTurnPerTick);
 
         if (simulateJitter.get()) {
             float jitter = (float) jitterAmount.getValue();
@@ -138,12 +152,8 @@ public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConf
             pitchStep += (float) ((Math.random() - 0.5) * jitter * 0.5);
         }
 
-        double sens = mc.options.sensitivity().get();
-        double deltaX = yawStep * 0.6 * sens;
-        double deltaY = pitchStep * 0.6 * sens;
-
-        event.setDeltaX(event.getDeltaX() + deltaX);
-        event.setDeltaY(event.getDeltaY() + deltaY);
+        event.setDeltaX(event.getDeltaX() + yawStep);
+        event.setDeltaY(event.getDeltaY() + pitchStep);
     }
 
     @Subscribe
@@ -159,16 +169,19 @@ public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConf
 
         if (currentTarget == null) {
             shouldSimulateMouse = false;
+            smartFallDelay = 0;
             return;
         }
 
         if (mc.player.distanceTo(currentTarget) > attackRange.getValue()) {
             shouldSimulateMouse = false;
+            smartFallDelay = 0;
             return;
         }
 
         if (checkWalls.get() && !isTargetVisible(currentTarget)) {
             shouldSimulateMouse = false;
+            smartFallDelay = 0;
             return;
         }
 
@@ -177,6 +190,58 @@ public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConf
         targetYaw = Mth.wrapDegrees(targetYaw);
         targetPitch = Mth.clamp(targetPitch, -90f, 90f);
 
+        // ─── CRITS MODE -LOGIIKKA ───────────────────────────────────────────
+        String critMode = critsMode.getMode();
+        boolean canCritNow = true; // oletus, että saa hyökätä
+
+        if (!critMode.equals("None") && attackController.canAttack(mc.player)) {
+            if (critMode.equals("Smart")) {
+                // Jos pelaaja on nousussa (hyppää), laitetaan viive
+                if (!mc.player.onGround() && mc.player.getDeltaMovement().y() > 0) {
+                    smartFallDelay = 2; // odotetaan 2 tickiä putoamista
+                }
+                if (smartFallDelay > 0) {
+                    smartFallDelay--;
+                    canCritNow = false; // ei hyökätä tällä tickillä
+                }
+            }
+            else if (critMode.equals("Silent")) {
+                doPacketCrit(); // lähetetään packet-krit
+            }
+            else if (critMode.equals("Auto")) {
+                if (!autoWaitingForFall && autoFallDelay == 0) {
+                    // Ei odotustilassa, tee hyppy
+                    doAutoJumpCrit();
+                    canCritNow = false;
+                } else if (autoFallDelay > 0) {
+                    // Odotetaan viivettä
+                    autoFallDelay--;
+                    if (autoFallDelay == 0) {
+                        // Viive ohi, salli isku ja nollaa tila
+                        autoWaitingForFall = false;
+                        canCritNow = true;
+                    } else {
+                        canCritNow = false;
+                    }
+                } else if (autoWaitingForFall) {
+                    // Odotetaan putoamisen alkua
+                    if (mc.player.getDeltaMovement().y() < 0) {
+                        // Putoaminen alkoi, asetetaan viive (3 tickiä)
+                        autoFallDelay = 3;
+                        autoWaitingForFall = false; // siirrytään viivetilaan
+                        canCritNow = false;
+                    } else {
+                        canCritNow = false;
+                    }
+                }
+            }
+        }
+
+        if (!canCritNow) {
+            return; // Smart-tila esti hyökkäyksen
+        }
+
+        // ─── VARSINAINEN HYÖKKÄYS ──────────────────────────────────────────
         String currentMode = mode.getMode();
 
         if (currentMode.equals("Legit")) {
@@ -184,7 +249,6 @@ public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConf
             targetPitchForMouse = targetPitch;
             shouldSimulateMouse = true;
 
-            // Legit hyökkäys: Varmistetaan crosshair ja cooldown
             if (isCrosshairOnTarget(currentTarget) && attackController.canAttack(mc.player)) {
                 performAttack(currentTarget);
             }
@@ -196,7 +260,6 @@ public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConf
 
             if (attackController.canAttack(mc.player)) {
                 Rotations.rotate(yaw, pitch, 10, false, () -> {
-                    // Tämä suoritetaan Rotations.onPreSendMovementPackets sisällä
                     performAttack(currentTarget);
                 });
             } else if (Rotations.getRotationTimer() > 5) {
@@ -206,8 +269,7 @@ public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConf
     }
 
     @Override
-    protected void onTick() {
-    }
+    protected void onTick() {}
 
     private void performAttack(LivingEntity target) {
         if (!isEnabled()) return;
@@ -217,23 +279,48 @@ public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConf
             float jitter = (float) attackJitterAmount.getValue();
             float oldYaw = mc.player.getYRot();
             float oldPitch = mc.player.getXRot();
-
             mc.player.setYRot(oldYaw + (float)((Math.random() - 0.5) * jitter));
             mc.player.setXRot(oldPitch + (float)((Math.random() - 0.5) * jitter * 0.5));
-
             mc.gameMode.attack(mc.player, target);
             mc.player.swing(mc.player.getUsedItemHand());
-
             mc.player.setYRot(oldYaw);
             mc.player.setXRot(oldPitch);
         } else {
             mc.gameMode.attack(mc.player, target);
             mc.player.swing(mc.player.getUsedItemHand());
         }
-
         attackController.recordAttack();
     }
 
+
+    private void doPacketCrit() {
+        if (mc.player == null || mc.getConnection() == null) return;
+        double x = mc.player.getX();
+        double y = mc.player.getY();
+        double z = mc.player.getZ();
+        float yaw = mc.player.getYRot();
+        float pitch = mc.player.getXRot();
+
+        sendPosRot(x, y + 0.0625, z, yaw, pitch, false);
+        sendPosRot(x, y,         z, yaw, pitch, false);
+        sendPosRot(x, y + 1.0E-5, z, yaw, pitch, false);
+        sendPosRot(x, y,         z, yaw, pitch, false);
+    }
+
+    private void doAutoJumpCrit() {
+        if (mc.player == null) return;
+        if (autoWaitingForFall || autoFallDelay > 0) return;
+        mc.player.jumpFromGround();
+        autoWaitingForFall = true;
+        autoFallDelay = 0;
+    }
+
+    private void sendPosRot(double x, double y, double z, float yaw, float pitch, boolean onGround) {
+        if (mc.player == null || mc.getConnection() == null) return;
+        mc.getConnection().send(new ServerboundMovePlayerPacket.PosRot(x, y, z, yaw, pitch, onGround, mc.player.horizontalCollision));
+    }
+
+    // ─── MUUT METODIT (ennallaan) ──────────────────────────────────────────
     private boolean isCrosshairOnTarget(LivingEntity target) {
         if (mc.hitResult instanceof EntityHitResult entityHit) {
             return entityHit.getEntity() == target;
@@ -287,15 +374,9 @@ public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConf
         double radius = (target.getBbWidth() / 2.0) * portalRadius.getValue();
         int vertSeg = (int) portalVerticalSegments.getValue();
         int horiSeg = (int) portalHorizontalSegments.getValue();
-
         Color portalColorCurrent = portalColor.getCurrentColor();
-
         renderer.drawPortalCylinder(x, y, z, radius, height, portalColorCurrent, vertSeg, horiSeg);
     }
-
-
-
-    // ── ColorConfigurable ────────────────────────────────────────────────────
 
     @Override
     public List<NamedColor> getColors() {

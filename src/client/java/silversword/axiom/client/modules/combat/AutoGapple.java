@@ -57,7 +57,7 @@ public class AutoGapple extends AxiomMod implements KeybindConfigurable {
     private static final ItemStack PEARL_STACK = new ItemStack(Items.ENDER_PEARL);
 
     public AutoGapple() {
-        super("Auto Gapple", "Eats gapples after no damage or right after pearl", ModuleCategory.COMBAT);
+        super("Auto Gapple", "Eats gapples automatically", ModuleCategory.COMBAT);
         addSetting(triggerHealth);
         addSetting(countAbsorption);
         addSetting(noDamageSeconds);

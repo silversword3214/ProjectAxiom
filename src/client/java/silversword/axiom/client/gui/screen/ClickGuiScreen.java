@@ -103,6 +103,10 @@ public final class ClickGuiScreen extends Screen {
             drawSearchBar(lastUi, mouseX, mouseY, delta);
         }
 
+        if (currentDropdown != null) {
+            currentDropdown.render(lastUi, mouseX, mouseY, delta);
+        }
+
         TextRenderer.get().end();
         super.render(ctx, mouseX, mouseY, delta);
 
@@ -181,6 +185,7 @@ public final class ClickGuiScreen extends Screen {
         windowManager.closeOverlay();
         saveUi();
         super.removed();
+
     }
 
     @Override
@@ -205,10 +210,12 @@ public final class ClickGuiScreen extends Screen {
             int clickGuiX = centerX - toggleW - gap / 2;
             int settingsX = centerX + gap / 2;
 
-            if (currentDropdown != null) {
+            if (currentDropdown != null && lastUi != null) {
                 if (currentDropdown.getBounds().contains(mouseX, mouseY)) {
                     if (currentDropdown.mouseClicked(lastUi, mouseX, mouseY, click.button())) return true;
-                } else currentDropdown = null;
+                } else {
+                    currentDropdown = null;
+                }
             }
 
             if (mouseX >= clickGuiX && mouseX <= clickGuiX + toggleW && mouseY >= topY && mouseY <= topY + toggleH) {
@@ -285,8 +292,8 @@ public final class ClickGuiScreen extends Screen {
     }
 
     private void createCategoryWindows(int screenW, int screenH) {
-        String[] categories = new String[] { "Movement", "Combat", "Render", "World", "Player", "Misc" };
-        int[] xCoords = { 5, 119, 236, 610, 725, 837 };
+        String[] categories = new String[] { "Movement", "Combat", "Render", "World", "Player", "Misc", "Utility" };
+        int[] xCoords = { 5, 119, 236, 610, 725, 837, 837 };
 
         int winW = 110;
         int winH = 250;
@@ -296,8 +303,14 @@ public final class ClickGuiScreen extends Screen {
             String cat = categories[i];
             String id = "category:" + cat.toLowerCase();
             int x = xCoords[i];
+            int y = startY - 40;
 
-            Window win = new Window(id, cat, x, startY, winW, winH);
+
+            if (cat.equals("Utility")) {
+                y = startY + winH - 25;
+            }
+
+            Window win = new Window(id, cat, x, y, winW, winH);
             win.setClosable(false);
             win.setMinimizable(true);
 
@@ -334,6 +347,7 @@ public final class ClickGuiScreen extends Screen {
     @Override
     public boolean keyPressed(KeyEvent input) {
         if (input.input() == 256) {
+            currentDropdown = null;
             if (windowManager.isOverlayOpen()) {
                 windowManager.closeOverlay();
                 return true;

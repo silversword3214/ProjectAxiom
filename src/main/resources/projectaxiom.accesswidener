@@ -34,3 +34,5 @@ accessible field net/minecraft/client/renderer/Sheets BANNER_MATERIALS Ljava/uti
 accessible field net/minecraft/client/renderer/Sheets SHIELD_MATERIALS Ljava/util/Map;
 accessible field net/minecraft/world/entity/player/Inventory selected I
 accessible method net/minecraft/world/level/block/CropBlock getBaseSeedId ()Lnet/minecraft/world/level/ItemLike;
+accessible field net/minecraft/world/entity/Entity level Lnet/minecraft/world/level/Level;
+accessible method net/minecraft/client/player/LocalPlayer isMoving ()Z

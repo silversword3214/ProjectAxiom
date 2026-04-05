@@ -7,6 +7,7 @@ import silversword.axiom.client.modules.movement.*;
 import silversword.axiom.client.modules.player.*;
 import silversword.axiom.client.modules.render.*;
 import silversword.axiom.client.modules.misc.*;
+import silversword.axiom.client.modules.utility.BedFucker;
 import silversword.axiom.client.modules.world.*;
 
 
@@ -81,6 +82,7 @@ public final class ModuleManager {
         add(new AutoGapple());
         add(new HitEffect());
         add(new Velocity());
+        add(new MaceDmg());
 
         // Movement
         add(new Flight());
@@ -89,6 +91,8 @@ public final class ModuleManager {
         add(new PhaseWBoat());
         add(new Speed());
         add(new AirJump());
+        add(new VulcanHighJump());
+        add(new SafeWalk());
         add(new AutoSprint());
         add(new Step());
         add(new Jesus());
@@ -152,6 +156,8 @@ public final class ModuleManager {
         add(new DeathLocationModule());
         add(new AutoClicker());
         add(new PingSpoof());
+
+        // Utility
         add(new BedFucker());
 
         // World

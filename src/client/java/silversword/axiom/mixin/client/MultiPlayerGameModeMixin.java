@@ -14,9 +14,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import silversword.axiom.client.event.player.AttackEvent;
 import silversword.axiom.client.event.player.UseBlockEvent;
 import silversword.axiom.client.hud.util.ComboCounter;
 import silversword.axiom.client.main.AxiomInitialize;
+import silversword.axiom.client.managers.ModuleManager;
+import silversword.axiom.client.modules.combat.Criticals;
 import silversword.axiom.client.modules.moduleutils.InteractItemEvent;
 
 @Mixin(MultiPlayerGameMode.class)
@@ -56,8 +59,18 @@ public class MultiPlayerGameModeMixin {
     @Inject(method = "attack", at = @At("HEAD"))
     private void onAttackEntity(Player player, Entity target, CallbackInfo ci) {
         if (player != null && player.isLocalPlayer() && target instanceof LivingEntity) {
-            ComboCounter.onHit();
+            ComboCounter.onHit(); // vanha koodi
+
+            // Uusi event
+            AttackEvent event = new AttackEvent(target);
+            AxiomInitialize.EVENT_BUS.post(event);
         }
+    }
+
+    @Inject(method = "attack", at = @At("HEAD"))
+    private void axiom$critBeforeAttack(Player player, Entity target, CallbackInfo ci) {
+        Criticals crits = ModuleManager.getInstance().getModule(Criticals.class);
+        if (crits != null) crits.tryDoPacketCrit(target);
     }
 
 

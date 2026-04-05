@@ -12,6 +12,8 @@ import silversword.axiom.client.modules.render.NoOverlay;
 @Mixin(Entity.class)
 public abstract class EntityMixin {
 
+
+
     // Freeze overlay
     private static boolean shouldRemove() {
         NoOverlay mod = ModuleManager.getInstance().getModule(NoOverlay.class);

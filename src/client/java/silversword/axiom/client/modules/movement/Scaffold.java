@@ -35,8 +35,8 @@ public class Scaffold extends AxiomMod {
     );
 
     private boolean isPlacing = false;
-    private int placeDelay = 0;          // viive legit modessa
-    private int legitCooldown = 0;       // FIX: ylimääräinen cooldown satunnaisviivettä varten
+    private int placeDelay = 0;
+    private int legitCooldown = 0;
 
     public Scaffold() {
         super("Scaffold", "Anti-Cheat optimized block placer", ModuleCategory.MOVEMENT);
@@ -49,7 +49,7 @@ public class Scaffold extends AxiomMod {
     public void onPreMotion(PreMotionEvent event) {
         if (!isEnabled() || mc.player == null || mc.level == null) return;
 
-        // FIX: Cooldown legit modessa (satunnainen 1-2 tickiä)
+
         if (legitMode.get()) {
             if (legitCooldown > 0) {
                 legitCooldown--;
@@ -65,7 +65,6 @@ public class Scaffold extends AxiomMod {
         BlockPos below = mc.player.blockPosition().below();
         boolean isOverAir = mc.level.getBlockState(below).isAir();
 
-        // Eagle / Legit Mode
         if (legitMode.get()) {
             if (isOverAir) {
                 mc.options.keyShift.setDown(true);
@@ -77,7 +76,6 @@ public class Scaffold extends AxiomMod {
         if (!isOverAir) return;
         if (isPlacing || Rotations.isRotating()) return;
 
-        // FIX: Älä yritä placetta jos pelaaja liikkuu liian nopeasti (Vulcan)
         double hSpeed = Math.hypot(mc.player.getDeltaMovement().x, mc.player.getDeltaMovement().z);
         if (hSpeed > 0.3 && !mc.player.onGround) return;
 
@@ -90,27 +88,24 @@ public class Scaffold extends AxiomMod {
         final BlockPos targetPos = data.pos;
         final Direction targetSide = data.side;
 
-        // Laske tarkka hitVec ilman satunnaisuutta (satunnaisuus lisätään callbackissa jos halutaan)
         Vec3 hitVec = getAccurateHitVec(targetPos, targetSide);
         float[] rots = calculateRotations(hitVec);
 
-        // FIX: Jos rotaatioero on hyvin pieni, tee placement ilman smooth rotaatiota
         float currentYaw = Rotations.getServerYaw();
         float currentPitch = Rotations.getServerPitch();
         float yawDiff = Math.abs(normalizeYawDiff(rots[0] - currentYaw));
         float pitchDiff = Math.abs(rots[1] - currentPitch);
         if (yawDiff < 1.5f && pitchDiff < 1.5f) {
-            // Suorita placement heti
+
             performPlacement(targetPos, targetSide, finalSlot);
-            // FIX: aseta cooldown
+
             if (legitMode.get()) {
-                legitCooldown = 1 + (int)(Math.random() * 2); // 1-2 tickiä
+                legitCooldown = 1 + (int)(Math.random() * 2);
             }
             return;
         }
 
         isPlacing = true;
-        // FIX: Käytetään dynaamisia askeleita (max 10° yaw, 5° pitch per tick)
         int dynamicSteps = Math.max(3, (int)Math.ceil(Math.max(Math.abs(yawDiff)/10.0, Math.abs(pitchDiff)/5.0)));
         Rotations.rotateSmooth(rots[0], rots[1], dynamicSteps, () -> {
             try {
@@ -122,7 +117,6 @@ public class Scaffold extends AxiomMod {
                 int currentSlot = getBestBlockSlot();
                 if (currentSlot == -1) return;
                 performPlacement(targetPos, targetSide, currentSlot);
-                // FIX: aseta cooldown placementin jälkeen
                 if (legitMode.get()) {
                     legitCooldown = 1 + (int)(Math.random() * 2);
                 }
@@ -132,7 +126,6 @@ public class Scaffold extends AxiomMod {
         });
     }
 
-    // FIX: Uusi metodi placementin suoritukseen
     private void performPlacement(BlockPos targetPos, Direction targetSide, int slot) {
         int oldSlot = mc.player.getInventory().selected;
         mc.player.getInventory().selected = slot;
@@ -143,7 +136,6 @@ public class Scaffold extends AxiomMod {
         mc.player.getInventory().selected = oldSlot;
     }
 
-    // FIX: Tarkka hitVec (keskellä kasvoa) ilman random offsetia – vähentää heittoa
     private Vec3 getAccurateHitVec(BlockPos pos, Direction side) {
         double x = pos.getX() + 0.5 + side.getStepX() * 0.5;
         double y = pos.getY() + 0.5 + side.getStepY() * 0.5;
@@ -184,7 +176,6 @@ public class Scaffold extends AxiomMod {
         return new float[]{yaw, pitch};
     }
 
-    // Apufunktio yaw-eron normalisointiin
     private float normalizeYawDiff(float diff) {
         diff = diff % 360;
         if (diff > 180) diff -= 360;

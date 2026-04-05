@@ -54,7 +54,7 @@ public final class BetterMace extends AxiomMod {
     private final MlgHandler mlgHandler = new MlgHandler();
 
     public BetterMace() {
-        super("BetterMace", "Wind Charge + Mace Swapper", ModuleCategory.COMBAT);
+        super("BetterMace", "Get good with mace", ModuleCategory.COMBAT);
         infiniteWindBurst.setParent(enableAutoSwap);
         moveToTarget.setParent(enableAutoSwap);
         aimSpeed.setParent(enableAimAssist);

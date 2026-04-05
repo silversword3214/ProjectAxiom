@@ -6,6 +6,7 @@
   "client": [
     "CameraInvoker",
     "CameraMixin",
+    "FishingHookMixin",
     "GuiMixin",
     "KeyboardHandlerMixin",
     "KeyboardInputMixin",
@@ -16,7 +17,6 @@
     "MultiPlayerGameModeMixin",
     "ReachMixin",
     "SubmitNodeStorageAccessor",
-    "FishingHookMixin",
     "VertexConsumerProviderImmediateMixin",
     "accessors.CameraAccessor",
     "accessors.ClientboundEntityEventPacketAccessor",
@@ -33,7 +33,6 @@
     "boat.BoatFlyMixin",
     "boat.BoatPhaseDismountMixin",
     "boat.BoatPhaseMixin",
-    "combat.CriticalsAttackMixin",
     "entity.EntityMixin",
     "entity.LivingEntityMixin",
     "entity.LocalPlayerMixin",
@@ -51,12 +50,14 @@
     "player.PlayerAttackCooldownMixin",
     "render.ApplyLineSmoothingMixin",
     "render.FogRendererMixin",
+    "render.FullbrightShadeMixin",
     "render.GameRendererMixin",
     "render.LevelRendererMixin",
     "render.LightTextureMixin",
     "render.LineSmoothingMixin",
     "render.MixinBlockAndTintGetter_Fullbright",
     "render.ParticleEngineMixin",
+    "render.WindowMixin",
     "render.xray.XRayAmbientOcclusionMixin",
     "render.xray.XRayLightmapMixin",
     "render.xray.XRayOcclusionMixin",
@@ -65,8 +66,7 @@
     "render.xray.XRayShouldDrawSideMixin",
     "render.xray.XRaySideCullingMixin",
     "render.xray.XRayTerrainRenderContextMixin",
-    "world.ClientWorldPropertiesMixin",
-    "render.FullbrightShadeMixin"
+    "world.ClientWorldPropertiesMixin"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -75,6 +75,7 @@
     "requireAnnotations": true
   },
   "mixins": [
+    "player.PlayerMixin"
 
   ]
 }

@@ -8,7 +8,8 @@ public enum ModuleCategory {
     RENDER("Render"),
     PLAYER("Player"),
     WORLD("World"),
-    MISC("Misc");
+    MISC("Misc"),
+    UTILITY("Utility");
 
 
 

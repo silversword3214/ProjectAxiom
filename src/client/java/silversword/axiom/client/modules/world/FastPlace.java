@@ -15,7 +15,7 @@ public class FastPlace extends AxiomMod implements KeybindConfigurable {
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
 
     // Halutessasi tee tästä myöhemmin setting
-    private final boolean onlyOnGround = true;
+    private final boolean onlyOnGround = false;
 
     public FastPlace() {
         super("Fast Place", "Removes right click delay while placing blocks.", ModuleCategory.WORLD);

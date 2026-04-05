@@ -1,17 +1,19 @@
-package silversword.axiom.client.modules.misc;
+package silversword.axiom.client.modules.utility;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
@@ -52,7 +54,7 @@ public final class BedFucker extends AxiomMod implements KeybindConfigurable {
     private BlockPos currentTarget = null;
 
     public BedFucker() {
-        super("BedFucker", "Automatically breaks beds (and anchors) through walls", ModuleCategory.PLAYER);
+        super("BedFucker", "Automatically breaks beds (and anchors) through walls", ModuleCategory.UTILITY);
 
         range = new SettingNumber("Range", 2.0, 10.0, 0.5, 5.0);
         ignoreWalls = new SettingBoolean("Ignore Walls", true);
@@ -201,39 +203,98 @@ public final class BedFucker extends AxiomMod implements KeybindConfigurable {
     private void breakBlock(BlockPos pos) {
         if (mc.player == null || mc.getConnection() == null) return;
 
-        // Silent rotation: temporarily change player's yaw/pitch to face the block
-        float[] originalRot = null;
+        // Get the best visible face (for through‑walls we fake a face)
+        BlockHitResult hit = getBestHitResult(pos);
+        if (hit == null) return;
+
+        // Silent rotation to that hit point
+        float[] originalRot;
         if (silentRotate.get()) {
             originalRot = new float[]{mc.player.getYRot(), mc.player.getXRot()};
-            Vec3 eyePos = mc.player.getEyePosition();
-            Vec3 targetVec = Vec3.atCenterOf(pos).subtract(eyePos).normalize();
-            float yaw = (float) Math.toDegrees(Math.atan2(targetVec.z, targetVec.x)) - 90;
-            float pitch = (float) -Math.toDegrees(Math.asin(targetVec.y));
+            Vec3 direction = hit.getLocation().subtract(mc.player.getEyePosition()).normalize();
+            float yaw = (float) Math.toDegrees(Math.atan2(direction.z, direction.x)) - 90;
+            float pitch = (float) -Math.toDegrees(Math.asin(direction.y));
             mc.player.setYRot(yaw);
             mc.player.setXRot(pitch);
+        } else {
+            originalRot = null;
         }
 
+        // Swing arm
+        mc.player.swing(InteractionHand.MAIN_HAND);
 
+        // Send START dig packet
         mc.getConnection().send(new ServerboundPlayerActionPacket(
                 ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK,
-                pos, Direction.UP, 0));
+                pos, hit.getDirection(), 0
+        ));
 
-        if (breakProgress.getValue() >= 0.99) {
-            mc.getConnection().send(new ServerboundPlayerActionPacket(
-                    ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK,
-                    pos, Direction.UP, 0));
-        } else {
+        // Calculate mining time based on block hardness (beds are soft)
+        float hardness = mc.level.getBlockState(pos).getDestroySpeed(mc.level, pos);
+        int ticksToBreak = Math.max(1, (int)(hardness * 10)); // ~0.5 sec for bed
+        if (breakProgress.getValue() >= 0.99) ticksToBreak = 1; // instant
 
-            mc.getConnection().send(new ServerboundPlayerActionPacket(
-                    ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK,
-                    pos, Direction.UP, 0));
+        // Random delay ±20%
+        if (randomDelay.get()) {
+            ticksToBreak += random.nextInt(Math.max(1, ticksToBreak / 3));
+            ticksToBreak = Math.max(1, ticksToBreak);
         }
 
+        // Schedule STOP after the delay
+        int finalTicksToBreak = ticksToBreak;
+        mc.execute(() -> {
+            try { Thread.sleep(finalTicksToBreak * 50); } catch (InterruptedException ignored) {}
+            mc.getConnection().send(new ServerboundPlayerActionPacket(
+                    ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK,
+                    pos, hit.getDirection(), 0
+            ));
+            // Restore rotation after breaking
+            if (silentRotate.get() && originalRot != null) {
+                mc.player.setYRot(originalRot[0]);
+                mc.player.setXRot(originalRot[1]);
+            }
+        });
+    }
 
-        if (silentRotate.get() && originalRot != null) {
-            mc.player.setYRot(originalRot[0]);
-            mc.player.setXRot(originalRot[1]);
+    // Helper: get a BlockHitResult that looks legitimate (even through walls)
+    private BlockHitResult getBestHitResult(BlockPos pos) {
+        if (mc.player == null || mc.level == null) return null;
+        Vec3 eyePos = mc.player.getEyePosition();
+        // For through‑walls, pick a face that is closest to the player
+        BlockState state = mc.level.getBlockState(pos);
+        VoxelShape shape = state.getShape(mc.level, pos);
+        if (shape.isEmpty()) shape = state.getCollisionShape(mc.level, pos);
+        if (shape.isEmpty()) return null;
+
+        AABB bounds = shape.bounds();
+        double centerX = pos.getX() + (bounds.minX + bounds.maxX) / 2;
+        double centerY = pos.getY() + (bounds.minY + bounds.maxY) / 2;
+        double centerZ = pos.getZ() + (bounds.minZ + bounds.maxZ) / 2;
+        Vec3 center = new Vec3(centerX, centerY, centerZ);
+
+        // Find the face whose outward normal most points toward the player
+        Direction bestFace = null;
+        double bestDot = -2;
+        Vec3 toPlayer = eyePos.subtract(center).normalize();
+        for (Direction face : Direction.values()) {
+            Vec3 normal = new Vec3(face.getStepX(), face.getStepY(), face.getStepZ());
+            double dot = toPlayer.dot(normal);
+            if (dot > bestDot) {
+                bestDot = dot;
+                bestFace = face;
+            }
         }
+        // Compute hit point on that face
+        double x = centerX, y = centerY, z = centerZ;
+        switch (bestFace) {
+            case DOWN:  y = pos.getY() + bounds.minY; break;
+            case UP:    y = pos.getY() + bounds.maxY; break;
+            case NORTH: z = pos.getZ() + bounds.minZ; break;
+            case SOUTH: z = pos.getZ() + bounds.maxZ; break;
+            case WEST:  x = pos.getX() + bounds.minX; break;
+            case EAST:  x = pos.getX() + bounds.maxX; break;
+        }
+        return BlockHitResult.miss(new Vec3(x, y, z), bestFace, pos);
     }
 
 
