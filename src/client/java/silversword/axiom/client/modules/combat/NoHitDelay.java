@@ -15,7 +15,7 @@ public class NoHitDelay extends AxiomMod implements KeybindConfigurable {
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
 
     public NoHitDelay() {
-        super("No Hit Delay", "Removes the delay between attacks. Tip: Use with KillAura", ModuleCategory.COMBAT);
+        super("No Hit Delay", "Removes the delay between attacks in single player", ModuleCategory.COMBAT);
         addSetting(onlyPlayers);
         addHiddenSetting(toggleKey);
     }

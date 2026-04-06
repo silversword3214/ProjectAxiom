@@ -70,7 +70,7 @@ public final class ESP extends AxiomMod implements ColorConfigurable, KeybindCon
             TargetGroup.NEUTRAL, TargetGroup.WATER,  TargetGroup.BOSS);
 
     public ESP() {
-        super("ESP", "Box, Sphere and Skeleton ESP in one module", ModuleCategory.RENDER);
+        super("ESP", "Render entities through walls", ModuleCategory.RENDER);
 
         // ── ESP-tyyppien togglet ─────────────────────────────────────────────
         enableBox      = new SettingBoolean("Box ESP",      true);

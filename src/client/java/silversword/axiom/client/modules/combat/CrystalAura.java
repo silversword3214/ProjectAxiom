@@ -99,7 +99,7 @@ public class CrystalAura extends AxiomMod implements KeybindConfigurable {
     private long lastHoldPlacedTime = 0;
 
     public CrystalAura() {
-        super("Crystal Aura", "Advanced crystal placement and detonation", ModuleCategory.COMBAT);
+        super("Crystal Aura", "Automatically places crystals on obsidian and detonates them", ModuleCategory.COMBAT);
         addSetting(toggleKey);
         addSetting(crystalMode);
         addSetting(targetMode);

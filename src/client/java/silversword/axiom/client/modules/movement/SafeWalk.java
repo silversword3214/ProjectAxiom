@@ -24,7 +24,7 @@ public final class SafeWalk extends AxiomMod implements KeybindConfigurable {
     public static boolean shouldPreventFall = false;
 
     public SafeWalk() {
-        super("SafeWalk", "Prevents falling off edges. Ignores non-solid blocks like grass.", ModuleCategory.MOVEMENT);
+        super("SafeWalk", "Prevents falling off edges", ModuleCategory.MOVEMENT);
         addSetting(mode);
         addSetting(edgeDistance);
         addHiddenSetting(toggleKey);

@@ -12,6 +12,8 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import silversword.axiom.client.event.packets.PacketEvent;
 import silversword.axiom.client.main.AxiomInitialize;
+import silversword.axiom.client.managers.BlinkManager;
+import silversword.axiom.client.modules.movement.Phase;
 import silversword.axiom.client.utils.Rotations;
 
 @Mixin(Connection.class)
@@ -47,6 +49,19 @@ public abstract class ConnectionMixin {
         PacketEvent.Send event = new PacketEvent.Send(packet, (Connection) (Object) this);
         AxiomInitialize.EVENT_BUS.post(event);
         if (event.isCancelled()) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "send(Lnet/minecraft/network/protocol/Packet;)V", at = @At("HEAD"), cancellable = true)
+    private void onSendPacket(Packet<?> packet, CallbackInfo ci) {
+        // JOS isFlushing on true, päästetään paketti läpi (ei peruta ci.cancel())
+        if (BlinkManager.getInstance().isFlushing()) {
+            return;
+        }
+
+        // Jos FakeLag on päällä, napataan paketti talteen ja perutaan lähetys
+        if (BlinkManager.getInstance().handlePacket(packet)) {
             ci.cancel();
         }
     }

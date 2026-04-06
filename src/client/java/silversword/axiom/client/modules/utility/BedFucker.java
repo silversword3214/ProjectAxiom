@@ -54,9 +54,9 @@ public final class BedFucker extends AxiomMod implements KeybindConfigurable {
     private BlockPos currentTarget = null;
 
     public BedFucker() {
-        super("BedFucker", "Automatically breaks beds (and anchors) through walls", ModuleCategory.UTILITY);
+        super("BedFucker", "Breaks beds through walls", ModuleCategory.UTILITY);
 
-        range = new SettingNumber("Range", 2.0, 10.0, 0.5, 5.0);
+        range = new SettingNumber("Range", 2.0, 10.0, 0.5, 3.0);
         ignoreWalls = new SettingBoolean("Ignore Walls", true);
         breakRespawnAnchor = new SettingBoolean("Break Respawn Anchor", false);
         breakDelayTicks = new SettingNumber("Delay (ticks)", 1, 40, 1, 4);

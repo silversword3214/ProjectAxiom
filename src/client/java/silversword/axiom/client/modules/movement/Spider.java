@@ -15,7 +15,7 @@ public class Spider extends AxiomMod {
     private int wallTimeout = 0;
 
     public Spider() {
-        super("Spider", "Allows you to climb vertical walls", ModuleCategory.MOVEMENT);
+        super("Spider", "Allows climbing walls", ModuleCategory.MOVEMENT);
         addSetting(climbSpeed);
     }
 

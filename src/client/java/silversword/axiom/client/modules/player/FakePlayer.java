@@ -15,7 +15,7 @@ public class FakePlayer extends AxiomMod implements KeybindConfigurable {
     private int spawnDelay = 0;
 
     public FakePlayer() {
-        super("FakePlayer", "Spawns a fake copy of you (client-side)", ModuleCategory.PLAYER);
+        super("FakePlayer", "Spawns a fake copy of you", ModuleCategory.PLAYER);
         addHiddenSetting(toggleKey);
     }
 

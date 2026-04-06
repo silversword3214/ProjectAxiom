@@ -1,11 +1,8 @@
 package silversword.axiom.client.render.rendersystem.axiomrenderer.renderer;
 
 
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
-
-import net.minecraft.client.Camera;
-import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
@@ -152,9 +149,6 @@ public class Renderer3D {
         core.flush();
     }
 
-    // ------------------------------------------------------------------------
-// Sphere rendering
-// ------------------------------------------------------------------------
 
     /**
      * Draws a 3D sphere (filled and/or outline) at the given position.
@@ -348,10 +342,8 @@ public class Renderer3D {
                 int alphaTop = (int) (baseA * (1 - tTop));
                 alphaBottom = Mth.clamp(alphaBottom, 0, 255);
                 alphaTop = Mth.clamp(alphaTop, 0, 255);
-                // Käytetään keskiarvon alfa koko neliölle
                 int avgAlpha = (alphaBottom + alphaTop) / 2;
                 int quadColor = new Color(baseR, baseG, baseB, avgAlpha).getARGB();
-                // Piirretään neliö (x1,z1) -> (x2,z2) alhaalta ylös
                 core.addQuad(x1, yBottom, z1,
                         x2, yBottom, z2,
                         x2, yTop,   z2,
@@ -404,5 +396,63 @@ public class Renderer3D {
             Color glowColor = new Color(color.r, color.g, color.b, (int)(color.a * glowAlphaFactor));
             drawPortalCylinder(x, y, z, radius + glowOffset, height, glowColor, verticalSegments, horizontalSegments);
         }
+    }
+
+    public void drawPlayerWireframe(Vec3 pos, float yaw, int argb, int thickness) {
+        // Muutetaan yaw radiaaneiksi
+        double yawRad = Math.toRadians(-yaw);
+
+        // Piirretään hahmon osat (Steve/Alex -standardimitoilla)
+
+        // Pää: 8x8x8 pikseliä -> 0.5 x 0.5 x 0.5 blokkia
+        drawRotatedWireframeBox(pos, yawRad, -0.25, 1.5, -0.25, 0.25, 2.0, 0.25, argb, thickness);
+
+        // Vartalo: 8x12x4 pikseliä -> 0.5 x 0.75 x 0.25 blokkia
+        drawRotatedWireframeBox(pos, yawRad, -0.25, 0.75, -0.125, 0.25, 1.5, 0.125, argb, thickness);
+
+        // Kädet: 4x12x4 pikseliä
+        drawRotatedWireframeBox(pos, yawRad, -0.5, 0.75, -0.125, -0.25, 1.5, 0.125, argb, thickness); // Vasen
+        drawRotatedWireframeBox(pos, yawRad, 0.25, 0.75, -0.125, 0.5, 1.5, 0.125, argb, thickness);  // Oikea
+
+        // Jalat: 4x12x4 pikseliä
+        drawRotatedWireframeBox(pos, yawRad, -0.25, 0.0, -0.125, 0.0, 0.75, 0.125, argb, thickness);  // Vasen
+        drawRotatedWireframeBox(pos, yawRad, 0.0, 0.0, -0.125, 0.25, 0.75, 0.125, argb, thickness);   // Oikea
+    }
+
+    public void drawRotatedWireframeBox(Vec3 origin, double yawRad, double minX, double minY, double minZ, double maxX, double maxY, double maxZ, int argb, int thickness) {
+        Vec3[] c = new Vec3[]{
+                new Vec3(minX, minY, minZ), new Vec3(maxX, minY, minZ), new Vec3(maxX, minY, maxZ), new Vec3(minX, minY, maxZ),
+                new Vec3(minX, maxY, minZ), new Vec3(maxX, maxY, minZ), new Vec3(maxX, maxY, maxZ), new Vec3(minX, maxY, maxZ)
+        };
+
+        double cos = Math.cos(yawRad);
+        double sin = Math.sin(yawRad);
+        for (int i = 0; i < 8; i++) {
+            double rx = c[i].x * cos - c[i].z * sin;
+            double rz = c[i].x * sin + c[i].z * cos;
+            c[i] = new Vec3(origin.x + rx, origin.y + c[i].y, origin.z + rz);
+        }
+
+        // TÄRKEÄ KORJAUS: thickness ensin, sitten argb
+        float th = (float) thickness;
+        // Bottom
+        core.addLine3D(c[0].x, c[0].y, c[0].z, c[1].x, c[1].y, c[1].z, th, argb);
+        core.addLine3D(c[1].x, c[1].y, c[1].z, c[2].x, c[2].y, c[2].z, th, argb);
+        core.addLine3D(c[2].x, c[2].y, c[2].z, c[3].x, c[3].y, c[3].z, th, argb);
+        core.addLine3D(c[3].x, c[3].y, c[3].z, c[0].x, c[0].y, c[0].z, th, argb);
+        // Top
+        core.addLine3D(c[4].x, c[4].y, c[4].z, c[5].x, c[5].y, c[5].z, th, argb);
+        core.addLine3D(c[5].x, c[5].y, c[5].z, c[6].x, c[6].y, c[6].z, th, argb);
+        core.addLine3D(c[6].x, c[6].y, c[6].z, c[7].x, c[7].y, c[7].z, th, argb);
+        core.addLine3D(c[7].x, c[7].y, c[7].z, c[4].x, c[4].y, c[4].z, th, argb);
+        // Columns
+        core.addLine3D(c[0].x, c[0].y, c[0].z, c[4].x, c[4].y, c[4].z, th, argb);
+        core.addLine3D(c[1].x, c[1].y, c[1].z, c[5].x, c[5].y, c[5].z, th, argb);
+        core.addLine3D(c[2].x, c[2].y, c[2].z, c[6].x, c[6].y, c[6].z, th, argb);
+        core.addLine3D(c[3].x, c[3].y, c[3].z, c[7].x, c[7].y, c[7].z, th, argb);
+    }
+
+    public RenderCore getCore() {
+        return core;
     }
 }

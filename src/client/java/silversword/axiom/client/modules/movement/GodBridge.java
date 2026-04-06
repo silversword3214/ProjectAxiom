@@ -21,7 +21,7 @@ import java.util.List;
 
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
-public class Scaffold extends AxiomMod {
+public class GodBridge extends AxiomMod {
 
     private final SettingBoolean tower = new SettingBoolean("Tower", true);
     private final SettingBoolean legitMode = new SettingBoolean("Legit (Eagle)", true);
@@ -38,8 +38,8 @@ public class Scaffold extends AxiomMod {
     private int placeDelay = 0;
     private int legitCooldown = 0;
 
-    public Scaffold() {
-        super("Scaffold", "Anti-Cheat optimized block placer", ModuleCategory.MOVEMENT);
+    public GodBridge() {
+        super("God Bridge", "Auto God bridge, not scaffold", ModuleCategory.MOVEMENT);
         addSetting(tower);
         addSetting(legitMode);
         addSetting(raytrace);

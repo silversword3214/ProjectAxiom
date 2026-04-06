@@ -3,14 +3,12 @@ package silversword.axiom.client.gui.components;
 import net.minecraft.resources.Identifier;
 import silversword.axiom.client.config.ClickGuiConfigManager;
 import silversword.axiom.client.gui.core.*;
-import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.main.AxiomMod;
+import silversword.axiom.client.modules.combat.PotionRefill;
 import silversword.axiom.client.modules.misc.DeathLocationModule;
 import silversword.axiom.client.modules.render.NoParticleModule;
 import silversword.axiom.client.modules.render.WaypointModule;
-import silversword.axiom.client.render.font.TextRenderer;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.color.rainbow.RainbowPalette;
 import silversword.axiom.client.render.rendersystem.utils.texture.Texture;
 import silversword.axiom.client.render.rendersystem.utils.texture.TextureManager;
 
@@ -170,9 +168,22 @@ public final class ModuleRow implements UiComponent {
             pressY = mouseY;
             if (gearRect.contains(mouseX, mouseY)) {
                 leftDown = false;
-                if (module instanceof WaypointModule) ((WaypointModule) module).openManager();
-                else if (module instanceof NoParticleModule) ((NoParticleModule) module).openManager();
-                else if (module instanceof DeathLocationModule) ((DeathLocationModule) module).openListWindow();
+                // Special settings
+                // Waypoints
+                if (module instanceof WaypointModule)
+                    ((WaypointModule) module).openManager();
+                // NoParticle
+                else if (module instanceof NoParticleModule)
+                    ((NoParticleModule) module).openManager();
+                // DeathLocation
+                else if (module instanceof DeathLocationModule)
+                    ((DeathLocationModule) module).openListWindow();
+                // AutoPot
+                else if (module instanceof PotionRefill) {
+                    ((PotionRefill) module).openManager();
+                }
+
+                // Normal se
                 else onOpenSettings.accept(module);
                 return true;
             }

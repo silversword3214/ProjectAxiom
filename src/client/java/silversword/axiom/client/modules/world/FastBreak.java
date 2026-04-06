@@ -55,7 +55,7 @@ public class FastBreak extends AxiomMod implements KeybindConfigurable {
     private BlockPos lastAttackedBlock = null;
 
     public FastBreak() {
-        super("Fast Break", "Speeds up block breaking and removes the delay.", ModuleCategory.WORLD);
+        super("Fast Break", "Speeds up block breaking and removes the delay", ModuleCategory.WORLD);
 
         addSetting(speed);
         addSetting(legitMode);

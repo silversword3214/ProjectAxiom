@@ -533,6 +533,98 @@ final class SettingPresetSliderRow extends SettingRowBase {
     }
 }
 
+// SettingRows.java tiedostoon:
+
+final class SettingRangeRow extends SettingRowBase {
+    private final SettingRangeSlider setting;
+    private boolean draggingMin = false;
+    private boolean draggingMax = false;
+
+    public SettingRangeRow(SettingRangeSlider setting) {
+        this.setting = setting;
+    }
+
+    @Override
+    public void render(UiContext ui, int mouseX, int mouseY, float delta) {
+        // Piirretään nimi vasemmalle
+        ui.text(setting.getName(), bounds.x + 4, bounds.y + 4, ui.theme.text);
+
+        // Arvoteksti (esim. "400-1200ms") oikealle ylös
+        String valStr = (int)setting.getMin() + "-" + (int)setting.getMax() + "ms";
+        ui.text(valStr, bounds.right() - ui.textWidth(valStr) - 4, bounds.y + 4, ui.theme.textDim);
+
+        // Sliderin taustapalkki
+        int barX = bounds.x + 6;
+        int barY = bounds.y + 18;
+        int barW = bounds.w - 12;
+        int barH = 3;
+
+        // Tausta (tumma)
+        ui.fill(barX, barY, barW, barH, 0xFF151515);
+
+        // Lasketaan prosentit (50ms - 5000ms välillä)
+        double minP = (setting.getMin() - 50) / (5000 - 50);
+        double maxP = (setting.getMax() - 50) / (5000 - 50);
+
+        int minX = barX + (int)(minP * barW);
+        int maxX = barX + (int)(maxP * barW);
+
+        // Aktiivinen alue pallojen välissä (teeman korostusväri)
+        ui.fill(minX, barY, maxX - minX, barH, ui.theme.accent);
+
+        // Nupit (pienet valkoiset neliöt tai pyöristetyt suorakaiteet)
+        ui.fill(minX - 2, barY - 3, 4, 9, 0xFFFFFFFF); // Vasen nuppi
+        ui.fill(maxX - 2, barY - 3, 4, 9, 0xFFFFFFFF); // Oikea nuppi
+    }
+
+    @Override
+    public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
+        // Tarkistetaan onko klikkaus sliderin korkeudella
+        if (button == 0 && mouseY >= bounds.y + 12 && mouseY <= bounds.y + 26) {
+            double relX = clamp01((mouseX - (bounds.x + 6)) / (bounds.w - 12));
+            double val = 50 + relX * (5000 - 50);
+
+            // Valitaan kumpaa päätä liikutetaan sen perusteella, kumpaa ollaan lähempänä
+            if (Math.abs(val - setting.getMin()) < Math.abs(val - setting.getMax())) {
+                draggingMin = true;
+            } else {
+                draggingMax = true;
+            }
+            updateValue(mouseX);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseDragged(UiContext ui, double mouseX, double mouseY, int button, double dx, double dy) {
+        if (draggingMin || draggingMax) {
+            updateValue(mouseX);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void mouseReleased(UiContext ui, double mouseX, double mouseY, int button) {
+        draggingMin = draggingMax = false;
+    }
+
+    private void updateValue(double mouseX) {
+        double relX = clamp01((mouseX - (bounds.x + 6)) / (bounds.w - 12));
+        // Pyöristetään 50ms välein
+        double val = Math.round((50 + relX * (5000 - 50)) / 50.0) * 50.0;
+
+        if (draggingMin) {
+            // Estetään vasenta nuppia menemästä oikean yli
+            setting.setMin(Math.min(val, setting.getMax() - 50));
+        } else {
+            // Estetään oikeaa nuppia menemästä vasemman yli
+            setting.setMax(Math.max(val, setting.getMin() + 50));
+        }
+    }
+}
+
 final class SettingStringRow implements UiComponent {
     private final SettingString setting;
     private final TextField textField;
@@ -603,3 +695,4 @@ final class SettingStringRow implements UiComponent {
         return textField.charTyped(ui, chr, modifiers);
     }
 }
+

@@ -24,7 +24,7 @@ public class Flight extends AxiomMod implements KeybindConfigurable {
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
 
     public Flight() {
-        super("Flight", "Advanced bypass flight with oscillation logic", ModuleCategory.MOVEMENT);
+        super("Flight", "Fly hack with multiple modes", ModuleCategory.MOVEMENT);
         INSTANCE = this;
 
         addSetting(flyMode);

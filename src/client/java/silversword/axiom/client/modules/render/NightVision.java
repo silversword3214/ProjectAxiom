@@ -13,7 +13,7 @@ public class NightVision extends AxiomMod implements KeybindConfigurable {
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
 
     public NightVision() {
-        super("Night Vision", "Fullbright but with night vision", ModuleCategory.RENDER);
+        super("Night Vision", "Fullbright with night vision effect", ModuleCategory.RENDER);
         setEnabled(false); // oletuksena pois päältä
         addHiddenSetting(toggleKey);
     }

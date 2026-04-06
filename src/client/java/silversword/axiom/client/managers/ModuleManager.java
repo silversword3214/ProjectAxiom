@@ -8,6 +8,7 @@ import silversword.axiom.client.modules.player.*;
 import silversword.axiom.client.modules.render.*;
 import silversword.axiom.client.modules.misc.*;
 import silversword.axiom.client.modules.utility.BedFucker;
+import silversword.axiom.client.modules.utility.XCarry;
 import silversword.axiom.client.modules.world.*;
 
 
@@ -64,7 +65,7 @@ public final class ModuleManager {
      * Add all modules here.
      * This is the ONLY place you should have "new SomeModule()".
      */
-
+    // This list is useful when I want to arrange the modules how I want
     private void registerModules() {
         // Combat
         add(new BetterMace());
@@ -76,10 +77,12 @@ public final class ModuleManager {
         add(new Criticals());
         add(new Reach());
         add(new ShieldBreaker());
-        add(new Aimbot());
+        add(new AimAssist());
         add(new NoHitDelay());
+        add(new PotionRefill());
         add(new AutoTotem());
         add(new AutoGapple());
+        add(new MiddleClickPearl());
         add(new HitEffect());
         add(new Velocity());
         add(new MaceDmg());
@@ -90,16 +93,22 @@ public final class ModuleManager {
         add(new BoatPhase());
         add(new PhaseWBoat());
         add(new Speed());
+        add(new HighJump());
+        add(new LongJump());
         add(new AirJump());
-        add(new VulcanHighJump());
         add(new SafeWalk());
         add(new AutoSprint());
+        add(new AutoWalk());
         add(new Step());
+        add(new Slippy());
+        add(new IceSpeed());
+        add(new FastLadder());
         add(new Jesus());
         add(new Spider());
+        add(new Phase());
         add(new LeatherBoots());
         add(new ClickTP());
-        add(new Scaffold());
+        add(new GodBridge());
         add(new Blink());
         add(new SlowDown());
         add(new NoSlow());
@@ -111,7 +120,10 @@ public final class ModuleManager {
         add(new AirPlace());
         add(new AutoArmor());
         add(new ChestStealer());
+        add(new FakeLag());
         add(new FakePlayer());
+        add(new AntiHunger());
+        add(new AntiCactus());
 
         // Render
         add(new WaypointModule());
@@ -159,6 +171,7 @@ public final class ModuleManager {
 
         // Utility
         add(new BedFucker());
+        add(new XCarry());
 
         // World
         add(new FastBreak());

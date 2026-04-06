@@ -102,6 +102,7 @@ public final class ModuleSettingsView implements UiComponent {
             case SettingSlider sl  -> new SettingPresetSliderRow(sl);
             case SettingTime t     -> new SettingTimeFieldRow(t);
             case SettingString str -> new SettingStringRow(str);
+            case SettingRangeSlider rs -> new SettingRangeRow(rs);
             default                -> new SettingFallbackRow(s);
         };
     }
@@ -111,6 +112,7 @@ public final class ModuleSettingsView implements UiComponent {
         for (Setting s : settings) {
             if (s != null && s.getParent() == parent) return true;
         }
+
         return false;
     }
 

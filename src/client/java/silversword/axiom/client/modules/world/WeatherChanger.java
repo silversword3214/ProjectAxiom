@@ -20,7 +20,7 @@ public class WeatherChanger extends AxiomMod implements KeybindConfigurable {
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
 
     public WeatherChanger() {
-        super("Weather Changer", "Changes the weather (client‑side).", ModuleCategory.WORLD);
+        super("Weather Changer", "Customize client-side weather", ModuleCategory.WORLD);
         addSetting(mode);
         addSetting(rainStrength);
         addSetting(thunderStrength);

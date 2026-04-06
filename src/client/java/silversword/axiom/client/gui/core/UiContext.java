@@ -126,6 +126,11 @@ public class UiContext {
         uiText.render(s, x, y, new silversword.axiom.client.render.rendersystem.utils.color.Color(argb), true);
     }
 
+    public void centeredText(String s, int centerX, int y, int argb) {
+        int width = textWidth(s);
+        text(s, centerX - (width / 2), y, argb);
+    }
+
     public void drawRainbowText(String text, float x, float y, int rowIndex) {
         float speed = silversword.axiom.client.config.ClickGuiConfigManager.getRainbowWaveSpeed();
         silversword.axiom.client.render.rendersystem.utils.color.rainbow.RainbowPalette palette =

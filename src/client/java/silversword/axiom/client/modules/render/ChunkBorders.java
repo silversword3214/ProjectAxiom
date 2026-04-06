@@ -47,7 +47,7 @@ public final class ChunkBorders extends AxiomMod implements ColorConfigurable, K
         renderDistance = new SettingNumber("Render Distance (chunks)", 1, 32, 1, 2);
         highlightCurrentChunk = new SettingBoolean("Highlight Current Chunk", true);
         verticalLines = new SettingBoolean("Vertical Lines", true);
-        horizontalLines = new SettingBoolean("Horizontal Lines", false);
+        horizontalLines = new SettingBoolean("Horizontal Lines", true);
         highlightOnlyFromPlayer = new SettingBoolean("Highlight only from player", false);
 
         addHiddenSetting(gridColor.getSetting());

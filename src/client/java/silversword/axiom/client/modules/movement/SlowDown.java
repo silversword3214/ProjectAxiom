@@ -19,7 +19,7 @@ public final class SlowDown extends AxiomMod implements KeybindConfigurable {
     private boolean originalStored = false;
 
     public SlowDown() {
-        super("Slow Motion", "Speeds up or slows down the game tick rate", ModuleCategory.MOVEMENT);
+        super("Slow Motion", "Slows down the games tick rate", ModuleCategory.MOVEMENT);
         addSetting(speed);
         addHiddenSetting(toggleKey);
     }

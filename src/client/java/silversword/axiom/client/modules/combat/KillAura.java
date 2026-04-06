@@ -79,7 +79,7 @@ public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConf
     private final SettingMode critsMode = new SettingMode("Crits Mode", new String[]{"None", "Smart", "Silent", "Auto"}, "None");
 
     public KillAura() {
-        super("Kill Aura", "Kill Aura with smooth rotations and crits", ModuleCategory.COMBAT);
+        super("Kill Aura", "Automatically attacks entities", ModuleCategory.COMBAT);
         addSetting(mode);
         addSetting(targetMode);
         addSetting(priorityMode);

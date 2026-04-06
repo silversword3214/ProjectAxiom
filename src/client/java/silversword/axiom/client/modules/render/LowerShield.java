@@ -24,7 +24,7 @@ public final class LowerShield extends AxiomMod implements KeybindConfigurable {
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
 
     public LowerShield() {
-        super("Lower Shield", "Lowers the shield.", ModuleCategory.RENDER);
+        super("Lower Shield", "Lowers the shield", ModuleCategory.RENDER);
 
         addSetting(alwaysLower);
         addSetting(idleOffset);

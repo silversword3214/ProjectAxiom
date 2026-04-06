@@ -36,3 +36,5 @@ accessible field net/minecraft/world/entity/player/Inventory selected I
 accessible method net/minecraft/world/level/block/CropBlock getBaseSeedId ()Lnet/minecraft/world/level/ItemLike;
 accessible field net/minecraft/world/entity/Entity level Lnet/minecraft/world/level/Level;
 accessible method net/minecraft/client/player/LocalPlayer isMoving ()Z
+accessible field net/minecraft/world/level/block/state/BlockBehaviour friction F
+accessible field net/minecraft/world/level/Level isClientSide Z

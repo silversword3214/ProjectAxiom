@@ -20,7 +20,7 @@ public class InputListener {
 
             // Haetaan Keybinds-moduuli
             Keybinds keybinds = ModuleManager.getInstance().getModule(Keybinds.class);
-            int clickGuiKey = GLFW.GLFW_KEY_TAB; // oletus
+            int clickGuiKey = GLFW.GLFW_KEY_RIGHT_SHIFT;
             if (keybinds != null) {
                 clickGuiKey = keybinds.clickGuiKey.get();
             }

@@ -47,7 +47,7 @@ public final class Trajectories extends AxiomMod implements KeybindConfigurable 
     private Direction hitSide = Direction.UP;
 
     public Trajectories() {
-        super("Trajectories", "Shows projectile trajectory", ModuleCategory.RENDER);
+        super("Trajectories", "Shows arrow path", ModuleCategory.RENDER);
 
         lineColor = new SettingColor("Line Color", new Color(0, 255, 0, 180));
         impactColor = new SettingColor("Impact Color", new Color(0, 255, 0, 180));

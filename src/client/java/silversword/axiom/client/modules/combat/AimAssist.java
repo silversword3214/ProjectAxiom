@@ -2,7 +2,6 @@ package silversword.axiom.client.modules.combat;
 
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import org.lwjgl.glfw.GLFW;
 import silversword.axiom.client.event.mouse.MouseUpdateEvent;
 import silversword.axiom.client.event.player.PreMotionEvent;
@@ -15,7 +14,7 @@ import silversword.axiom.client.setting.*;
 
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
-public class Aimbot extends AxiomMod implements KeybindConfigurable {
+public class AimAssist extends AxiomMod implements KeybindConfigurable {
 
     private final TargetManager targetManager = new TargetManager();
     private LivingEntity currentTarget = null;
@@ -37,8 +36,8 @@ public class Aimbot extends AxiomMod implements KeybindConfigurable {
     public final SettingBoolean checkWalls = new SettingBoolean("Check Walls", true);
     public final SettingBoolean ignoreBots = new SettingBoolean("Ignore Bots", true);
 
-    public Aimbot() {
-        super("Aimbot", "Automatically aims at nearby entities", ModuleCategory.COMBAT);
+    public AimAssist() {
+        super("Aim Assist", "Get better aiming", ModuleCategory.COMBAT);
         addSetting(targetMode);
         addSetting(range);
         addSetting(bodyPart);

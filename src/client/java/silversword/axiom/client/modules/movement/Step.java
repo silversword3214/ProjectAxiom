@@ -16,11 +16,11 @@ public final class Step extends AxiomMod implements KeybindConfigurable {
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
 
     public Step() {
-        super("Step", "Step up blocks without jumping", ModuleCategory.MOVEMENT);
+        super("Step", "Change the step height", ModuleCategory.MOVEMENT);
 
         this.stepHeight = new SettingSlider("Step Height", new double[]{
                 1,2,3,4,5,6,7,8,9,10
-        }, 2); // default 2
+        }, 4);
         addSetting(stepHeight);
         addHiddenSetting(toggleKey);
     }

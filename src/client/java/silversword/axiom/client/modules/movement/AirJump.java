@@ -1,20 +1,24 @@
 package silversword.axiom.client.modules.movement;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import silversword.axiom.client.event.player.PreMotionEvent;
+import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.setting.SettingKeybind;
 
+import static silversword.axiom.client.main.AxiomInitialize.mc;
 
-public class AirJump extends AxiomMod implements KeybindConfigurable {
+public final class AirJump extends AxiomMod implements KeybindConfigurable {
 
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
 
+    private int jumpCooldown = 4;
+    private int cooldown = 0;
+    private boolean hasJumpedInAir = true;
+
     public AirJump() {
-        super("Air Jump", "Allows player to jump when in air", ModuleCategory.MOVEMENT);
-        addHiddenSetting(toggleKey);
+        super("Air Jump", "Jump in the air", ModuleCategory.MOVEMENT);
 
     }
 
@@ -24,29 +28,38 @@ public class AirJump extends AxiomMod implements KeybindConfigurable {
     }
 
     @Override
-    public void onTick() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.getConnection() == null) return;
+    protected void onEnable() {
+        cooldown = 0;
+        hasJumpedInAir = false;
+    }
 
-        // Disabled in Creative mode
-        if (mc.player.getAbilities().instabuild) {
+    @Override
+    protected void onTick() {
+
+    }
+
+    @Subscribe
+    private void onPreMotion(PreMotionEvent event) {
+        if (!isEnabled()) return;
+        if (mc.player == null) return;
+
+        if (cooldown > 0) {
+            cooldown--;
             return;
         }
 
-        // If falling
-        if (mc.player.getDeltaMovement().y < -0.1 || mc.player.fallDistance > 2.0f) {
-            // Lähetä packet
-            mc.getConnection().send(
-                    new ServerboundMovePlayerPacket.StatusOnly(
-                            true,
-                            mc.player.horizontalCollision
-                    )
-            );
-
-            // Set on client-side
-            mc.player.setOnGround(true);
-            mc.player.fallDistance = 0.0f;
+        if (mc.player.onGround()) {
+            hasJumpedInAir = false;
+            return;
         }
 
+        if (mc.player.isInWater() || mc.player.isInLava()) return;
+
+        if (!hasJumpedInAir && mc.options.keyJump.isDown()) {
+            mc.player.jumpFromGround();
+            hasJumpedInAir = false;
+
+            cooldown = jumpCooldown;
+        }
     }
 }

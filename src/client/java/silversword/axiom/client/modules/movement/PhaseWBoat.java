@@ -35,7 +35,7 @@ public final class PhaseWBoat extends AxiomMod implements KeybindConfigurable {
     private boolean waitingForTutorial = false; // to avoid multiple windows
 
     public PhaseWBoat() {
-        super("PhaseWBoat", "Starts Flight, then BoatPhase, and Shift to exit.", ModuleCategory.MOVEMENT);
+        super("PhaseWBoat", "Buggy phase", ModuleCategory.MOVEMENT);
         addHiddenSetting(toggleKey);
         addHiddenSetting(tutorialDisabled);
     }

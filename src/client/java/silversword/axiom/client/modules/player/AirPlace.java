@@ -45,7 +45,7 @@ public class AirPlace extends AxiomMod implements KeybindConfigurable {
     private HitResult hitResult;
 
     public AirPlace() {
-        super("Air Place", "Places a block where your crosshair is pointing at", ModuleCategory.PLAYER);
+        super("Air Place", "Allows block placing in air", ModuleCategory.PLAYER);
         INSTANCE = this;
 
         addSetting(render);
