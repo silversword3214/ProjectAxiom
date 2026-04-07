@@ -35,7 +35,7 @@ public class Blink extends AxiomMod implements KeybindConfigurable {
     private long startTime = 0;
 
     public Blink() {
-        super("Blink", "Holds movement packets to simulate lag", ModuleCategory.MOVEMENT);
+        super("Blink", "Temporarily stop sending movement packets", ModuleCategory.MOVEMENT);
 
         // Luodaan moodit: "Post" (lähetä) ja "Cancel" (peruuta)
         mode = new SettingMode("Mode", new String[]{"Post", "Cancel"}, "Post");

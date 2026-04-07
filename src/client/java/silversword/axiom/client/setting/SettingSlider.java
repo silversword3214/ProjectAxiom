@@ -25,10 +25,6 @@ public class SettingSlider extends Setting {
         return closest;
     }
 
-    /**
-     * Palauttaa valitun arvon siistinä merkkijonona.
-     * Jos luku on kokonaisluku, poistaa turhat nollat (esim. 10.0 -> "10").
-     */
     public String getDisplayValue() {
         double v = getValue();
         if (v == (int) v) return String.valueOf((int) v);
@@ -39,7 +35,6 @@ public class SettingSlider extends Setting {
         return presets;
     }
 
-    // --- Setting-kantaluokan metodien toteutus ---
 
     @Override
     public double getValue() {
@@ -68,7 +63,6 @@ public class SettingSlider extends Setting {
         }
     }
 
-    // --- GUI-metodit ---
 
     public void next() {
         index = (index + 1) % presets.length;
@@ -85,7 +79,6 @@ public class SettingSlider extends Setting {
 
     @Override
     public void render(int x, int y, int mouseX, int mouseY) {
-        // Renderöinti hoidetaan yleensä GUI-luokassa, joka hyödyntää getDisplayValue() metodia
     }
 
     @Override
