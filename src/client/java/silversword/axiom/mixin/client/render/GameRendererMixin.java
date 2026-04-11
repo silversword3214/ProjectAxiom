@@ -16,6 +16,7 @@ import silversword.axiom.client.modules.render.NoHurtCam;
 import silversword.axiom.client.modules.render.NoOverlay;
 import silversword.axiom.client.modules.render.NoViewBobbingTilt;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.postprocess.ShaderRenderer;
 
 @Mixin(GameRenderer.class)
 public abstract class GameRendererMixin {
@@ -24,6 +25,7 @@ public abstract class GameRendererMixin {
     @Inject(method = "close", at = @At("RETURN"))
     private void onGameRendererClose(CallbackInfo ci) {
         RenderAPI.getInstance().close();
+        ShaderRenderer.getInstance().close();
     }
 
     // View bobbing

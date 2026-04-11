@@ -128,6 +128,7 @@ public final class ModuleManager {
         // Render
         add(new WaypointModule());
         add(new ESP());
+        add(new ShaderESP());
         add(new ChestESP());
         add(new CaveESP());
         add(new LavaESP());

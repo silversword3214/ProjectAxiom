@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.postprocess.ShaderRenderer;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
 import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
 
@@ -42,5 +43,7 @@ public class LevelRendererMixin {
 
         AxiomInitialize.EVENT_BUS.post(event);
         api.end();
+
+        ShaderRenderer.getInstance().render(camera, tickDelta);
     }
 }

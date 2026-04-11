@@ -39,7 +39,9 @@ public final class RenderPipelines {
     public static RenderPipeline UI_COLORED_LINES;
     public static RenderPipeline UI_TEXTURED;
     public static RenderPipeline UI_TEXT;
+    public static RenderPipeline ENTITY_MASK;
     public static RenderPipeline SHADER_OUTLINE;
+    public static RenderPipeline SHADER_COMPOSITE;
 
     private static final List<PipelineBuilder> BUILDERS = new ArrayList<>();
 
@@ -135,10 +137,21 @@ public final class RenderPipelines {
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
 
-        // 9. Shader outline
+        // 9. Noop entity mask
+        BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS)
+                .withLocation(id("pipeline/entity_mask"))
+                .withVertexFormat(com.mojang.blaze3d.vertex.DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS)
+                .withVertexShader(id("shaders/entity/noop_mask.vert"))
+                .withFragmentShader(id("shaders/entity/noop_mask.frag"))
+                .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+                .withDepthWrite(false)
+                .withBlend(BlendFunction.TRANSLUCENT)
+                .withCull(false));
+
+        // 10. Shader outline
         BUILDERS.add(new PipelineBuilder()
                 .withLocation(id("pipeline/shader_outline"))
-                .withVertexFormat(AxiomVertexFormats.POS2_UV_COLOR, VertexFormat.Mode.TRIANGLES)
+                .withVertexFormat(AxiomVertexFormats.EMPTY, VertexFormat.Mode.TRIANGLES)
                 .withVertexShader(id("shaders/post/outline.vert"))
                 .withFragmentShader(id("shaders/post/outline.frag"))
                 .withSampler("u_Scene")
@@ -148,7 +161,17 @@ public final class RenderPipelines {
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
 
-
+        // 11. Composite pass
+        BUILDERS.add(new PipelineBuilder()
+                .withLocation(id("pipeline/shader_composite"))
+                .withVertexFormat(AxiomVertexFormats.EMPTY, VertexFormat.Mode.TRIANGLES)
+                .withVertexShader(id("shaders/post/outline.vert"))
+                .withFragmentShader(id("shaders/post/composite.frag"))
+                .withSampler("u_Scene")
+                .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+                .withDepthWrite(false)
+                .withBlend(BlendFunction.TRANSLUCENT)
+                .withCull(false));
     }
 
     private static Identifier id(String path) {
@@ -188,7 +211,9 @@ public final class RenderPipelines {
                 case 5 -> UI_COLORED_LINES = pipeline;
                 case 6 -> UI_TEXTURED = pipeline;
                 case 7 -> UI_TEXT = pipeline;
-                case 8 -> SHADER_OUTLINE = pipeline;
+                case 8 -> ENTITY_MASK = pipeline;
+                case 9 -> SHADER_OUTLINE = pipeline;
+                case 10 -> SHADER_COMPOSITE = pipeline;
             }
             index++;
             LOGGER.info("Rebuilt pipeline: {}", pipeline.getLocation());

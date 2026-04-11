@@ -23,5 +23,7 @@ public abstract class AxiomVertexFormats {
             .add("Color", VertexFormatElement.COLOR)
             .build();
 
+    public static final VertexFormat EMPTY = VertexFormat.builder().build();
+
     private AxiomVertexFormats() {}
 }
