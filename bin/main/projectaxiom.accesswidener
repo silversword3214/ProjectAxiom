@@ -1,0 +1,40 @@
+accessWidener	v2	named
+
+
+accessible   class   net/minecraft/network/protocol/game/ServerboundInteractPacket$ActionType
+accessible   class   net/minecraft/network/protocol/game/ServerboundInteractPacket$InteractionAtLocationAction
+accessible   class   net/minecraft/network/protocol/game/ServerboundInteractPacket$Action
+accessible   class   net/minecraft/client/multiplayer/ClientChunkCache$Storage
+accessible field net/minecraft/client/player/ClientInput moveVector Lnet/minecraft/world/phys/Vec2;
+
+accessible   class   net/minecraft/client/resources/MapTextureManager$MapInstance
+accessible   field   net/minecraft/client/resources/MapTextureManager$MapInstance texture Lnet/minecraft/client/renderer/texture/DynamicTexture;
+
+
+accessible   class   net/minecraft/client/ResourceLoadStateTracker$ReloadState
+
+accessible   class   com/mojang/blaze3d/opengl/GlStateManager$BooleanState
+accessible   method  com/mojang/blaze3d/pipeline/RenderPipeline$Builder <init> ()V
+accessible   method  com/mojang/blaze3d/pipeline/RenderPipeline$Builder withSnippet (Lcom/mojang/blaze3d/pipeline/RenderPipeline$Snippet;)V
+
+accessible   field   net/minecraft/client/renderer/SubmitNodeStorage submitsPerOrder Lit/unimi/dsi/fastutil/ints/Int2ObjectAVLTreeMap;
+
+accessible field net/minecraft/client/renderer/GameRenderer levelProjectionMatrixBuffer Lnet/minecraft/client/renderer/PerspectiveProjectionMatrixBuffer;
+accessible field net/minecraft/client/Minecraft mainRenderTarget Lcom/mojang/blaze3d/pipeline/RenderTarget;
+accessible method net/minecraft/client/renderer/LevelRenderer cullTerrain (Lnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/culling/Frustum;Z)V
+
+accessible field net/minecraft/client/renderer/GameRenderer levelProjectionMatrixBuffer Lnet/minecraft/client/renderer/PerspectiveProjectionMatrixBuffer;
+accessible method net/minecraft/client/Camera getMaxZoom (F)F
+
+accessible method net/minecraft/client/renderer/GameRenderer getFov (Lnet/minecraft/client/Camera;FZ)F
+accessible field net/minecraft/world/entity/Entity onGround Z
+accessible field net/minecraft/world/entity/player/Inventory items Lnet/minecraft/core/NonNullList;
+accessible field net/minecraft/client/resources/model/ModelManager atlasManager Lnet/minecraft/client/resources/model/AtlasManager;
+accessible field net/minecraft/client/renderer/Sheets BANNER_MATERIALS Ljava/util/Map;
+accessible field net/minecraft/client/renderer/Sheets SHIELD_MATERIALS Ljava/util/Map;
+accessible field net/minecraft/world/entity/player/Inventory selected I
+accessible method net/minecraft/world/level/block/CropBlock getBaseSeedId ()Lnet/minecraft/world/level/ItemLike;
+accessible field net/minecraft/world/entity/Entity level Lnet/minecraft/world/level/Level;
+accessible method net/minecraft/client/player/LocalPlayer isMoving ()Z
+accessible field net/minecraft/world/level/block/state/BlockBehaviour friction F
+accessible field net/minecraft/world/level/Level isClientSide Z

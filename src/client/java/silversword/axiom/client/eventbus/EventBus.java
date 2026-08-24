@@ -41,7 +41,6 @@ public class EventBus {
         List<HandlerEntry> entries = handlers.get(event.getClass());
         if (entries == null || entries.isEmpty()) return;
 
-        // Lajitellaan prioriteetin mukaan (korkein ensin)
         List<HandlerEntry> sorted = new ArrayList<>(entries);
         sorted.sort(Comparator.comparingInt(e -> -e.priority.ordinal()));
 

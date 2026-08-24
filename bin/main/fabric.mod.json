@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "projectaxiom",
+  "version": "${version}",
+  "name": "Project Axiom",
+  "description": "Lightweight Minecraft utility client",
+  "authors": ["Silversword3214"],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "accessWidener": "projectaxiom.accesswidener",
+  "entrypoints": {
+    "client": [
+      "silversword.axiom.client.main.AxiomInitialize"
+    ]
+  },
+  "mixins": [
+    "axiom.client.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  },
+  "icon": "assets/projectaxiom/icon.png"
+}
