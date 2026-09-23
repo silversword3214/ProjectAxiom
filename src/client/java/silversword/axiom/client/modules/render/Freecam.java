@@ -84,7 +84,7 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
 
         // Create and set the dummy camera
         cameraEntity = new FreecamCameraEntity(mc.level);
-        Vec3 camPos = mc.gameRenderer.getMainCamera().position();
+        Vec3 camPos = mc.gameRenderer.mainCamera().position();
         cameraEntity.setPos(camPos.x, camPos.y, camPos.z);
         cameraEntity.setYRot(yaw);
         cameraEntity.setXRot(pitch);
@@ -129,7 +129,7 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
             mc.level.addFreshEntity(cameraEntity);
         }
 
-        if (reloadChunks.get()) mc.levelRenderer.allChanged();
+        if (reloadChunks.get()) mc.levelRenderer.resetLevelRenderData();
     }
 
     @Override
@@ -145,7 +145,7 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
         }
 
         if (reloadChunks.get()) {
-            mc.execute(() -> mc.levelRenderer.allChanged());
+            mc.execute(() -> mc.levelRenderer.resetLevelRenderData());
         }
 
         mc.options.setCameraType(prevPerspective);
@@ -230,7 +230,7 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
     @Subscribe(priority = EventPriority.LOW)
     private void onMouseScroll(MouseScrollEvent event) {
         if (!isEnabled()) return;
-        if (speedScrollSensitivity.getValue() > 0 && mc.screen == null) {
+        if (speedScrollSensitivity.getValue() > 0 && mc.gui.screen() == null) {
             double newSpeed = speed.getValue() + event.value * 0.25 * speedScrollSensitivity.getValue() * speed.getValue();
             if (newSpeed < 0.1) newSpeed = 0.1;
             speed.setValue(newSpeed);

@@ -1,8 +1,7 @@
 package silversword.axiom.client.hud.core;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.world.effect.MobEffect;
@@ -20,7 +19,7 @@ import java.util.List;
 
 public final class HudContext {
     public final Minecraft mc;
-    public final GuiGraphics draw;
+    public final GuiGraphicsExtractor draw;
     public final Theme theme;
     public final float delta;
     public final Renderer2D renderer;
@@ -30,7 +29,7 @@ public final class HudContext {
     private final List<ItemEntry> items = new ArrayList<>();
 
 
-    public HudContext(Minecraft mc, GuiGraphics draw, Theme theme, float delta, Renderer2D renderer) {
+    public HudContext(Minecraft mc, GuiGraphicsExtractor draw, Theme theme, float delta, Renderer2D renderer) {
         this.mc = mc;
         this.draw = draw;
         this.theme = theme;
@@ -73,12 +72,13 @@ public final class HudContext {
     public void drawVanillaEffectIcon(MobEffectInstance effect, int x, int y, int size, float alpha) {
         if (effect == null) return;
         Holder<MobEffect> entry = effect.getEffect();
-        Identifier tex;
-        try {
-            tex = Gui.getMobEffectSprite(entry);
-        } catch (Throwable t) {
-            return;
-        }
+
+        Identifier tex = entry.unwrapKey()
+                .map(key -> key.identifier().withPrefix("mob_effect/"))
+                .orElse(null);
+
+        if (tex == null) return;
+
         float a = clamp01(alpha);
         int color = ARGB.white(a);
         draw.blitSprite(RenderPipelines.GUI_TEXTURED, tex, x, y, size, size, color);
@@ -125,15 +125,21 @@ public final class HudContext {
 
     public void renderTexts() {
         for (TextEntry e : textEntries) {
-            boolean wasBuilding = TextRenderer.get().isBuilding();
-            if (wasBuilding) {
-                TextRenderer.get().end();
+            TextRenderer textRenderer = TextRenderer.get();
+            boolean wasBuilding = textRenderer.isBuilding();
+            if (!wasBuilding) {
+                textRenderer.begin(e.scale, false, false);
             }
-            TextRenderer.get().begin(e.scale, false, false);
-            TextRenderer.get().render(e.text, e.x, e.y, new silversword.axiom.client.render.rendersystem.utils.color.Color(e.color), e.shadow);
-            TextRenderer.get().end();
-            if (wasBuilding) {
-                TextRenderer.get().begin(1.0, false, false);
+            if (textRenderer instanceof silversword.axiom.client.render.font.CustomTextRenderer custom) {
+                custom.render(draw, e.text, e.x, e.y,
+                        new silversword.axiom.client.render.rendersystem.utils.color.Color(e.color), e.shadow);
+            } else if (e.shadow) {
+                draw.text(mc.font, e.text, e.x, e.y, e.color);
+            } else {
+                draw.text(mc.font, e.text, e.x, e.y, e.color, false);
+            }
+            if (!wasBuilding) {
+                textRenderer.end();
             }
         }
         textEntries.clear();
@@ -153,9 +159,9 @@ public final class HudContext {
 
     public void drawVanillaText(String s, int x, int y, int argb, boolean shadow) {
         if (shadow) {
-            draw.drawString(mc.font, s, x, y, argb);
+            draw.text(mc.font, s, x, y, argb);
         } else {
-            draw.drawString(mc.font, s, x, y, argb, false);
+            draw.text(mc.font, s, x, y, argb, false);
         }
     }
 
@@ -176,7 +182,7 @@ public final class HudContext {
         return mc.font.lineHeight;
     }
 
-    public GuiGraphics getVanillaContext() {
+    public GuiGraphicsExtractor getVanillaContext() {
         return draw;
     }
 

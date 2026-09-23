@@ -6,6 +6,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.event.render.Render3DEvent;
 
 import silversword.axiom.client.eventbus.Subscribe;
@@ -74,7 +75,7 @@ public final class BlockOutline extends AxiomMod implements ColorConfigurable, K
         if (!(hit instanceof BlockHitResult blockHit)) return;
 
         BlockPos pos = blockHit.getBlockPos();
-        double distance = mc.player.getEyePosition().distanceTo(pos.getCenter());
+        double distance = mc.player.getEyePosition().distanceTo(Vec3.atCenterOf(pos));
         if (distance > renderDistance.getValue()) return;
 
         BlockState state = mc.level.getBlockState(pos);

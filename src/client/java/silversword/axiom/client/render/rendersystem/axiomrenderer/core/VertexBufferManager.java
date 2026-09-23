@@ -1,6 +1,7 @@
 package silversword.axiom.client.render.rendersystem.axiomrenderer.core;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.buffers.GpuFence;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -154,10 +155,15 @@ public class VertexBufferManager implements AutoCloseable {
     public void upload(ByteBuffer data, int size, CommandEncoder encoder) {
         GpuBuffer currentBuffer = buffers[currentIndex];
         if (currentBuffer == null) throw new IllegalStateException("Buffer not allocated");
-        try (GpuBuffer.MappedView mapped = encoder.mapBuffer(currentBuffer.slice(0, size), false, true)) {
-            ByteBuffer target = mapped.data();
-            data.rewind();
-            target.put(data);
+        GpuBufferSlice slice = currentBuffer.slice(0, size);
+        if (encoder != null) {
+            encoder.writeToBuffer(slice, data);
+        } else {
+            try (GpuBufferSlice.MappedView mapped = slice.map(false, true)) {
+                ByteBuffer target = mapped.data();
+                data.rewind();
+                target.put(data);
+            }
         }
     }
 

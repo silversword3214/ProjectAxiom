@@ -2,7 +2,7 @@ package silversword.axiom.client.hud;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.DeltaTracker;
 import org.joml.Matrix3x2fStack;
 import org.joml.Matrix4f;
@@ -70,7 +70,7 @@ public final class HudManager {
         return Collections.unmodifiableList(elements);
     }
 
-    public void renderAll(GuiGraphics draw, DeltaTracker tickCounter) {
+    public void renderAll(GuiGraphicsExtractor draw, DeltaTracker tickCounter) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
 
@@ -98,15 +98,15 @@ public final class HudManager {
             pose.translate((float) entry.x, (float) entry.y);
             float scale = entry.size / 16.0f;
             pose.scale(scale, scale);
-            draw.renderItem(entry.stack, 0, 0);
-            draw.renderItemDecorations(mc.font, entry.stack, 0, 0);
+            draw.item(entry.stack, 0, 0);
+            draw.itemDecorations(mc.font, entry.stack, 0, 0);
             pose.popMatrix();
         }
 
         ctx.renderTexts();
 
         RenderAPI.getInstance().getCore().flush();
-        DrawTexture.renderAll();
+        DrawTexture.renderAll(renderer);
         RenderAPI.getInstance().getCore().flush();
     }
 

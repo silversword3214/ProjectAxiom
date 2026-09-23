@@ -1,11 +1,14 @@
 package silversword.axiom.client.render.rendersystem.axiomrenderer.core;
 
 import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.BindGroupLayout;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.platform.CompareOp;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
@@ -26,9 +29,23 @@ public final class RenderPipelines {
     private static final Logger LOGGER = LoggerFactory.getLogger(RenderPipelines.class);
     public static final Map<Identifier, String> SHADER_SOURCE_CACHE = new HashMap<>();
 
-    private static final RenderPipeline.Snippet DYNAMIC_TRANSFORMS = RenderPipeline.builder()
-            .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
-            .buildSnippet();
+    private static final RenderPipeline.Snippet DYNAMIC_TRANSFORMS =
+            RenderPipeline.builder()
+                    .withBindGroupLayout(
+                            BindGroupLayout.builder()
+                                    .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
+                                    .build()
+                    )
+                    .buildSnippet();
+
+    private static final RenderPipeline.Snippet UI_TEXTURE_BINDINGS =
+            RenderPipeline.builder()
+                    .withBindGroupLayout(
+                            BindGroupLayout.builder()
+                                    .withSampler("u_Texture")
+                                    .build()
+                    )
+                    .buildSnippet();
 
     // Public pipeline fields
     public static RenderPipeline WORLD_COLORED;
@@ -49,10 +66,10 @@ public final class RenderPipelines {
         // 1. World quads (no depth)
         BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS)
                 .withLocation(id("pipeline/world_colored"))
-                .withVertexFormat(AxiomVertexFormats.POS3_COLOR, VertexFormat.Mode.TRIANGLES)
+                .withVertexFormat(AxiomVertexFormats.POS3_COLOR, PrimitiveTopology.TRIANGLES)
                 .withVertexShader(id("shaders/world_colored.vert"))
                 .withFragmentShader(id("shaders/world_colored.frag"))
-                .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+                .withDepthTestFunction(CompareOp.ALWAYS_PASS)
                 .withDepthWrite(false)
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
@@ -61,10 +78,10 @@ public final class RenderPipelines {
         BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS)
                 .withLineSmooth()
                 .withLocation(id("pipeline/world_colored_lines"))
-                .withVertexFormat(AxiomVertexFormats.POS3_COLOR, VertexFormat.Mode.DEBUG_LINES)
+                .withVertexFormat(AxiomVertexFormats.POS3_COLOR, PrimitiveTopology.DEBUG_LINES)
                 .withVertexShader(id("shaders/world_colored.vert"))
                 .withFragmentShader(id("shaders/world_colored.frag"))
-                .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+                .withDepthTestFunction(CompareOp.ALWAYS_PASS)
                 .withDepthWrite(false)
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
@@ -72,10 +89,10 @@ public final class RenderPipelines {
         // 3. World quads with depth
         BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS)
                 .withLocation(id("pipeline/world_colored_depth"))
-                .withVertexFormat(AxiomVertexFormats.POS3_COLOR, VertexFormat.Mode.TRIANGLES)
+                .withVertexFormat(AxiomVertexFormats.POS3_COLOR, PrimitiveTopology.TRIANGLES)
                 .withVertexShader(id("shaders/world_colored.vert"))
                 .withFragmentShader(id("shaders/world_colored.frag"))
-                .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
+                .withDepthTestFunction(CompareOp.LESS_THAN_OR_EQUAL)
                 .withDepthWrite(false)
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
@@ -83,56 +100,54 @@ public final class RenderPipelines {
         // 4. World lines with depth
         BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS)
                 .withLocation(id("pipeline/world_colored_lines_depth"))
-                .withVertexFormat(AxiomVertexFormats.POS3_COLOR, VertexFormat.Mode.DEBUG_LINES)
+                .withVertexFormat(AxiomVertexFormats.POS3_COLOR, PrimitiveTopology.DEBUG_LINES)
                 .withVertexShader(id("shaders/world_colored.vert"))
                 .withFragmentShader(id("shaders/world_colored.frag"))
-                .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
+                .withDepthTestFunction(CompareOp.LESS_THAN_OR_EQUAL)
                 .withDepthWrite(false)
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
 
-        // 5. UI quads (2D)
+        /// UI colored
         BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS)
                 .withLocation(id("pipeline/ui_colored"))
-                .withVertexFormat(AxiomVertexFormats.POS2_COLOR, VertexFormat.Mode.TRIANGLES)
-                .withVertexShader(id("shaders/world_colored.vert")) // make sure this shader exists
-                .withFragmentShader(id("shaders/world_colored.frag"))
-                .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+                .withVertexFormat(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES)
+                .withVertexShader(id("shaders/ui_colored.vert"))
+                .withFragmentShader(id("shaders/ui_colored.frag"))
+                .withDepthTestFunction(CompareOp.ALWAYS_PASS)
                 .withDepthWrite(false)
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
 
-        // 6. UI lines (2D)
+// UI colored lines
         BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS)
                 .withLocation(id("pipeline/ui_colored_lines"))
-                .withVertexFormat(AxiomVertexFormats.POS2_COLOR, VertexFormat.Mode.DEBUG_LINES)
-                .withVertexShader(id("shaders/world_colored.vert"))
-                .withFragmentShader(id("shaders/world_colored.frag"))
-                .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+                .withVertexFormat(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.DEBUG_LINES)
+                .withVertexShader(id("shaders/ui_colored.vert"))
+                .withFragmentShader(id("shaders/ui_colored.frag"))
+                .withDepthTestFunction(CompareOp.ALWAYS_PASS)
                 .withDepthWrite(false)
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
 
-        // 7. UI textured quads
-        BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS)
+// UI textured
+        BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS, UI_TEXTURE_BINDINGS)
                 .withLocation(id("pipeline/ui_textured"))
-                .withVertexFormat(AxiomVertexFormats.POS2_UV_COLOR, VertexFormat.Mode.TRIANGLES)
+                .withVertexFormat(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES)
                 .withVertexShader(id("shaders/ui_textured.vert"))
                 .withFragmentShader(id("shaders/ui_textured.frag"))
-                .withSampler("u_Texture")
-                .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+                .withDepthTestFunction(CompareOp.ALWAYS_PASS)
                 .withDepthWrite(false)
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
 
-        // 8. UI text (SDF)
-        BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS)
+// UI text
+        BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS, UI_TEXTURE_BINDINGS)
                 .withLocation(id("pipeline/ui_text"))
-                .withVertexFormat(AxiomVertexFormats.POS2_UV_COLOR, VertexFormat.Mode.TRIANGLES)
+                .withVertexFormat(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES)
                 .withVertexShader(id("shaders/text.vert"))
                 .withFragmentShader(id("shaders/text.frag"))
-                .withSampler("u_Texture")
-                .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+                .withDepthTestFunction(CompareOp.ALWAYS_PASS)
                 .withDepthWrite(false)
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
@@ -140,10 +155,10 @@ public final class RenderPipelines {
         // 9. Noop entity mask
         BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS)
                 .withLocation(id("pipeline/entity_mask"))
-                .withVertexFormat(com.mojang.blaze3d.vertex.DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS)
+                .withVertexFormat(DefaultVertexFormat.ENTITY, PrimitiveTopology.QUADS)
                 .withVertexShader(id("shaders/entity/noop_mask.vert"))
                 .withFragmentShader(id("shaders/entity/noop_mask.frag"))
-                .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+                .withDepthTestFunction(CompareOp.ALWAYS_PASS)
                 .withDepthWrite(false)
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
@@ -151,12 +166,10 @@ public final class RenderPipelines {
         // 10. Shader outline
         BUILDERS.add(new PipelineBuilder()
                 .withLocation(id("pipeline/shader_outline"))
-                .withVertexFormat(AxiomVertexFormats.EMPTY, VertexFormat.Mode.TRIANGLES)
+                .withVertexFormat(AxiomVertexFormats.EMPTY, PrimitiveTopology.TRIANGLES)
                 .withVertexShader(id("shaders/post/outline.vert"))
                 .withFragmentShader(id("shaders/post/outline.frag"))
-                .withSampler("u_Scene")
-                .withUniform("OutlineData", UniformType.UNIFORM_BUFFER)
-                .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+                .withDepthTestFunction(CompareOp.ALWAYS_PASS)
                 .withDepthWrite(false)
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
@@ -164,11 +177,10 @@ public final class RenderPipelines {
         // 11. Composite pass
         BUILDERS.add(new PipelineBuilder()
                 .withLocation(id("pipeline/shader_composite"))
-                .withVertexFormat(AxiomVertexFormats.EMPTY, VertexFormat.Mode.TRIANGLES)
+                .withVertexFormat(AxiomVertexFormats.EMPTY, PrimitiveTopology.TRIANGLES)
                 .withVertexShader(id("shaders/post/outline.vert"))
                 .withFragmentShader(id("shaders/post/composite.frag"))
-                .withSampler("u_Scene")
-                .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+                .withDepthTestFunction(CompareOp.ALWAYS_PASS)
                 .withDepthWrite(false)
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
@@ -192,6 +204,7 @@ public final class RenderPipelines {
                 var optional = resources.getResource(identifier);
                 if (optional.isEmpty()) {
                     LOGGER.error("Shader not found: {}", identifier);
+                    throw new RuntimeException("Missing shader: " + identifier); // Keskeytä alustus
                 }
                 try (InputStream in = optional.get().open()) {
                     String source = IOUtils.toString(in, StandardCharsets.UTF_8);

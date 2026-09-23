@@ -60,7 +60,7 @@ public class BlockEntry implements UiComponent {
 
         ItemStack stack = block.asItem().getDefaultInstance();
         if (!stack.isEmpty()) {
-            ui.draw.renderItem(stack, bounds.x + 2, bounds.y + 2);
+            ui.draw.item(stack, bounds.x + 2, bounds.y + 2);
         }
 
         String name = block.getName().getString();

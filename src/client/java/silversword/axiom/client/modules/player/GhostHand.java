@@ -116,37 +116,32 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
             return true;
         }
 
-        return state.getBlock() == Blocks.CRAFTING_TABLE ||
-                state.getBlock() == Blocks.ENCHANTING_TABLE ||
-                state.getBlock() == Blocks.ANVIL ||
-                state.getBlock() == Blocks.STONECUTTER ||
-                state.getBlock() == Blocks.GRINDSTONE ||
-                state.getBlock() == Blocks.LOOM ||
-                state.getBlock() == Blocks.CARTOGRAPHY_TABLE ||
-                state.getBlock() == Blocks.FLETCHING_TABLE ||
-                state.getBlock() == Blocks.SMITHING_TABLE ||
-                state.getBlock() == Blocks.COMPOSTER ||
-                state.getBlock() == Blocks.BARREL ||
-                state.getBlock() == Blocks.BLAST_FURNACE ||
-                state.getBlock() == Blocks.SMOKER ||
-                state.getBlock() == Blocks.BREWING_STAND ||
-                state.getBlock() == Blocks.BEACON ||
-                state.getBlock() == Blocks.CONDUIT ||
-                state.getBlock() == Blocks.ENDER_CHEST ||
-                state.getBlock() == Blocks.SHULKER_BOX ||
-                state.getBlock() == Blocks.HOPPER ||
-                state.getBlock() == Blocks.DROPPER ||
-                state.getBlock() == Blocks.DISPENSER ||
-                state.getBlock() == Blocks.COPPER_CHEST ||
-                state.getBlock() == Blocks.TRAPPED_CHEST ||
-                state.getBlock() == Blocks.WAXED_COPPER_CHEST ||
-                state.getBlock() == Blocks.EXPOSED_COPPER_CHEST ||
-                state.getBlock() == Blocks.WAXED_OXIDIZED_COPPER_CHEST ||
-                state.getBlock() == Blocks.OXIDIZED_COPPER_CHEST ||
-                state.getBlock() == Blocks.WAXED_EXPOSED_COPPER_CHEST ||
-                state.getBlock() == Blocks.WAXED_WEATHERED_COPPER_CHEST ||
-                state.getBlock() == Blocks.WEATHERED_COPPER_CHEST ||
-                state.getBlock() == Blocks.JUKEBOX;
+        net.minecraft.world.level.block.Block block = state.getBlock();
+
+        return block == Blocks.CRAFTING_TABLE ||
+                block == Blocks.ENCHANTING_TABLE ||
+                block == Blocks.ANVIL ||
+                block == Blocks.STONECUTTER ||
+                block == Blocks.GRINDSTONE ||
+                block == Blocks.LOOM ||
+                block == Blocks.CARTOGRAPHY_TABLE ||
+                block == Blocks.FLETCHING_TABLE ||
+                block == Blocks.SMITHING_TABLE ||
+                block == Blocks.COMPOSTER ||
+                block == Blocks.BARREL ||
+                block == Blocks.BLAST_FURNACE ||
+                block == Blocks.SMOKER ||
+                block == Blocks.BREWING_STAND ||
+                block == Blocks.BEACON ||
+                block == Blocks.CONDUIT ||
+                block == Blocks.ENDER_CHEST ||
+                block == Blocks.SHULKER_BOX ||
+                block == Blocks.HOPPER ||
+                block == Blocks.DROPPER ||
+                block == Blocks.DISPENSER ||
+                Blocks.COPPER_CHEST.asList().contains(block) ||
+                block == Blocks.TRAPPED_CHEST ||
+                block == Blocks.JUKEBOX;
     }
 
     private void scanInteractiveBlocks() {

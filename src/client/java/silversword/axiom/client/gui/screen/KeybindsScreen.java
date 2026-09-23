@@ -66,7 +66,7 @@ public class KeybindsScreen extends Screen {
     @Override
     public void onClose() {
         if (this.minecraft != null) {
-            this.minecraft.setScreen(parent);
+            this.minecraft.setScreenAndShow(parent);
         }
     }
 }

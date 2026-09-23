@@ -3,6 +3,7 @@ package silversword.axiom.client.modules.render;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.LivingEntity;
@@ -175,7 +176,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         entityList.clear();
 
         double maxDistSq = renderDistance.getValue() * renderDistance.getValue();
-        Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
+        Vec3 cameraPos = mc.gameRenderer.mainCamera().position();
 
         for (Entity entity : mc.level.entitiesForRendering()) {
             if (entity == mc.player && ignoreSelf.get()) continue;
@@ -210,9 +211,9 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
             };
         }
 
-        if (type == EntityType.ITEM) return drawItems.get();
-        if (type == EntityType.ITEM_FRAME || type == EntityType.GLOW_ITEM_FRAME) return drawItemFrames.get();
-        if (type == EntityType.TNT || type == EntityType.TNT_MINECART) return drawTNT.get();
+        if (type == EntityTypes.ITEM) return drawItems.get();
+        if (type == EntityTypes.ITEM_FRAME || type == EntityTypes.GLOW_ITEM_FRAME) return drawItemFrames.get();
+        if (type == EntityTypes.TNT || type == EntityTypes.TNT_MINECART) return drawTNT.get();
 
         return false;
     }
@@ -225,7 +226,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         if (!isEnabled() || entityList.isEmpty()) return;
 
         int count = getRenderCount();
-        Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
+        Vec3 cameraPos = mc.gameRenderer.mainCamera().position();
 
         for (int i = count - 1; i >= 0; i--) {
             Entity entity = entityList.get(i);
@@ -271,7 +272,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
     private double getHeight(Entity entity) {
         double height = entity.getEyeHeight(entity.getPose());
         EntityType<?> type = entity.getType();
-        if (type == EntityType.ITEM || type == EntityType.ITEM_FRAME || type == EntityType.GLOW_ITEM_FRAME) {
+        if (type == EntityTypes.ITEM || type == EntityTypes.ITEM_FRAME || type == EntityTypes.GLOW_ITEM_FRAME) {
             height += 0.2;
         } else {
             height += 0.5;
@@ -396,7 +397,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
                 double iconX = startX + i * (iconSize + armorGap);
 
                 // Item-ikoni (Vanilla GuiGraphics vaatii int-koordinaatit)
-                event.getGuiGraphics().renderItem(stack, (int) iconX, (int) yCursor);
+                event.getGuiGraphics().item(stack, (int) iconX, (int) yCursor);
 
                 // Durability-palkki
                 if (stack.isDamageableItem()) {
@@ -553,7 +554,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
     private GameType getGameMode(Player player) { return null; }
     private int getPing(Player player) { return 0; }
     private double distanceToCamera(Entity entity) {
-        return mc.gameRenderer.getMainCamera().position().distanceTo(entity.position());
+        return mc.gameRenderer.mainCamera().position().distanceTo(entity.position());
     }
 
     // --------------------------- Color Config ------------------------------

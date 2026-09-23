@@ -1,7 +1,7 @@
 package silversword.axiom.client.gui.core;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.resources.Identifier;
 import silversword.axiom.client.render.font.TextRenderer;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
@@ -14,7 +14,7 @@ import java.util.Stack;
 public class UiContext {
 
     public final Minecraft mc;
-    public final GuiGraphics draw;
+    public final GuiGraphicsExtractor draw;
     public final Theme theme;
     public final float delta;
     public final RenderCore renderCore;
@@ -24,7 +24,7 @@ public class UiContext {
     private final Stack<Rect> scissorStack = new Stack<>();
 
 
-    public UiContext(Minecraft mc, GuiGraphics draw, Theme theme, float delta, Renderer2D renderer) {
+    public UiContext(Minecraft mc, GuiGraphicsExtractor draw, Theme theme, float delta, Renderer2D renderer) {
         this.mc = mc;
         this.draw = draw;
         this.theme = theme;
@@ -42,29 +42,26 @@ public class UiContext {
         if (left < right && top < bottom) {
             return new Rect(left, top, right - left, bottom - top);
         }
-        // Jos eivät leikkaa, palauta tyhjä scissor (nolla-alue)
         return new Rect(0, 0, 0, 0);
     }
 
     public void enableScissor(int x, int y, int w, int h) {
-        renderCore.flush();
         Rect newRect = new Rect(x, y, w, h);
         if (!scissorStack.isEmpty()) {
             Rect parent = scissorStack.peek();
-            newRect = intersect(parent, newRect); // Leikkaa edellisen kanssa
+            newRect = intersect(parent, newRect);
         }
         scissorStack.push(newRect);
-        renderCore.enableScissor(newRect.x, newRect.y, newRect.w, newRect.h);
+        draw.enableScissor(newRect.x, newRect.y, newRect.w, newRect.h);
     }
 
     public void disableScissor() {
-        renderCore.flush();
         scissorStack.pop();
         if (scissorStack.isEmpty()) {
-            renderCore.disableScissor();
+            draw.disableScissor();
         } else {
             Rect top = scissorStack.peek();
-            renderCore.enableScissor(top.x, top.y, top.w, top.h);
+            draw.enableScissor(top.x, top.y, top.w, top.h);
         }
     }
 
@@ -111,7 +108,7 @@ public class UiContext {
     }
 
     public void text(String s, int x, int y, int argb) {
-        uiText.render(s, x, y, new silversword.axiom.client.render.rendersystem.utils.color.Color(argb), false);
+        renderText(s, x, y, argb, false);
     }
 
     public void addTexture(Identifier textureId, double x, double y, double width, double height, Color color) {
@@ -119,11 +116,11 @@ public class UiContext {
     }
 
     public void addTexture(Identifier textureId, double x, double y, double width, double height, double rotation, Color color) {
-        renderer.core.addRotatedTexture(textureId, (float) x, (float) y, (float) width, (float) height, (float) rotation, color.getARGB());
+        renderer.drawRotatedTexture(textureId, (float) x, (float) y, (float) width, (float) height, (float) rotation, color.getARGB());
     }
 
     public void textShadow(String s, int x, int y, int argb) {
-        uiText.render(s, x, y, new silversword.axiom.client.render.rendersystem.utils.color.Color(argb), true);
+        renderText(s, x, y, argb, true);
     }
 
     public void centeredText(String s, int centerX, int y, int argb) {
@@ -143,28 +140,33 @@ public class UiContext {
             String ch = String.valueOf(text.charAt(i));
             int colorArgb = palette.getColorForPosition(now, speed, i, rowIndex, currentX, y);
 
-            // 1. Piirretään ilman varjoa (käyttää sisäisesti scale / 2.3)
-            uiText.render(ch, currentX, y, new silversword.axiom.client.render.rendersystem.utils.color.Color(colorArgb), false);
+            renderText(ch, currentX, y, colorArgb, false);
 
-            // 2. KORJAUS: Lasketaan leveys samalla 2.3 jakajalla kuin render
-            // Haetaan raaka leveys ilman rendererin omaa skaalausta ja lasketaan se itse
             double rawWidth = uiText.getWidth(ch, false);
 
-            // Koska CustomTextRenderer.getWidth käyttää jakajaa 1.5, meidän pitää "kumota" se
-            // ja käyttää 2.3 jakajaa, jotta väli täsmää piirrettyyn jälkeen.
             currentX += (rawWidth * 1.5) / 2.3;
         }
     }
 
     public int textWidth(String s) {
-        return (int) (uiText.getWidth(s));
+        return (int) uiText.getWidth(s);
     }
 
     public int fontHeight() {
-        return (int) (uiText.getHeight());
+        return (int) uiText.getHeight();
     }
 
     public int fontAscent() {
         return (int) uiText.getAscent();
+    }
+
+    private void renderText(String text, double x, double y, int argb, boolean shadow) {
+        if (uiText instanceof silversword.axiom.client.render.font.CustomTextRenderer custom) {
+            custom.render(draw, text, x, y, new silversword.axiom.client.render.rendersystem.utils.color.Color(argb), shadow);
+        } else if (shadow) {
+            draw.text(mc.font, text, (int) x, (int) y, argb);
+        } else {
+            draw.text(mc.font, text, (int) x, (int) y, argb, false);
+        }
     }
 }

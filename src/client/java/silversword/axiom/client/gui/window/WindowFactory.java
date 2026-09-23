@@ -240,6 +240,35 @@ public final class WindowFactory {
         return win;
     }
 
+    public Window openColorPickerWindow(String windowId, String title, int screenW, int screenH, UiComponent content) {
+        Window existing = windowManager.getWindowById(windowId);
+        if (existing != null) {
+            // Keskittäminen
+            centerWindow(existing, screenW, screenH);
+            // Sisältöä ei päivitetä automaattisesti – tämä voi olla ongelma, jos sisältö on muuttunut.
+            // Jos halutaan päivittää sisältö, se pitäisi tehdä erikseen.
+            windowManager.openOverlay(existing);
+            return existing;
+        }
+
+        int w = 350;
+        int h = 380;
+        int x = (screenW - w) / 2;
+        int y = (screenH - h) / 2;
+
+        Window win = new Window(windowId, title, x, y, w, h);
+        win.setMinimizable(false);
+        win.setClosable(false);
+        win.setOnClose(() -> win.close());
+
+        win.clearChildren();
+        win.add(content);
+
+        windowManager.openOverlay(win);
+        win.open();
+        return win;
+    }
+
     // Compatibility aliases
     public Window createPinnedWindow(int screenW, int screenH) {
         return createNewWindow(screenW, screenH);

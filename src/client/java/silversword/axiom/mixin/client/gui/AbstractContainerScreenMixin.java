@@ -1,7 +1,7 @@
 package silversword.axiom.mixin.client.gui;
 
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -13,11 +13,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import silversword.axiom.client.modules.player.ChestStealer;
+import silversword.axiom.client.render.font.CustomTextRenderer;
 import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.utils.render.TextUtils;
 
 @Mixin(AbstractContainerScreen.class)
 public abstract class AbstractContainerScreenMixin {
@@ -30,8 +28,8 @@ public abstract class AbstractContainerScreenMixin {
     private static final int BUTTON_WIDTH = 50;
     private static final int BUTTON_HEIGHT = 15;
 
-    @Inject(method = "render", at = @At("TAIL"))
-    private void onRender(GuiGraphics context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void onRender(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         ChestStealer stealer = ChestStealer.INSTANCE;
         if (stealer == null || !stealer.isEnabled()) return;
 
@@ -50,25 +48,26 @@ public abstract class AbstractContainerScreenMixin {
         int bgColor = hovered ? 0xFFC80000 : 0xFF960000; // punainen
         int borderColor = 0xFFC8C8C8; // vaaleanharmaa
 
-        RenderCore core = RenderAPI.getInstance().getCore();
-
-        // Piirrä pyöristetty tausta ja reunus
-        core.addRoundedRect(buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT, 3, bgColor);
-        core.addRoundedRectOutline(buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT, 3, 1.0f, borderColor);
+        context.fill(buttonX, buttonY, buttonX + BUTTON_WIDTH, buttonY + BUTTON_HEIGHT, bgColor);
+        context.outline(buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT, borderColor);
 
         // Teksti (käyttää uutta TextRenderer-rajapintaa)
         TextRenderer textRenderer = TextRenderer.get();
         String text = "Steal";
         double scale = 0.90;
 
-        int textWidth = (int) (TextUtils.getWidth(text) * scale);
-        int fontHeight = (int) (TextUtils.getHeight() * scale);
+        int textWidth = (int) (textRenderer.getWidth(text) * scale);
+        int fontHeight = (int) (textRenderer.getHeight() * scale);
 
         int textX = buttonX + (BUTTON_WIDTH - textWidth) / 2;
         int textY = buttonY + (BUTTON_HEIGHT - fontHeight) / 2;
 
         textRenderer.begin(scale, false, true);
-        textRenderer.render(text, textX, textY, new Color(255, 255, 255, 255), false);
+        if (textRenderer instanceof CustomTextRenderer custom) {
+            custom.render(context, text, textX, textY, new Color(255, 255, 255, 255), false);
+        } else {
+            context.text(net.minecraft.client.Minecraft.getInstance().font, text, textX, textY, 0xFFFFFFFF, false);
+        }
         textRenderer.end();
     }
 

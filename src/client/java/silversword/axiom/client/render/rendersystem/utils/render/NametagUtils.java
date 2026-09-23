@@ -13,20 +13,12 @@ public final class NametagUtils {
     private static final Minecraft mc = Minecraft.getInstance();
 
     public static Vec3 worldToScreen(Vec3 worldPos) {
-        var camera = mc.gameRenderer.getMainCamera();
+        var camera = mc.gameRenderer.mainCamera();
         float tickDelta = mc.getDeltaTracker().getGameTimeDeltaPartialTick(true);
 
-        // 1. Luodaan Bobbing/Hurt -korjausmatriisi
-        Matrix4f bobCorrection = new Matrix4f();
-        applyBobbing(bobCorrection, tickDelta);
+        Matrix4f view = RenderUtils.getViewMatrix(camera);
 
-        // 2. Perusnäkymämatriisi (Kameran rotaatio)
-        Matrix4f view = new Matrix4f().rotation(camera.rotation());
-
-
-        bobCorrection.mul(view);
-
-        // 3. Haetaan projektio
+        // Haetaan projektio
         Matrix4f proj = RenderUtils.getProjectionMatrix(tickDelta);
 
         // 4. Lasketaan suhteellinen sijainti (Maailma -> Kamera-avaruus)
@@ -38,7 +30,7 @@ public final class NametagUtils {
         );
 
         // 5. Muunnos: Clip-avaruuteen
-        clip.mul(bobCorrection); // Sisältää nyt sekä heilunnan että kameran suunnan
+        clip.mul(view);
         clip.mul(proj);
 
         if (clip.w <= 0.0f) return null;

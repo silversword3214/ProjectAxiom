@@ -53,13 +53,13 @@ public class Fullbright extends AxiomMod implements KeybindConfigurable {
 
     private void reloadChunks() {
         if (mc.levelRenderer != null) {
-            mc.levelRenderer.allChanged();
+            mc.levelRenderer.resetLevelRenderData();
         }
     }
 
     private void forceLightmapUpdate() {
         if (mc.levelRenderer != null) {
-            mc.levelRenderer.allChanged();
+            mc.levelRenderer.resetLevelRenderData();
         }
     }
 }

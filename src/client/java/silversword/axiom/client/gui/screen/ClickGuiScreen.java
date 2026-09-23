@@ -1,7 +1,7 @@
 package silversword.axiom.client.gui.screen;
 
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -78,18 +78,20 @@ public final class ClickGuiScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float deltaTicks) {
+    public void extractBackground(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
         // tyhjä
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         windowManager.updateAnimations();
 
         int width = ctx.guiWidth();
         int height = ctx.guiHeight();
+
         Matrix4f proj = new Matrix4f().setOrtho(0, width, height, 0, -1000, 1000);
         Renderer2D renderer = new Renderer2D(ctx, RenderAPI.getInstance().getCore(), proj);
+
         lastUi = new UiContext(this.minecraft, ctx, theme, delta, renderer);
 
         TextRenderer.get().begin(1.0, false, false);
@@ -108,7 +110,7 @@ public final class ClickGuiScreen extends Screen {
         }
 
         TextRenderer.get().end();
-        super.render(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
 
         RenderCore core = RenderAPI.getInstance().getCore();
         boolean wasScissor = core.isScissorEnabled();
@@ -121,7 +123,7 @@ public final class ClickGuiScreen extends Screen {
             core.enableScissor(sx, sy, sw, sh);
         }
 
-        DrawTexture.renderAll();
+        DrawTexture.renderAll(renderer);
 
         if (wasScissor) {
             core.enableScissor(sx, sy, sw, sh);
@@ -224,8 +226,8 @@ public final class ClickGuiScreen extends Screen {
             }
             if (mouseX >= settingsX && mouseX <= settingsX + toggleW && mouseY >= topY && mouseY <= topY + toggleH) {
                 // Avaa asetusscreen
-                this.minecraft.setScreen(new AxiomSettingsScreen(() -> {
-                    this.minecraft.setScreen(new ClickGuiScreen());
+                this.minecraft.setScreenAndShow(new AxiomSettingsScreen(() -> {
+                    this.minecraft.setScreenAndShow(new ClickGuiScreen());
                 }));
                 return true;
             }
@@ -367,13 +369,13 @@ public final class ClickGuiScreen extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent input) {
-        if (topMode == TopMode.CLICKGUI && moduleSearchBar.charTyped(lastUi, input.codepointAsString().charAt(0), input.modifiers())) {
+        if (topMode == TopMode.CLICKGUI && moduleSearchBar.charTyped(lastUi, input.codepointAsString().charAt(0), 0)) {
             return true;
         }
         if (lastUi != null && input.isAllowedChatCharacter() && (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen())) {
             String s = input.codepointAsString();
             for (int i = 0; i < s.length(); i++) {
-                windowManager.charTyped(lastUi, s.charAt(i), input.modifiers());
+                windowManager.charTyped(lastUi, s.charAt(i), 0);
             }
             return true;
         }

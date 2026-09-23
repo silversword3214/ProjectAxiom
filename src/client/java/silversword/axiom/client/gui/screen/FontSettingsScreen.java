@@ -1,6 +1,6 @@
 package silversword.axiom.client.gui.screen;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.*;
 import net.minecraft.network.chat.Component;
@@ -46,7 +46,7 @@ public final class FontSettingsScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float deltaTicks) {}
+    public void extractBackground(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {}
 
     @Override
     protected void init() {
@@ -107,7 +107,7 @@ public final class FontSettingsScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         Matrix4f proj = new Matrix4f().setOrtho(0, width, height, 0, -1000, 1000);
         Renderer2D renderer = new Renderer2D(ctx, RenderAPI.getInstance().getCore(), proj);
         lastUi = new UiContext(this.minecraft, ctx, theme, delta, renderer);
@@ -129,7 +129,7 @@ public final class FontSettingsScreen extends Screen {
         }
 
         if (textOk) TextRenderer.get().end();
-        super.render(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
     }
 
 
@@ -167,8 +167,8 @@ public final class FontSettingsScreen extends Screen {
         if (lastUi != null && input.isAllowedChatCharacter()) {
             String s = input.codepointAsString();
             for (char c : s.toCharArray()) {
-                if (searchBar.charTyped(lastUi, c, input.modifiers())) return true;
-                if (scrollContainer != null && scrollContainer.charTyped(lastUi, c, input.modifiers())) return true;
+                if (searchBar.charTyped(lastUi, c, 0)) return true;
+                if (scrollContainer != null && scrollContainer.charTyped(lastUi, c, 0)) return true;
             }
         }
         return super.charTyped(input);

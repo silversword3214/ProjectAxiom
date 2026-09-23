@@ -5,11 +5,9 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.font.FontManager;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
-import org.joml.Matrix4f;
 import silversword.axiom.client.config.*;
 import silversword.axiom.client.event.InputListener;
 import silversword.axiom.client.eventbus.EventBus;
@@ -22,17 +20,34 @@ import silversword.axiom.client.modules.waypoints.WaypointCommands;
 import silversword.axiom.client.render.font.Fonts;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderPipelines;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.FabricHudHook;
-
 import silversword.axiom.client.sound.CustomSounds;
-
 
 public final class AxiomInitialize implements ClientModInitializer {
     public static final EventBus EVENT_BUS = new EventBus();
-    public static final Minecraft mc = Minecraft.getInstance();
     public static final WindowManager pauseWindowManager = new WindowManager();
+
+    // Julkinen kenttä olemassa olevaa koodia varten, alustetaan kun peli käynnistyy
+    public static Minecraft mc;
+
+    // Metodi, joka hakee tuoreen instanssin aina kun sitä kutsutaan
+    public static Minecraft mc() {
+        return Minecraft.getInstance();
+    }
 
     @Override
     public void onInitializeClient() {
+        // Päivitetään mc-kenttä heti kun pelin instanssi on valmis
+        ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
+            mc = client;
+
+            Fonts.refresh();
+            String savedFont = FontConfigManager.loadFont();
+            if (savedFont != null) {
+                silversword.axiom.client.render.font.Fonts.setFont(savedFont);
+            }
+            RenderPipelines.rebuildAll();
+        });
+
         ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
             @Override
             public Identifier getFabricId() {
@@ -42,14 +57,6 @@ public final class AxiomInitialize implements ClientModInitializer {
             @Override
             public void onResourceManagerReload(ResourceManager manager) {
                 RenderPipelines.rebuildAll();
-            }
-        });
-
-        ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
-            Fonts.refresh();
-            String savedFont = FontConfigManager.loadFont();
-            if (savedFont != null) {
-                silversword.axiom.client.render.font.Fonts.setFont(savedFont);
             }
         });
 

@@ -1,14 +1,12 @@
-// TODO(Ravel): Failed to fully resolve file: class com.intellij.psi.impl.source.tree.java.PsiPolyadicExpressionImpl cannot be cast to class com.intellij.psi.PsiLiteralExpression (com.intellij.psi.impl.source.tree.java.PsiPolyadicExpressionImpl and com.intellij.psi.PsiLiteralExpression are in unnamed module of loader com.intellij.ide.plugins.cl.PluginClassLoader @7d77e38c)
-// TODO(Ravel): Failed to fully resolve file: class com.intellij.psi.impl.source.tree.java.PsiPolyadicExpressionImpl cannot be cast to class com.intellij.psi.PsiLiteralExpression (com.intellij.psi.impl.source.tree.java.PsiPolyadicExpressionImpl and com.intellij.psi.PsiLiteralExpression are in unnamed module of loader com.intellij.ide.plugins.cl.PluginClassLoader @7d77e38c)
 package silversword.axiom.mixin.client.hand;
 
-import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.ItemInHandRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.renderer.ItemInHandRenderer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.InteractionHand;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,48 +18,40 @@ import silversword.axiom.client.modules.render.LowerShield;
 public abstract class LowerShieldMixin {
 
     @Inject(
-            method = "renderArmWithItem",
+            method = "submitArmWithItem",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/render/item/HeldItemRenderer;renderItem" +
-                            "(Lnet/minecraft/entity/LivingEntity;" +
-                            "Lnet/minecraft/item/ItemStack;" +
-                            "Lnet/minecraft/item/ItemDisplayContext;" +
-                            "Lnet/minecraft/client/util/math/MatrixStack;" +
-                            "Lnet/minecraft/client/render/command/OrderedRenderCommandQueue;I)V",
+                    target = "Lnet/minecraft/client/renderer/ItemInHandRenderer;renderItem(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemDisplayContext;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;I)V",
                     shift = At.Shift.BEFORE
             ),
             require = 0
     )
     private void axiom$lowerShield(
             AbstractClientPlayer player,
-            float tickProgress,
-            float pitch,
+            float frameInterp,
+            float xRot,
             InteractionHand hand,
-            float swingProgress,
-            ItemStack stack,
-            float equipProgress,
-            PoseStack matrices,
-            SubmitNodeCollector queue,
-            int light,
+            float attack,
+            ItemStack itemStack,
+            float inverseArmHeight,
+            PoseStack poseStack,
+            SubmitNodeCollector submitNodeCollector,
+            int lightCoords,
             CallbackInfo ci
     ) {
         LowerShield mod = ModuleManager.getInstance().getModule(LowerShield.class);
         if (mod == null || !mod.isEnabled()) return;
         if (player == null) return;
 
-        // Vain kilpi
-        if (stack == null || !stack.is(Items.SHIELD)) return;
+        if (itemStack == null || !itemStack.is(Items.SHIELD)) return;
 
-        boolean isBlocking =
-                player.isUsingItem() &&
-                        player.getUsedItemHand() == hand &&
-                        player.getUseItem().is(Items.SHIELD);
+        boolean isBlocking = player.isUsingItem()
+                && player.getUsedItemHand() == hand
+                && player.getUseItem().is(Items.SHIELD);
 
         float offsetY = mod.getOffsetY(isBlocking);
         if (offsetY <= 0.0f) return;
 
-        // Y-akseli: miinus = alas
-        matrices.translate(0.0, -offsetY, 0.0);
+        poseStack.translate(0.0, -offsetY, 0.0);
     }
 }

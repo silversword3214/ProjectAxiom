@@ -32,6 +32,7 @@ public class Zoom extends AxiomMod implements KeybindConfigurable {
     private double lastFov;
     private boolean preCinematic;
     private double preMouseSensitivity;
+    private boolean preHudHidden;
     private double value;
 
     private double time;
@@ -65,7 +66,8 @@ public class Zoom extends AxiomMod implements KeybindConfigurable {
         lastFov = mc.options.fov().get();
 
         if (hideHud.get()) {
-            mc.options.hideGui = true;
+            preHudHidden = isHudHidden();
+            setHudHidden(true);
         }
     }
 
@@ -74,11 +76,11 @@ public class Zoom extends AxiomMod implements KeybindConfigurable {
         mc.options.smoothCamera = preCinematic;
         mc.options.sensitivity().set(preMouseSensitivity);
         if (hideHud.get()) {
-            mc.options.hideGui = false;
+            setHudHidden(preHudHidden);
         }
         // Force terrain update to reset FOV
         if (mc.levelRenderer != null) {
-            mc.levelRenderer.needsUpdate();
+            mc.levelRenderer.resetLevelRenderData();
         }
     }
 
@@ -117,7 +119,7 @@ public class Zoom extends AxiomMod implements KeybindConfigurable {
         if (!isEnabled()) return;
         if (scrollSensitivity.getValue() <= 0) return;
         // Älä zoomaa jos ruudulla on jokin näyttö (menu, ClickGUI)
-        if (mc.screen != null) return;
+        if (mc.gui.screen() != null) return;
 
         double delta = event.value * 0.25 * scrollSensitivity.getValue() * targetZoom;
         targetZoom += delta;
@@ -131,14 +133,35 @@ public class Zoom extends AxiomMod implements KeybindConfigurable {
         if (!isEnabled()) return;
         if (mc.player == null || mc.level == null) return;
         // Älä zoomaa jos ruudulla on jokin näyttö (menu, ClickGUI)
-        if (mc.screen != null) return;
+        if (mc.gui.screen() != null) return;
 
         double scaling = getCurrentScaling();
         event.fov /= scaling;
 
         if (lastFov != event.fov && mc.levelRenderer != null) {
-            mc.levelRenderer.needsUpdate();
+            mc.levelRenderer.resetLevelRenderData();
             lastFov = event.fov;
+        }
+    }
+
+    private boolean isHudHidden() {
+        try {
+            java.lang.reflect.Field renderStateField = mc.gui.getClass().getDeclaredField("guiRenderState");
+            renderStateField.setAccessible(true);
+            Object renderState = renderStateField.get(mc.gui);
+            return renderState.getClass().getField("isHudHidden").getBoolean(renderState);
+        } catch (ReflectiveOperationException ignored) {
+            return false;
+        }
+    }
+
+    private void setHudHidden(boolean hidden) {
+        try {
+            java.lang.reflect.Field renderStateField = mc.gui.getClass().getDeclaredField("guiRenderState");
+            renderStateField.setAccessible(true);
+            Object renderState = renderStateField.get(mc.gui);
+            renderState.getClass().getField("isHudHidden").setBoolean(renderState, hidden);
+        } catch (ReflectiveOperationException ignored) {
         }
     }
 

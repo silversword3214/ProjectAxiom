@@ -1,10 +1,9 @@
 package silversword.axiom.client.render.rendersystem.axiomrenderer;
 
 
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -28,7 +27,7 @@ public class RenderAPI {
         return INSTANCE;
     }
 
-    public void beginHUDUnscaled(GuiGraphics graphics, float tickDelta) {
+    public void beginHUDUnscaled(GuiGraphicsExtractor graphics, float tickDelta) {
         var window = Minecraft.getInstance().getWindow();
         int width = window.getGuiScaledWidth();
         int height = window.getGuiScaledHeight();

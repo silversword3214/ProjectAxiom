@@ -47,7 +47,7 @@ public abstract class PauseScreenMixin extends Screen {
 
         this.addRenderableWidget(
                 Button.builder(buttonText, button -> {
-                            Minecraft.getInstance().setScreen(new PauseMenuSettings(this));
+                            Minecraft.getInstance().setScreenAndShow(new PauseMenuSettings(this));
                         })
                         .bounds(x, y, width, height)
                         .build()

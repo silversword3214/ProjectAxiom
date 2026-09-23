@@ -1,39 +1,22 @@
 package silversword.axiom.client.render.font;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.gui.Font;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import net.minecraft.client.gui.Font.DisplayMode;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
-import com.mojang.blaze3d.vertex.PoseStack;
-import org.joml.Matrix4f;
-import org.joml.Matrix4fStack;
 
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
-public class VanillaTextRenderer implements TextRenderer {
+public final class VanillaTextRenderer implements TextRenderer {
     public static final VanillaTextRenderer INSTANCE = new VanillaTextRenderer();
 
-    private final ByteBufferBuilder buffer = new ByteBufferBuilder(2048);
-    private final MultiBufferSource.BufferSource immediate = MultiBufferSource.immediate(buffer);
-
-    private final PoseStack matrices = new PoseStack();
-    private final Matrix4f emptyMatrix = new Matrix4f();
-
-    public double scale = 2;
-    public boolean scaleIndividually;
-
+    private double scale = 2.0;
     private boolean building;
-    private double alpha = 1;
+    private double alpha = 1.0;
 
-    private VanillaTextRenderer() {
-        // use INSTANCE
-    }
+    private VanillaTextRenderer() {}
 
     @Override
-    public void setAlpha(double a) {
-        alpha = a;
+    public void setAlpha(double alpha) {
+        this.alpha = alpha;
     }
 
     @Override
@@ -45,7 +28,6 @@ public class VanillaTextRenderer implements TextRenderer {
 
     @Override
     public double getAscent() {
-        // Vanilla ei paljasta tarkkaa nousua, käytetään fontHeight
         return mc.font.lineHeight * scale;
     }
 
@@ -56,8 +38,8 @@ public class VanillaTextRenderer implements TextRenderer {
 
     @Override
     public void begin(double scale, boolean scaleOnly, boolean big) {
-        if (building) throw new RuntimeException("VanillaTextRenderer.begin() called twice");
-        this.scale = scale * 2;
+        if (building) throw new IllegalStateException("VanillaTextRenderer.begin() called twice");
+        this.scale = scale * 2.0;
         this.building = true;
     }
 
@@ -66,28 +48,9 @@ public class VanillaTextRenderer implements TextRenderer {
         boolean wasBuilding = building;
         if (!wasBuilding) begin();
 
-        x += 0.5 * scale;
-        y += 0.5 * scale;
-
-        int preA = color.a;
-        color.a = (int) (((double) color.a / 255 * alpha) * 255);
-
-        Matrix4f matrix = emptyMatrix;
-        if (scaleIndividually) {
-            matrices.pushPose();
-            matrices.scale((float) scale, (float) scale, 1);
-            matrix = matrices.last().pose();
-        }
-
-        mc.font.drawInBatch(text, (float) (x / scale), (float) (y / scale), color.getARGB(), shadow, matrix, immediate, DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
-        double x2 = (x / scale) + mc.font.width(text);
-
-        if (scaleIndividually) matrices.popPose();
-
-        color.a = preA;
-
+        double width = getWidth(text, shadow);
         if (!wasBuilding) end();
-        return (x2 - 1) * scale;
+        return x + width;
     }
 
     @Override
@@ -97,14 +60,8 @@ public class VanillaTextRenderer implements TextRenderer {
 
     @Override
     public void end() {
-        if (!building) throw new RuntimeException("VanillaTextRenderer.end() called without calling begin()");
-        Matrix4fStack matrixStack = RenderSystem.getModelViewStack();
-        matrixStack.pushMatrix();
-        if (!scaleIndividually) matrixStack.scale((float) scale, (float) scale, 1);
-        immediate.endBatch();
-        matrixStack.popMatrix();
-
-        this.scale = 2;
-        this.building = false;
+        if (!building) throw new IllegalStateException("VanillaTextRenderer.end() called without begin()");
+        scale = 2.0;
+        building = false;
     }
 }

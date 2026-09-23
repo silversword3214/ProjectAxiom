@@ -6,36 +6,44 @@ import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.render.rendersystem.utils.color.rainbow.RainbowColor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class HsvColorPicker implements UiComponent {
+
+    public enum Mode { SQUARE, WHEEL }
 
     private final SettingColor setting;
     private final Runnable onColorChanged;
 
     private Rect bounds;
-    private Rect svRect;
-    private Rect hueRect;
+    private Rect pickerRect;
+    private Rect sideSliderRect;
     private Rect currentColorRect;
-    private Rect alphaSliderRect;
-    private Rect speedSliderRect;
-    private Rect rainbowToggleRect;
 
     private float hue;
     private float saturation;
     private float value;
-    private float alpha; // 0.0 - 1.0
-    private float speed; // 0.001 - 5.0
+
+    private int r, g, b;
+    private float alpha;
+    private float speed;
     private boolean rainbow;
 
-    private boolean draggingSV;
-    private boolean draggingHue;
-    private boolean draggingAlpha;
-    private boolean draggingSpeed;
+    private Mode mode = Mode.SQUARE;
 
-    // Gradient cache
+    private boolean draggingPicker;
+    private boolean draggingSide;
+
     private int[][] gradientCache;
     private boolean gradientDirty = true;
+    private float cachedWheelValue = -1f;
 
-    private Rect paletteSelectorRect;
+    // Alikomponentit
+    private final List<UiComponent> children = new ArrayList<>();
+    private ActionButton rainbowToggle;
+    private ActionButton modeToggle;
+    private Slider rSlider, gSlider, bSlider, aSlider, speedSlider;
 
     public HsvColorPicker(SettingColor setting, Runnable onColorChanged) {
         this.setting = setting;
@@ -48,6 +56,38 @@ public class HsvColorPicker implements UiComponent {
         this.alpha = setting.getCurrentColor().a / 255f;
         this.speed = setting.speed;
         this.rainbow = setting.rainbow;
+
+        syncHsvToRgb();
+
+        this.rainbowToggle = new ActionButton(getRainbowText(), () -> {
+            this.rainbow = !this.rainbow;
+            rainbowToggle.setLabel(getRainbowText());
+            updateColor();
+        });
+
+        this.modeToggle = new ActionButton("Style: SQUARE", () -> {
+            this.mode = (this.mode == Mode.SQUARE) ? Mode.WHEEL : Mode.SQUARE;
+            this.modeToggle.setLabel("Style: " + this.mode.name());
+            this.gradientDirty = true;
+        });
+
+        this.rSlider = new Slider("Red", 0, 255, 1, () -> this.r, val -> { this.r = (int)val; syncRgbToHsv(); });
+        this.gSlider = new Slider("Green", 0, 255, 1, () -> this.g, val -> { this.g = (int)val; syncRgbToHsv(); });
+        this.bSlider = new Slider("Blue", 0, 255, 1, () -> this.b, val -> { this.b = (int)val; syncRgbToHsv(); });
+        this.aSlider = new Slider("Alpha", 0, 100, 1, () -> this.alpha * 100, val -> { this.alpha = (float)(val / 100f); updateColor(); });
+        this.speedSlider = new Slider("Speed", 0.1, 5.0, 0.1, () -> this.speed, val -> { this.speed = (float)val; updateColor(); });
+
+        children.add(rainbowToggle);
+        children.add(modeToggle);
+        children.add(rSlider);
+        children.add(gSlider);
+        children.add(bSlider);
+        children.add(aSlider);
+        children.add(speedSlider);
+    }
+
+    private String getRainbowText() {
+        return rainbow ? "Rainbow: ON" : "Rainbow: OFF";
     }
 
     @Override
@@ -59,321 +99,103 @@ public class HsvColorPicker implements UiComponent {
     public void setBounds(Rect bounds) {
         this.bounds = bounds;
 
-        int padding = 10;
-        int hueWidth = 12;
-        int bottomPanelHeight = 80;
+        int padding = 8;
+        int hueWidth = 16;
+        int topAreaHeight = 180; // Kasvatettu korkeus ympyrälle
+        int rightColumnWidth = 80;
 
-        svRect = new Rect(
+        pickerRect = new Rect(
                 bounds.x + padding,
                 bounds.y + padding,
-                bounds.w - padding * 2 - hueWidth - 6,
-                bounds.h - padding * 2 - bottomPanelHeight - padding
+                bounds.w - padding * 4 - hueWidth - rightColumnWidth,
+                topAreaHeight
         );
 
-        hueRect = new Rect(
-                svRect.right() + 6,
-                svRect.y,
+        sideSliderRect = new Rect(
+                pickerRect.right() + padding,
+                bounds.y + padding,
                 hueWidth,
-                svRect.h
+                topAreaHeight
         );
 
-        int bottomY = bounds.y + bounds.h - bottomPanelHeight - padding;
-        int row1Y = bottomY;
-        int row2Y = bottomY + 35;
+        int rightX = sideSliderRect.right() + padding;
+        currentColorRect = new Rect(rightX, bounds.y + padding, rightColumnWidth, 40);
 
-        // Nykyisen värin näyttö (vasen ylä)
-        currentColorRect = new Rect(
-                bounds.x + padding,
-                row1Y,
-                60,
-                30
-        );
+        modeToggle.setBounds(new Rect(rightX, currentColorRect.bottom() + padding, rightColumnWidth, 24));
+        rainbowToggle.setBounds(new Rect(rightX, modeToggle.getBounds().bottom() + 4, rightColumnWidth, 24));
 
-        // Rainbow-toggle (oikea ylä)
-        rainbowToggleRect = new Rect(
-                bounds.x + bounds.w - padding - 80,
-                row1Y,
-                80,
-                30
-        );
+        int currentY = pickerRect.bottom() + padding + 15;
+        int rowHeight = 24;
+        int rowPadding = 6;
+        int compWidth = bounds.w - padding * 2;
 
-        // Alpha-liukusäädin (vasen ala)
-        int sliderWidth = (bounds.w - 2 * padding - 10) / 2;
-        alphaSliderRect = new Rect(
-                bounds.x + padding,
-                row2Y,
-                sliderWidth,
-                30
-        );
-
-        // Speed-liukusäädin (oikea ala)
-        speedSliderRect = new Rect(
-                alphaSliderRect.right() + 10,
-                row2Y,
-                sliderWidth,
-                30
-        );
-
+        rSlider.setBounds(new Rect(bounds.x + padding, currentY, compWidth, rowHeight)); currentY += rowHeight + rowPadding;
+        gSlider.setBounds(new Rect(bounds.x + padding, currentY, compWidth, rowHeight)); currentY += rowHeight + rowPadding;
+        bSlider.setBounds(new Rect(bounds.x + padding, currentY, compWidth, rowHeight)); currentY += rowHeight + rowPadding;
+        aSlider.setBounds(new Rect(bounds.x + padding, currentY, compWidth, rowHeight)); currentY += rowHeight + rowPadding;
+        speedSlider.setBounds(new Rect(bounds.x + padding, currentY, compWidth, rowHeight));
 
         gradientDirty = true;
     }
 
     @Override
     public int getPreferredHeight() {
-        return 300;
+        return 1000;
     }
 
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
-        renderSVGradientOptimized(ui);
-        renderHueSliderOptimized(ui);
+        if (mode == Mode.SQUARE) {
+            renderSquareGradientOptimized(ui);
+            renderHueSliderOptimized(ui);
+        } else {
+            renderWheelGradientOptimized(ui);
+            renderValueSliderOptimized(ui);
+        }
+
         renderCursors(ui);
-        renderBottomPanel(ui, mouseX, mouseY);
-    }
 
-    private void ensureGradient() {
-        if (gradientDirty || gradientCache == null ||
-                gradientCache.length != svRect.w || gradientCache[0].length != svRect.h) {
+        Color preview = rainbow ? new RainbowColor().set(setting).setSpeed(speed) : Color.fromHsv(hue, saturation, value);
+        preview.a = (int)(alpha * 255);
 
-            gradientCache = new int[svRect.w][svRect.h];
-            for (int y = 0; y < svRect.h; y++) {
-                float v = 1f - (float) y / svRect.h;
-                for (int x = 0; x < svRect.w; x++) {
-                    float s = (float) x / svRect.w;
-                    gradientCache[x][y] = Color.fromHsv(hue, s, v).getARGB();
-                }
-            }
-            gradientDirty = false;
+        ui.fillRounded(currentColorRect, preview.getARGB(), ui.theme.radius);
+        ui.drawRoundedOutline(currentColorRect, ui.theme.border, ui.theme.radius, 1.0);
+
+        for (UiComponent comp : children) {
+            if (comp == speedSlider && !rainbow) continue;
+            comp.render(ui, mouseX, mouseY, delta);
         }
     }
 
-    private void renderSVGradientOptimized(UiContext ui) {
-        if (svRect.w <= 0 || svRect.h <= 0) return;
-        ensureGradient();
-        int step = Math.max(1, Math.min(svRect.w, svRect.h) / 40);
-        for (int y = 0; y < svRect.h; y += step) {
-            for (int x = 0; x < svRect.w; x += step) {
-                int color = gradientCache[x][y];
-                int w = Math.min(step, svRect.w - x);
-                int h = Math.min(step, svRect.h - y);
-                ui.fill(svRect.x + x, svRect.y + y, w, h, color);
-            }
-        }
+    private void syncHsvToRgb() {
+        Color c = Color.fromHsv(hue, saturation, value);
+        this.r = c.r;
+        this.g = c.g;
+        this.b = c.b;
+        updateColor();
     }
 
-    private void renderHueSliderOptimized(UiContext ui) {
-        if (hueRect.h <= 0) return;
-        int step = Math.max(1, hueRect.h / 30);
-        for (int y = 0; y < hueRect.h; y += step) {
-            float h = 360f * y / hueRect.h;
-            Color c = Color.fromHsv(h, 1f, 1f);
-            int height = Math.min(step, hueRect.h - y);
-            ui.fill(hueRect.x, hueRect.y + y, hueRect.w, height, c.getARGB());
-        }
-    }
+    private void syncRgbToHsv() {
+        float rF = r / 255f, gF = g / 255f, bF = b / 255f;
+        float max = Math.max(rF, Math.max(gF, bF));
+        float min = Math.min(rF, Math.min(gF, bF));
+        float d = max - min;
 
-    private void renderCursors(UiContext ui) {
-        // SV cursor
-        int cx = (int) (svRect.x + saturation * svRect.w);
-        int cy = (int) (svRect.y + (1 - value) * svRect.h);
-        ui.fill(cx - 2, cy - 2, 4, 4, 0xFFFFFFFF);
-        ui.fill(cx - 1, cy - 1, 2, 2, 0xFF000000);
+        this.value = max;
+        this.saturation = max == 0 ? 0 : d / max;
 
-        // Hue cursor
-        int hy = (int) (hueRect.y + (hue / 360f) * hueRect.h);
-        ui.fill(hueRect.x - 2, hy - 2, hueRect.w + 4, 4, 0xFFFFFFFF);
-        ui.fill(hueRect.x - 1, hy - 1, hueRect.w + 2, 2, 0xFF000000);
-    }
-
-    private void renderBottomPanel(UiContext ui, int mouseX, int mouseY) {
-        // Nykyinen väri (vasen ylä)
-        Color currentColor;
-        if (rainbow) {
-            currentColor = new RainbowColor().set(setting).setSpeed(speed);
+        if (max == min) {
+            this.hue = 0;
         } else {
-            currentColor = Color.fromHsv(hue, saturation, value);
-            currentColor.a = (int)(alpha * 255);
-        }
-        ui.fill(currentColorRect, currentColor.getARGB());
-        ui.text("Current", currentColorRect.x, currentColorRect.y - 10, ui.theme.text);
-
-        // Rainbow-toggle (oikea ylä)
-        boolean rainbowHover = rainbowToggleRect.contains(mouseX, mouseY);
-        int buttonColor = rainbowHover ? ui.theme.buttonHover : ui.theme.button;
-        // Outline
-        ui.fill(rainbowToggleRect.x - 1, rainbowToggleRect.y - 1,
-                rainbowToggleRect.w + 2, rainbowToggleRect.h + 2, 0xFF888888);
-        ui.fill(rainbowToggleRect, buttonColor);
-
-        if (rainbow) {
-            for (int i = 0; i < rainbowToggleRect.w; i += 4) {
-                float h = (i / (float) rainbowToggleRect.w) * 360f;
-                Color c = Color.fromHsv(h, 1f, 1f);
-                ui.fill(rainbowToggleRect.x + i, rainbowToggleRect.y,
-                        Math.min(4, rainbowToggleRect.w - i), 3, c.getARGB());
-            }
-        }
-        String toggleText = rainbow ? "Rainbow: ON" : "Rainbow: OFF";
-        int toggleX = rainbowToggleRect.x + (rainbowToggleRect.w - ui.textWidth(toggleText)) / 2;
-        int toggleY = rainbowToggleRect.y + (rainbowToggleRect.h - ui.fontHeight()) / 2;
-        ui.text(toggleText, toggleX, toggleY, ui.theme.text);
-
-        // Alpha-slider (vasen ala)
-        boolean alphaHover = alphaSliderRect.contains(mouseX, mouseY);
-        int alphaBg = alphaHover ? ui.theme.buttonHover : ui.theme.button;
-        // Outline
-        ui.fill(alphaSliderRect.x - 1, alphaSliderRect.y - 1,
-                alphaSliderRect.w + 2, alphaSliderRect.h + 2, 0xFF888888);
-        ui.fill(alphaSliderRect, alphaBg);
-
-        int sliderX = (int) (alphaSliderRect.x + 2 + (alphaSliderRect.w - 4) * alpha);
-        ui.fill(sliderX - 2, alphaSliderRect.y + 2, 4, alphaSliderRect.h - 4, 0xFFFFFFFF);
-
-        String alphaText = String.format("Alpha: %d%%", (int)(alpha * 100));
-        int alphaTextX = alphaSliderRect.x + (alphaSliderRect.w - ui.textWidth(alphaText)) / 2;
-        int alphaTextY = alphaSliderRect.y + 2;
-        ui.text(alphaText, alphaTextX, alphaTextY, ui.theme.text);
-
-        // Speed-slider (oikea ala) – näytetään vain jos rainbow päällä
-        if (rainbow) {
-            boolean speedHover = speedSliderRect.contains(mouseX, mouseY);
-            int speedBg = speedHover ? ui.theme.buttonHover : ui.theme.button;
-            // Outline
-            ui.fill(speedSliderRect.x - 1, speedSliderRect.y - 1,
-                    speedSliderRect.w + 2, speedSliderRect.h + 2, 0xFF888888);
-            ui.fill(speedSliderRect, speedBg);
-
-            int speedX = (int) (speedSliderRect.x + 2 + (speedSliderRect.w - 4) * (speed / 5.0f));
-            ui.fill(speedX - 2, speedSliderRect.y + 2, 4, speedSliderRect.h - 4, 0xFFFFFFFF);
-
-            String speedText = String.format("Speed: %.2f", speed);
-            int speedTextX = speedSliderRect.x + (speedSliderRect.w - ui.textWidth(speedText)) / 2;
-            int speedTextY = speedSliderRect.y + 2;
-            ui.text(speedText, speedTextX, speedTextY, ui.theme.text);
-        } else {
-            // Jos rainbow ei päällä, piirretään speed-slider harmaana (disabled)
-            ui.fill(speedSliderRect.x - 1, speedSliderRect.y - 1,
-                    speedSliderRect.w + 2, speedSliderRect.h + 2, 0xFF888888);
-            ui.fill(speedSliderRect, 0x44000000);
-            String speedText = "Speed: N/A";
-            int speedTextX = speedSliderRect.x + (speedSliderRect.w - ui.textWidth(speedText)) / 2;
-            int speedTextY = speedSliderRect.y + 2;
-            ui.text(speedText, speedTextX, speedTextY, ui.theme.textDim);
+            if (max == rF) this.hue = (gF - bF) / d + (gF < bF ? 6 : 0);
+            else if (max == gF) this.hue = (bF - rF) / d + 2;
+            else if (max == bF) this.hue = (rF - gF) / d + 4;
+            this.hue /= 6f;
+            this.hue *= 360f;
         }
 
-    }
-
-
-    @Override
-    public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-        if (button != 0) return false;
-
-        if (rainbowToggleRect.contains(mouseX, mouseY)) {
-            rainbow = !rainbow;
-            updateColor();
-            return true;
-        }
-
-        if (rainbow) {
-            if (speedSliderRect.contains(mouseX, mouseY)) {
-                draggingSpeed = true;
-                updateSpeed(mouseX);
-                return true;
-            }
-        }
-
-        if (svRect.contains(mouseX, mouseY)) {
-            draggingSV = true;
-            updateSV(mouseX, mouseY);
-            return true;
-        }
-
-        if (hueRect.contains(mouseX, mouseY)) {
-            draggingHue = true;
-            updateHue(mouseY);
-            return true;
-        }
-
-        if (alphaSliderRect.contains(mouseX, mouseY)) {
-            draggingAlpha = true;
-            updateAlpha(mouseX);
-            return true;
-        }
-
-
-
-        return false;
-    }
-
-    @Override
-    public void mouseReleased(UiContext ui, double mouseX, double mouseY, int button) {
-        draggingSV = false;
-        draggingHue = false;
-        draggingAlpha = false;
-        draggingSpeed = false;
-    }
-
-    @Override
-    public boolean mouseDragged(UiContext ui, double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (rainbow && draggingSpeed && speedSliderRect.contains(mouseX, mouseY)) {
-            updateSpeed(mouseX);
-            return true;
-        }
-
-        if (draggingSV && svRect.contains(mouseX, mouseY)) {
-            updateSV(mouseX, mouseY);
-            return true;
-        }
-
-        if (draggingHue && hueRect.contains(mouseX, mouseY)) {
-            updateHue(mouseY);
-            return true;
-        }
-
-        if (draggingAlpha && alphaSliderRect.contains(mouseX, mouseY)) {
-            updateAlpha(mouseX);
-            return true;
-        }
-
-        return false;
-    }
-
-    private void updateSpeed(double mouseX) {
-        float newSpeed = (float) ((mouseX - speedSliderRect.x) / speedSliderRect.w) * 5.0f;
-        newSpeed = clamp(newSpeed, 0.001f, 5.0f);
-        if (Math.abs(speed - newSpeed) > 0.001f) {
-            speed = newSpeed;
-            updateColor();
-        }
-    }
-
-    private void updateAlpha(double mouseX) {
-        float newAlpha = (float) ((mouseX - alphaSliderRect.x) / alphaSliderRect.w);
-        newAlpha = clamp(newAlpha, 0f, 1f);
-        if (Math.abs(alpha - newAlpha) > 0.001f) {
-            alpha = newAlpha;
-            updateColor();
-        }
-    }
-
-    private void updateSV(double mouseX, double mouseY) {
-        float newSaturation = clamp((float) ((mouseX - svRect.x) / svRect.w), 0f, 1f);
-        float newValue = 1f - clamp((float) ((mouseY - svRect.y) / svRect.h), 0f, 1f);
-        if (Math.abs(saturation - newSaturation) > 0.001f || Math.abs(value - newValue) > 0.001f) {
-            saturation = newSaturation;
-            value = newValue;
-            updateColor();
-        }
-    }
-
-    private void updateHue(double mouseY) {
-        if (rainbow) return;
-        float newHue = clamp((float) ((mouseY - hueRect.y) / hueRect.h), 0f, 1f) * 360f;
-        if (Math.abs(hue - newHue) > 0.001f) {
-            hue = newHue;
-            gradientDirty = true;
-            updateColor();
-        }
+        gradientDirty = true;
+        updateColor();
     }
 
     private void updateColor() {
@@ -381,22 +203,221 @@ public class HsvColorPicker implements UiComponent {
             setting.rainbow = true;
             setting.speed = speed;
         } else {
-            Color rgb = Color.fromHsv(hue, saturation, value);
-            rgb.a = (int)(alpha * 255);
-            setting.set(rgb.r, rgb.g, rgb.b, rgb.a);
+            setting.set(r, g, b, (int)(alpha * 255));
             setting.rainbow = false;
-            setting.speed = 1.0f;
         }
-        if (onColorChanged != null) {
-            onColorChanged.run();
+        if (onColorChanged != null) onColorChanged.run();
+    }
+
+    @Override
+    public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
+        if (button != 0) return false;
+
+        for (UiComponent comp : children) {
+            if (comp == speedSlider && !rainbow) continue;
+            if (comp.getBounds().contains(mouseX, mouseY) && comp.mouseClicked(ui, mouseX, mouseY, button)) {
+                return true;
+            }
         }
+
+        if (pickerRect.contains(mouseX, mouseY)) {
+            draggingPicker = true;
+            updatePickerTarget(mouseX, mouseY);
+            return true;
+        }
+
+        if (sideSliderRect.contains(mouseX, mouseY)) {
+            draggingSide = true;
+            updateSideTarget(mouseY);
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public void mouseReleased(UiContext ui, double mouseX, double mouseY, int button) {
+        draggingPicker = false;
+        draggingSide = false;
+        for (UiComponent comp : children) comp.mouseReleased(ui, mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(UiContext ui, double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        for (UiComponent comp : children) {
+            if (comp == speedSlider && !rainbow) continue;
+            if (comp.mouseDragged(ui, mouseX, mouseY, button, deltaX, deltaY)) return true;
+        }
+
+        if (draggingPicker) {
+            updatePickerTarget(mouseX, mouseY);
+            return true;
+        }
+        if (draggingSide) {
+            updateSideTarget(mouseY);
+            return true;
+        }
+        return false;
+    }
+
+    private void updatePickerTarget(double mouseX, double mouseY) {
+        if (mode == Mode.SQUARE) {
+            this.saturation = clamp((float) ((mouseX - pickerRect.x) / pickerRect.w), 0f, 1f);
+            this.value = 1f - clamp((float) ((mouseY - pickerRect.y) / pickerRect.h), 0f, 1f);
+        } else {
+            int size = Math.min(pickerRect.w, pickerRect.h);
+            float cx = pickerRect.x + (pickerRect.w / 2f);
+            float cy = pickerRect.y + (pickerRect.h / 2f);
+            float radius = size / 2f;
+
+            float dx = (float) (mouseX - cx);
+            float dy = (float) (mouseY - cy);
+            float dist = (float) Math.sqrt(dx * dx + dy * dy);
+
+            this.saturation = clamp(dist / radius, 0f, 1f);
+
+            float angle = (float) Math.toDegrees(Math.atan2(dy, dx));
+            if (angle < 0) angle += 360f;
+            this.hue = angle;
+        }
+        syncHsvToRgb();
+    }
+
+    private void updateSideTarget(double mouseY) {
+        float val = clamp((float) ((mouseY - sideSliderRect.y) / sideSliderRect.h), 0f, 1f);
+        if (mode == Mode.SQUARE) {
+            this.hue = val * 360f;
+            gradientDirty = true;
+        } else {
+            this.value = 1f - val;
+            gradientDirty = true;
+        }
+        syncHsvToRgb();
     }
 
     private float clamp(float v, float min, float max) {
         return Math.max(min, Math.min(max, v));
     }
 
-    @Override public boolean keyPressed(UiContext ui, int keyCode, int scanCode, int modifiers) { return false; }
-    @Override public boolean charTyped(UiContext ui, char chr, int modifiers) { return false; }
-    @Override public boolean mouseScrolled(UiContext ui, double mouseX, double mouseY, double amount) { return false; }
+    private void renderSquareGradientOptimized(UiContext ui) {
+        if (pickerRect.w <= 0 || pickerRect.h <= 0) return;
+
+        if (gradientDirty || gradientCache == null || gradientCache.length != pickerRect.w || gradientCache[0].length != pickerRect.h) {
+            gradientCache = new int[pickerRect.w][pickerRect.h];
+            for (int y = 0; y < pickerRect.h; y++) {
+                float v = 1f - (float) y / pickerRect.h;
+                for (int x = 0; x < pickerRect.w; x++) {
+                    float s = (float) x / pickerRect.w;
+                    gradientCache[x][y] = Color.fromHsv(hue, s, v).getARGB();
+                }
+            }
+            gradientDirty = false;
+        }
+
+        int step = Math.max(1, Math.min(pickerRect.w, pickerRect.h) / 80);
+        for (int y = 0; y < pickerRect.h; y += step) {
+            for (int x = 0; x < pickerRect.w; x += step) {
+                int w = Math.min(step, pickerRect.w - x);
+                int h = Math.min(step, pickerRect.h - y);
+                ui.fill(pickerRect.x + x, pickerRect.y + y, w, h, gradientCache[x][y]);
+            }
+        }
+        ui.drawOutline(pickerRect, ui.theme.border);
+    }
+
+    private void renderHueSliderOptimized(UiContext ui) {
+        if (sideSliderRect.h <= 0) return;
+        int step = Math.max(1, sideSliderRect.h / 60);
+        for (int y = 0; y < sideSliderRect.h; y += step) {
+            float h = 360f * y / sideSliderRect.h;
+            int height = Math.min(step, sideSliderRect.h - y);
+            ui.fill(sideSliderRect.x, sideSliderRect.y + y, sideSliderRect.w, height, Color.fromHsv(h, 1f, 1f).getARGB());
+        }
+        ui.drawOutline(sideSliderRect, ui.theme.border);
+    }
+
+    private void renderWheelGradientOptimized(UiContext ui) {
+        if (pickerRect.w <= 0 || pickerRect.h <= 0) return;
+
+        int size = Math.min(pickerRect.w, pickerRect.h);
+        int cx = size / 2;
+        int cy = size / 2;
+        float radius = size / 2f;
+
+        if (gradientDirty || gradientCache == null || gradientCache.length != size || gradientCache[0].length != size || Math.abs(cachedWheelValue - value) > 0.01f) {
+            gradientCache = new int[size][size];
+            for (int y = 0; y < size; y++) {
+                for (int x = 0; x < size; x++) {
+                    float dx = x - cx;
+                    float dy = y - cy;
+                    float dist = (float) Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist > radius) {
+                        gradientCache[x][y] = 0;
+                    } else {
+                        float angle = (float) Math.toDegrees(Math.atan2(dy, dx));
+                        if (angle < 0) angle += 360f;
+                        float s = dist / radius;
+                        gradientCache[x][y] = Color.fromHsv(angle, s, value).getARGB();
+                    }
+                }
+            }
+            cachedWheelValue = value;
+            gradientDirty = false;
+        }
+
+        // Täysi tarkkuus ympyrälle, step on aina 1
+        int step = 1;
+        int offsetX = pickerRect.x + (pickerRect.w - size) / 2;
+        int offsetY = pickerRect.y + (pickerRect.h - size) / 2;
+
+        for (int y = 0; y < size; y += step) {
+            for (int x = 0; x < size; x += step) {
+                int color = gradientCache[x][y];
+                if (color != 0) {
+                    ui.fill(offsetX + x, offsetY + y, 1, 1, color);
+                }
+            }
+        }
+    }
+
+    private void renderValueSliderOptimized(UiContext ui) {
+        if (sideSliderRect.h <= 0) return;
+        int step = Math.max(1, sideSliderRect.h / 60);
+        for (int y = 0; y < sideSliderRect.h; y += step) {
+            float v = 1f - (float) y / sideSliderRect.h;
+            int height = Math.min(step, sideSliderRect.h - y);
+            ui.fill(sideSliderRect.x, sideSliderRect.y + y, sideSliderRect.w, height, Color.fromHsv(hue, saturation, v).getARGB());
+        }
+        ui.drawOutline(sideSliderRect, ui.theme.border);
+    }
+
+    private void renderCursors(UiContext ui) {
+        if (mode == Mode.SQUARE) {
+            int cx = (int) (pickerRect.x + saturation * pickerRect.w);
+            int cy = (int) (pickerRect.y + (1 - value) * pickerRect.h);
+            ui.fillCircle(cx, cy, 3, 0xFFFFFFFF);
+            ui.fillCircle(cx, cy, 2, 0xFF000000);
+
+            int hy = (int) (sideSliderRect.y + (hue / 360f) * sideSliderRect.h);
+            ui.fill(sideSliderRect.x - 2, hy - 2, sideSliderRect.w + 4, 4, 0xFFFFFFFF);
+            ui.fill(sideSliderRect.x - 1, hy - 1, sideSliderRect.w + 2, 2, 0xFF000000);
+
+        } else {
+            int size = Math.min(pickerRect.w, pickerRect.h);
+            float cx = pickerRect.x + (pickerRect.w / 2f);
+            float cy = pickerRect.y + (pickerRect.h / 2f);
+            float radius = size / 2f;
+
+            float radAngle = (float) Math.toRadians(hue);
+            int px = (int) (cx + Math.cos(radAngle) * (saturation * radius));
+            int py = (int) (cy + Math.sin(radAngle) * (saturation * radius));
+            ui.fillCircle(px, py, 3, 0xFFFFFFFF);
+            ui.fillCircle(px, py, 2, 0xFF000000);
+
+            int vy = (int) (sideSliderRect.y + (1f - value) * sideSliderRect.h);
+            ui.fill(sideSliderRect.x - 2, vy - 2, sideSliderRect.w + 4, 4, 0xFFFFFFFF);
+            ui.fill(sideSliderRect.x - 1, vy - 1, sideSliderRect.w + 2, 2, 0xFF000000);
+        }
+    }
 }

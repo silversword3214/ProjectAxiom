@@ -4,7 +4,7 @@ import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.TextureFormat;
+import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.textures.GpuSampler;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -20,7 +20,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 public class Texture extends AbstractTexture {
-    public Texture(int width, int height, TextureFormat format, FilterMode min, FilterMode mag) {
+    public Texture(int width, int height, GpuFormat format, FilterMode min, FilterMode mag) {
         texture = RenderSystem.getDevice().createTexture("", 15, format, width, height, 1, 1);
         sampler = RenderSystem.getSamplerCache().getSampler(AddressMode.REPEAT, AddressMode.REPEAT, min, mag, false);
 
@@ -52,8 +52,8 @@ public class Texture extends AbstractTexture {
 
     private @NotNull NativeImage getImage() {
         NativeImage.Format imageFormat = switch (texture.getFormat()) {
-            case RGBA8 -> NativeImage.Format.RGBA;
-            case RED8 -> NativeImage.Format.LUMINANCE;
+            case RGBA8_UNORM -> NativeImage.Format.RGBA;
+            case R8_UNORM -> NativeImage.Format.LUMINANCE;
             default -> throw new IllegalArgumentException();
         };
 
@@ -84,7 +84,7 @@ public class Texture extends AbstractTexture {
                 STBImage.stbi_set_flip_vertically_on_load(flipY);
                 ByteBuffer image = STBImage.stbi_load_from_memory(data, width, height, comp, 4);
 
-                var texture = new Texture(width.get(0), height.get(0), TextureFormat.RGBA8, filter, filter);
+                var texture = new Texture(width.get(0), height.get(0), GpuFormat.RGBA8_UNORM, filter, filter);
                 texture.upload(image);
 
                 STBImage.stbi_image_free(image);

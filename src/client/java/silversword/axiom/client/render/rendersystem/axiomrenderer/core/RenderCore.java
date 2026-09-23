@@ -3,7 +3,10 @@ package silversword.axiom.client.render.rendersystem.axiomrenderer.core;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.buffers.GpuFence;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.IndexType;
+import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.blaze3d.pipeline.*;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -20,6 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import silversword.axiom.client.render.rendersystem.utils.texture.Texture;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.*;
 
 public class RenderCore {
@@ -40,7 +45,6 @@ public class RenderCore {
     }
 
     public void beginFrame(Matrix4f projection, Matrix4f modelView) {
-
         batches.clear();
         textBatches.clear();
         allocator.clear();
@@ -49,17 +53,21 @@ public class RenderCore {
     }
 
     public void flush() {
-        for (Map.Entry<RenderPipeline, Batch> entry : batches.entrySet()) {
-            drawBatch(entry.getKey(), entry.getValue());
-            entry.getValue().clear();
-        }
-        batches.clear();
+        try {
+            for (Map.Entry<RenderPipeline, Batch> entry : batches.entrySet()) {
+                drawBatch(entry.getKey(), entry.getValue());
+                entry.getValue().clear();
+            }
+            batches.clear();
 
-        for (Map.Entry<Texture, Batch> entry : textBatches.entrySet()) {
-            drawTextBatch(entry.getKey(), entry.getValue());
-            entry.getValue().clear();
+            for (Map.Entry<Texture, Batch> entry : textBatches.entrySet()) {
+                drawTextBatch(entry.getKey(), entry.getValue());
+                entry.getValue().clear();
+            }
+            textBatches.clear();
+        } catch (Exception e) {
+            throw new RuntimeException("Flush failed", e);
         }
-        textBatches.clear();
     }
 
     private VertexBufferManager getBufferManager(RenderPipeline pipeline) {
@@ -81,14 +89,13 @@ public class RenderCore {
 
     // ----- Normal batch drawing (colored, textured) -----
     private void drawBatch(RenderPipeline pipeline, Batch batch) {
+
         if (pipeline == null) {
-            LOGGER.error("Pipeline is null");
             return;
         }
 
         MeshData mesh = buildMeshFromBatch(batch);
         if (mesh == null) {
-            LOGGER.warn("Mesh is null for batch (vertexCount={})", batch.vertexCount());
             return;
         }
 
@@ -99,21 +106,12 @@ public class RenderCore {
         VertexBufferManager vbm = getBufferManager(pipeline);
         vbm.ensureCapacity(vertexBufferSize);
 
-        CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
-        vbm.upload(mesh.vertexBuffer(), vertexBufferSize, encoder);
-        GpuBuffer vertices = vbm.getCurrentBuffer();
+        vbm.upload(mesh.vertexBuffer(), vertexBufferSize, null);
+        GpuBufferSlice vertices = vbm.getCurrentBuffer().slice(0, vertexBufferSize);
 
-        GpuBuffer indices;
-        VertexFormat.IndexType indexType;
-        if (pipeline.getVertexFormatMode() == VertexFormat.Mode.QUADS) {
-            mesh.sortQuads(allocator, RenderSystem.getProjectionType().vertexSorting());
-            indices = pipeline.getVertexFormat().uploadImmediateIndexBuffer(mesh.indexBuffer());
-            indexType = mesh.drawState().indexType();
-        } else {
-            RenderSystem.AutoStorageIndexBuffer indexBuffer = RenderSystem.getSequentialBuffer(pipeline.getVertexFormatMode());
-            indices = indexBuffer.getBuffer(drawParams.indexCount());
-            indexType = indexBuffer.type();
-        }
+        RenderSystem.AutoStorageIndexBuffer indexBuffer = RenderSystem.getSequentialBuffer(pipeline.getPrimitiveTopology());
+        GpuBuffer indices = indexBuffer.getBuffer(drawParams.indexCount());
+        IndexType indexType = indexBuffer.type();
 
         Matrix4f mvp = new Matrix4f(currentProjectionMatrix).mul(currentModelViewMatrix);
         GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(
@@ -126,8 +124,7 @@ public class RenderCore {
         GpuTextureView textureView = null;
         GpuSampler sampler = null;
         if (batch.getTexture() != null) {
-            var textureManager = Minecraft.getInstance().getTextureManager();
-            var abstractTexture = textureManager.getTexture(batch.getTexture());
+            var abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(batch.getTexture());
             if (abstractTexture != null) {
                 textureView = abstractTexture.getTextureView();
                 sampler = abstractTexture.getSampler();
@@ -136,53 +133,88 @@ public class RenderCore {
             }
         }
 
-        try (RenderPass renderPass = encoder.createRenderPass(
-                () -> "axiomrenderapi_draw",
-                Minecraft.getInstance().getMainRenderTarget().getColorTextureView(),
-                OptionalInt.empty(),
-                Minecraft.getInstance().getMainRenderTarget().getDepthTextureView(),
-                OptionalDouble.empty())) {
+        CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
+        try {
+            try (RenderPass renderPass = encoder.createRenderPass(
+                    () -> "axiomrenderapi_draw",
+                    Minecraft.getInstance().gameRenderer.mainRenderTarget().getColorTextureView(),
+                    Optional.empty(),
+                    Minecraft.getInstance().gameRenderer.mainRenderTarget().getDepthTextureView(),
+                    OptionalDouble.empty())) {
 
-            if (textureView != null) {
-                renderPass.bindTexture("u_Texture", textureView, sampler);
-            }
+                if (textureView != null) {
+                    renderPass.bindTexture("u_Texture", textureView, sampler);
+                }
 
-            renderPass.setPipeline(pipeline);
-
-
-            // Scissor oikeilla pikselikoordinaateilla
-            if (scissorEnabled) {
-                Minecraft mc = Minecraft.getInstance();
-                int windowWidth = mc.getWindow().getWidth();
-                int windowHeight = mc.getWindow().getHeight();
-                int scaledWidth = mc.getWindow().getGuiScaledWidth();
-                int scaledHeight = mc.getWindow().getGuiScaledHeight();
-                float scaleX = (float) windowWidth / scaledWidth;
-                float scaleY = (float) windowHeight / scaledHeight;
-
-                int glX = (int) (scissorX * scaleX);
-                int glY = windowHeight - (int) ((scissorY + scissorH) * scaleY);
-                int glW = (int) (scissorW * scaleX);
-                int glH = (int) (scissorH * scaleY);
-
-                renderPass.enableScissor(glX, glY, glW, glH);
-            } else {
+                renderPass.setPipeline(pipeline);
                 renderPass.disableScissor();
+
+                RenderSystem.bindDefaultUniforms(renderPass);
+                renderPass.setUniform("DynamicTransforms", dynamicTransforms);
+                renderPass.setVertexBuffer(0, vertices);
+                renderPass.setIndexBuffer(indices, indexType);
+                renderPass.drawIndexed(drawParams.indexCount(), 1, 0, 0, 0);
+            } catch (Exception e) {
+                LOGGER.error("Error during render pass", e);
             }
 
-            RenderSystem.bindDefaultUniforms(renderPass);
-            renderPass.setUniform("DynamicTransforms", dynamicTransforms);
-            renderPass.setVertexBuffer(0, vertices);
-            renderPass.setIndexBuffer(indices, indexType);
-            renderPass.drawIndexed(0, 0, drawParams.indexCount(), 1);
-        } catch (Exception e) {
-            LOGGER.error("Error during render pass", e);
+            GpuFence fence = encoder.createFence();
+            vbm.setFence(fence);
+        } finally {
+            encoder.submit();
         }
-        
         mesh.close();
-        GpuFence fence = encoder.createFence();
-        vbm.setFence(fence);
         vbm.rotate();
+    }
+
+    private boolean applyScissor(RenderPass renderPass) {
+        if (!scissorEnabled) {
+            renderPass.disableScissor();
+            return true;
+        }
+
+        Minecraft mc = Minecraft.getInstance();
+        var renderTarget = mc.gameRenderer.mainRenderTarget();
+        int targetWidth = renderTarget.width;
+        int targetHeight = renderTarget.height;
+
+        int scaledWidth = mc.getWindow().getGuiScaledWidth();
+        int scaledHeight = mc.getWindow().getGuiScaledHeight();
+
+        if (targetWidth <= 0 || targetHeight <= 0 || scaledWidth <= 0 || scaledHeight <= 0) {
+            renderPass.disableScissor();
+            return true;
+        }
+
+        float scaleX = (float) targetWidth / scaledWidth;
+        float scaleY = (float) targetHeight / scaledHeight;
+
+        float guiMinX = scissorX;
+        float guiMaxX = scissorX + scissorW;
+        float guiMinY = scissorY;
+        float guiMaxY = scissorY + scissorH;
+
+        int fbMinX = Math.round(guiMinX * scaleX);
+        int fbMaxX = Math.round(guiMaxX * scaleX);
+        int fbMinY = targetHeight - Math.round(guiMaxY * scaleY);
+        int fbMaxY = targetHeight - Math.round(guiMinY * scaleY);
+
+        int clampedMinX = Math.max(0, Math.min(fbMinX, targetWidth));
+        int clampedMaxX = Math.max(0, Math.min(fbMaxX, targetWidth));
+        int clampedMinY = Math.max(0, Math.min(fbMinY, targetHeight));
+        int clampedMaxY = Math.max(0, Math.min(fbMaxY, targetHeight));
+
+        int glX = clampedMinX;
+        int glY = clampedMinY;
+        int glW = clampedMaxX - clampedMinX;
+        int glH = clampedMaxY - clampedMinY;
+
+        if (glW <= 0 || glH <= 0) {
+            return false;
+        }
+
+        renderPass.enableScissor(glX, glY, glW, glH);
+        return true;
     }
 
     // ----- Text batch drawing -----
@@ -204,13 +236,12 @@ public class RenderCore {
         VertexBufferManager vbm = getBufferManager(pipeline);
         vbm.ensureCapacity(vertexBufferSize);
 
-        CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
-        vbm.upload(mesh.vertexBuffer(), vertexBufferSize, encoder);
-        GpuBuffer vertices = vbm.getCurrentBuffer();
+        vbm.upload(mesh.vertexBuffer(), vertexBufferSize, null);
+        GpuBufferSlice vertices = vbm.getCurrentBuffer().slice(0, vertexBufferSize);
 
-        RenderSystem.AutoStorageIndexBuffer indexBuffer = RenderSystem.getSequentialBuffer(pipeline.getVertexFormatMode());
+        RenderSystem.AutoStorageIndexBuffer indexBuffer = RenderSystem.getSequentialBuffer(pipeline.getPrimitiveTopology());
         GpuBuffer indices = indexBuffer.getBuffer(drawParams.indexCount());
-        VertexFormat.IndexType indexType = indexBuffer.type();
+        IndexType indexType = indexBuffer.type();
 
         Matrix4f mvp = new Matrix4f(currentProjectionMatrix).mul(currentModelViewMatrix);
         GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(
@@ -223,52 +254,39 @@ public class RenderCore {
         GpuTextureView textureView = texture.textureView();
         GpuSampler sampler = texture.sampler();
 
-        try (RenderPass renderPass = encoder.createRenderPass(
-                () -> "axiomrenderapi_text",
-                Minecraft.getInstance().getMainRenderTarget().getColorTextureView(),
-                OptionalInt.empty(),
-                Minecraft.getInstance().getMainRenderTarget().getDepthTextureView(),
-                OptionalDouble.empty())) {
+        CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
+        try {
+            try (RenderPass renderPass = encoder.createRenderPass(
+                    () -> "axiomrenderapi_text",
+                    Minecraft.getInstance().gameRenderer.mainRenderTarget().getColorTextureView(),
+                    Optional.empty(),
+                    Minecraft.getInstance().gameRenderer.mainRenderTarget().getDepthTextureView(),
+                    OptionalDouble.empty())) {
 
-            if (textureView != null) {
-                renderPass.bindTexture("u_Texture", textureView, sampler);
+                if (textureView != null) {
+                    renderPass.bindTexture("u_Texture", textureView, sampler);
+                }
+
+                renderPass.setPipeline(pipeline);
+                if (applyScissor(renderPass)) {
+                    renderPass.setPipeline(pipeline);
+                    RenderSystem.bindDefaultUniforms(renderPass);
+                    renderPass.setUniform("DynamicTransforms", dynamicTransforms);
+                    renderPass.setVertexBuffer(0, vertices);
+                    renderPass.setIndexBuffer(indices, indexType);
+                    renderPass.drawIndexed(drawParams.indexCount(), 1, 0, 0, 0);
+                }
+            } catch (Exception e) {
+                LOGGER.error("Error during text render pass", e);
             }
 
-            renderPass.setPipeline(pipeline);
-
-            // Scissor
-            if (scissorEnabled) {
-                Minecraft mc = Minecraft.getInstance();
-                int windowWidth = mc.getWindow().getWidth();
-                int windowHeight = mc.getWindow().getHeight();
-                int scaledWidth = mc.getWindow().getGuiScaledWidth();
-                int scaledHeight = mc.getWindow().getGuiScaledHeight();
-                float scaleX = (float) windowWidth / scaledWidth;
-                float scaleY = (float) windowHeight / scaledHeight;
-
-                int glX = (int) (scissorX * scaleX);
-                int glY = windowHeight - (int) ((scissorY + scissorH) * scaleY);
-                int glW = (int) (scissorW * scaleX);
-                int glH = (int) (scissorH * scaleY);
-
-                renderPass.enableScissor(glX, glY, glW, glH);
-            } else {
-                renderPass.disableScissor();
-            }
-
-            RenderSystem.bindDefaultUniforms(renderPass);
-            renderPass.setUniform("DynamicTransforms", dynamicTransforms);
-            renderPass.setVertexBuffer(0, vertices);
-            renderPass.setIndexBuffer(indices, indexType);
-            renderPass.drawIndexed(0, 0, drawParams.indexCount(), 1);
-        } catch (Exception e) {
-            LOGGER.error("Error during text render pass", e);
+            GpuFence fence = encoder.createFence();
+            vbm.setFence(fence);
+        } finally {
+            encoder.submit();
         }
 
         mesh.close();
-
-        GpuFence fence = encoder.createFence();
-        vbm.setFence(fence);
         vbm.rotate();
     }
 
@@ -292,7 +310,7 @@ public class RenderCore {
     public void addLine3D(double x1, double y1, double z1, double x2, double y2, double z2, float thickness, int color) {
         RenderPipeline pipeline = RenderPipelines.WORLD_COLORED_LINES;
         if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline, k -> new Batch(AxiomVertexFormats.POS3_COLOR, VertexFormat.Mode.DEBUG_LINES));
+        Batch batch = batches.computeIfAbsent(pipeline, k -> new Batch(AxiomVertexFormats.POS3_COLOR, PrimitiveTopology.DEBUG_LINES));
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -308,7 +326,7 @@ public class RenderCore {
                         int color) {
         RenderPipeline pipeline = RenderPipelines.WORLD_COLORED;
         if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline, k -> new Batch(AxiomVertexFormats.POS3_COLOR, VertexFormat.Mode.TRIANGLES));
+        Batch batch = batches.computeIfAbsent(pipeline, k -> new Batch(AxiomVertexFormats.POS3_COLOR, PrimitiveTopology.TRIANGLES));
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -327,7 +345,7 @@ public class RenderCore {
                             int color) {
         RenderPipeline pipeline = RenderPipelines.WORLD_COLORED;
         if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline, k -> new Batch(AxiomVertexFormats.POS3_COLOR, VertexFormat.Mode.TRIANGLES));
+        Batch batch = batches.computeIfAbsent(pipeline, k -> new Batch(AxiomVertexFormats.POS3_COLOR, PrimitiveTopology.TRIANGLES));
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -339,13 +357,18 @@ public class RenderCore {
 
     // --- 2D drawing methods ---
     public void addRect2D(float x, float y, float width, float height, int color) {
+
         RenderPipeline pipeline = RenderPipelines.UI_COLORED;
         if (pipeline == null) {
-            LOGGER.error("uiColoredPipeline is null!");
-            return;
+            RenderPipelines.rebuildAll();
+            pipeline = RenderPipelines.UI_COLORED;
+            if (pipeline == null) {
+                return;
+            }
         }
+
         Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_COLOR, VertexFormat.Mode.TRIANGLES));
+                k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -358,7 +381,7 @@ public class RenderCore {
         RenderPipeline pipeline = RenderPipelines.UI_COLORED_LINES;
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_COLOR, VertexFormat.Mode.DEBUG_LINES));
+                k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.DEBUG_LINES));
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -380,7 +403,7 @@ public class RenderCore {
         RenderPipeline pipeline = RenderPipelines.UI_COLORED_LINES;
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_COLOR, VertexFormat.Mode.DEBUG_LINES));
+                k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.DEBUG_LINES));
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -395,7 +418,7 @@ public class RenderCore {
         RenderPipeline pipeline = RenderPipelines.UI_COLORED;
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_COLOR, VertexFormat.Mode.TRIANGLES));
+                k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -450,7 +473,7 @@ public class RenderCore {
         RenderPipeline pipeline = RenderPipelines.UI_COLORED;
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_COLOR, VertexFormat.Mode.TRIANGLES));
+                k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -535,8 +558,6 @@ public class RenderCore {
             addRect2D(x, y, w, h, color);
             return;
         }
-
-        // --- Keskiosat (EI päällekkäisyyksiä) ---
 
         // Vasen suikale (kulmien välissä)
         addRect2D(x, y + radius, radius, h - 2 * radius, color);
@@ -701,7 +722,7 @@ public class RenderCore {
         if (pipeline == null) return;
 
         Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_COLOR, VertexFormat.Mode.TRIANGLES));
+                k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -740,7 +761,7 @@ public class RenderCore {
         RenderPipeline pipeline = RenderPipelines.UI_TEXTURED;
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_UV_COLOR, VertexFormat.Mode.TRIANGLES));
+                k -> new Batch(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES));
         batch.setTexture(texture);
 
         float r = ((color >> 16) & 0xFF) / 255f;
@@ -762,7 +783,7 @@ public class RenderCore {
         RenderPipeline pipeline = RenderPipelines.UI_TEXTURED;
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_UV_COLOR, VertexFormat.Mode.TRIANGLES));
+                k -> new Batch(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES));
         batch.setTexture(texture);
 
         float r = ((color >> 16) & 0xFF) / 255f;
@@ -810,7 +831,7 @@ public class RenderCore {
         RenderPipeline pipeline = RenderPipelines.UI_TEXT;
         if (pipeline == null) return;
         Batch batch = textBatches.computeIfAbsent(texture,
-                k -> new Batch(AxiomVertexFormats.POS2_UV_COLOR, VertexFormat.Mode.TRIANGLES));
+                k -> new Batch(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES));
 
         // Kolmio 1
         batch.vertexUV(x0, y0, u0, v0, r, g, b, a);

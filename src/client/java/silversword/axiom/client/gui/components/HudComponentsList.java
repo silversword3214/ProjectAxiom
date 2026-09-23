@@ -57,7 +57,7 @@ public class HudComponentsList implements UiComponent {
 
                 // 1. Vaihdetaan näyttö ENSIN ClickGuiScreeniin
                 ClickGuiScreen clickGui = new ClickGuiScreen();
-                mc.setScreen(clickGui);
+                mc.setScreenAndShow(clickGui);
 
                 // 2. Haetaan factory vasta nyt (uusi näyttö on asettanut sen)
                 WindowFactory factory = ClickGuiScreen.lastFactory;
@@ -137,7 +137,7 @@ public class HudComponentsList implements UiComponent {
                 ui.fillRounded(gearRect, gearHover ? ui.theme.buttonHover : ui.theme.panel, 3);
 
                 if (gearTexture != null) {
-                    ui.renderer.core.addRotatedTexture(GEAR_TEXTURE, gearRect.x + 2, gearRect.y + 2, gearRect.w - 4, gearRect.h - 4, rotation, 0xFFFFFFFF);
+                    ui.renderer.drawRotatedTexture(GEAR_TEXTURE, gearRect.x + 2, gearRect.y + 2, gearRect.w - 4, gearRect.h - 4, rotation, 0xFFFFFFFF);
                 } else {
                     ui.text("...", gearRect.x + 5, gearRect.y + 4, ui.theme.textDim);
                 }

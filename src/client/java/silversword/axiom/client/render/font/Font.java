@@ -1,8 +1,13 @@
 package silversword.axiom.client.render.font;
 
 import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.TextureFormat;
+import com.mojang.blaze3d.GpuFormat;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.render.TextureSetup;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.state.gui.BlitRenderState;
+import org.joml.Matrix3x2f;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.utils.texture.Texture;
@@ -59,7 +64,7 @@ public class Font {
         STBTruetype.stbtt_PackEnd(packContext);
 
         // Create texture object and get font scale
-        texture = new Texture(size, size, TextureFormat.RED8, FilterMode.LINEAR, FilterMode.LINEAR);
+        texture = new Texture(size, size, GpuFormat.R8_UNORM, FilterMode.LINEAR, FilterMode.LINEAR);
         texture.upload(bitmap);
         scale = STBTruetype.stbtt_ScaleForPixelHeight(fontInfo, height);
 
@@ -141,6 +146,41 @@ public class Font {
                     color.r / 255f, color.g / 255f, color.b / 255f, color.a / 255f
             );
 
+            x += c.xAdvance * scale;
+        }
+        return x;
+    }
+
+    /**
+     * Queues glyphs in Minecraft's GUI extraction pass. Rendering directly through
+     * RenderCore during extraction is too early in 26.2 and is overwritten later.
+     */
+    public double render(GuiGraphicsExtractor graphics, String string, double x, double y, Color color, double scale) {
+        y += ascent * this.scale * scale;
+        Matrix3x2f pose = new Matrix3x2f(graphics.pose());
+        TextureSetup textureSetup = TextureSetup.singleTexture(texture.textureView(), texture.sampler());
+        int argb = color.getARGB();
+
+        for (int i = 0; i < string.length(); i++) {
+            CharData c = charMap.get(string.charAt(i));
+            if (c == null) c = charMap.get(32);
+
+            int x0 = (int) Math.floor(x + c.x0 * scale);
+            int y0 = (int) Math.floor(y + c.y0 * scale);
+            int x1 = (int) Math.ceil(x + c.x1 * scale);
+            int y1 = (int) Math.ceil(y + c.y1 * scale);
+
+            if (x1 > x0 && y1 > y0) {
+                graphics.guiRenderState.addGuiElement(new BlitRenderState(
+                        RenderPipelines.GUI_TEXT_GRAYSCALE,
+                        textureSetup,
+                        pose,
+                        x0, y0, x1, y1,
+                        c.u0, c.u1, c.v0, c.v1,
+                        argb,
+                        graphics.scissorStack.peek()
+                ));
+            }
             x += c.xAdvance * scale;
         }
         return x;

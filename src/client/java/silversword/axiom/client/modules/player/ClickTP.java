@@ -48,8 +48,8 @@ public class ClickTP extends AxiomMod implements KeybindConfigurable {
 
         // Jos osoitetaan entityyn ja interaktio onnistuu, älä teleporttaa
         if (mc.hitResult != null) {
-            if (mc.hitResult.getType() == HitResult.Type.ENTITY &&
-                    mc.player.interactOn(((EntityHitResult) mc.hitResult).getEntity(), InteractionHand.MAIN_HAND) != InteractionResult.PASS) {
+            if (mc.hitResult instanceof EntityHitResult entityHit &&
+                    mc.player.interactOn(entityHit.getEntity(), InteractionHand.MAIN_HAND, entityHit.getLocation()) != InteractionResult.PASS) {
                 return;
             }
             // Jos osoitetaan blockiin ja kädessä on BlockItem, älä teleporttaa (anna sijoittaa blocki)
@@ -60,7 +60,7 @@ public class ClickTP extends AxiomMod implements KeybindConfigurable {
         }
 
         // Kamera ja raycast
-        Camera camera = mc.gameRenderer.getMainCamera();
+        Camera camera = mc.gameRenderer.mainCamera();
         Vec3 cameraPos = camera.position();
 
         // Lasketaan katsesuunta ja kerrotaan 210:llä (max kantama)

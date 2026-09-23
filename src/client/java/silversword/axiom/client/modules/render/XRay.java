@@ -179,7 +179,7 @@ public final class XRay extends AxiomMod implements KeybindConfigurable {
     private static void reloadChunks() {
         Minecraft mc = Minecraft.getInstance();
         if (mc != null && mc.levelRenderer != null) {
-            mc.levelRenderer.allChanged();
+            mc.levelRenderer.resetLevelRenderData();
         }
     }
 
@@ -213,6 +213,6 @@ public final class XRay extends AxiomMod implements KeybindConfigurable {
     private static void rebuildChunks() {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.levelRenderer == null) return;
-        mc.levelRenderer.allChanged();
+        mc.levelRenderer.resetLevelRenderData();
     }
 }

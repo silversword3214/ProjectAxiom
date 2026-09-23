@@ -1,6 +1,6 @@
 package silversword.axiom.client.modules.misc;
 
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Blocks;
@@ -232,8 +232,8 @@ public class AutoMine extends AxiomMod implements BlockSelectable, KeybindConfig
         double maxDistSq = maxDist * maxDist;
         Vec3 playerPos = mc.player.position();
         int radius = (int) Math.ceil(maxDist / 16) + 1;
-        int chunkX = mc.player.chunkPosition().x;
-        int chunkZ = mc.player.chunkPosition().z;
+        int chunkX = mc.player.chunkPosition().x();
+        int chunkZ = mc.player.chunkPosition().z();
 
         allTargets.clear();
         List<BlockPos> candidates = new ArrayList<>();
@@ -823,10 +823,10 @@ public class AutoMine extends AxiomMod implements BlockSelectable, KeybindConfig
                 ((BlockItem) mc.player.getOffhandItem().getItem()).getBlock() == targetBlock) return true;
         int offhandSlotId = 45;
         int fromSlotId = invIndexToPlayerScreenSlotId(slot);
-        mc.gameMode.handleInventoryMouseClick(syncId, fromSlotId, 0, net.minecraft.world.inventory.ClickType.PICKUP, mc.player);
-        mc.gameMode.handleInventoryMouseClick(syncId, offhandSlotId, 0, net.minecraft.world.inventory.ClickType.PICKUP, mc.player);
+        mc.gameMode.handleContainerInput(syncId, fromSlotId, 0, ContainerInput.PICKUP, mc.player);
+        mc.gameMode.handleContainerInput(syncId, offhandSlotId, 0, ContainerInput.PICKUP, mc.player);
         if (!mc.player.containerMenu.getCarried().isEmpty())
-            mc.gameMode.handleInventoryMouseClick(syncId, fromSlotId, 0, ClickType.PICKUP, mc.player);
+            mc.gameMode.handleContainerInput(syncId, fromSlotId, 0, ContainerInput.PICKUP, mc.player);
         return true;
     }
 

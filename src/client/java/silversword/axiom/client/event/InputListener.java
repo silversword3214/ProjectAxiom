@@ -41,10 +41,10 @@ public class InputListener {
                 boolean isPressed = GLFW.glfwGetKey(handle, clickGuiKey) == GLFW.GLFW_PRESS;
 
                 if (isPressed && !wasKeyPressed) {
-                    if (client.screen == null) {
-                        client.setScreen(new ClickGuiScreen());
-                    } else if (client.screen instanceof ClickGuiScreen) {
-                        client.setScreen(null);
+                    if (client.gui.screen() == null) {
+                        client.gui.setScreen(new ClickGuiScreen());
+                    } else if (client.gui.screen() instanceof ClickGuiScreen) {
+                        client.gui.setScreen(null);
                     }
                 }
                 wasKeyPressed = isPressed;

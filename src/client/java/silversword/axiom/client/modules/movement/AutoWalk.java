@@ -28,7 +28,7 @@ public final class AutoWalk extends AxiomMod implements KeybindConfigurable {
         if (mc.player == null || mc.options == null) return;
 
         // Jos ollaan jossain valikossa (esim. chat tai inventory), ei pakoteta kävelyä
-        if (mc.screen != null) {
+        if (mc.gui.screen() != null) {
             return;
         }
 

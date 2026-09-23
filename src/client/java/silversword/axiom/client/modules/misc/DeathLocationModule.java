@@ -51,7 +51,7 @@ public class DeathLocationModule extends AxiomMod {
         if (showMessage.get()) {
             String msg = String.format("§c[DeathLocation] §fYou died at §e%d %d %d §fin §e%s",
                     (int)x, (int)y, (int)z, world);
-            mc.player.displayClientMessage(Component.literal(msg), false);
+            mc.player.sendSystemMessage(Component.literal(msg));
         }
     }
 

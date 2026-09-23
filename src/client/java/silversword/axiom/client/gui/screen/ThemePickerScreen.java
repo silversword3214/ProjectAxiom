@@ -1,6 +1,6 @@
 package silversword.axiom.client.gui.screen;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.*;
 import net.minecraft.network.chat.Component;
@@ -26,7 +26,7 @@ public class ThemePickerScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float deltaTicks) {}
+    public void extractBackground(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {}
 
     @Override
     protected void init() {
@@ -49,7 +49,7 @@ public class ThemePickerScreen extends Screen {
 
         Button paletteButton = new Button("Rainbow Palettes", () -> {
             if (minecraft != null) {
-                minecraft.setScreen(new PaletteSelectorScreen(() -> minecraft.setScreen(this)));
+                minecraft.setScreenAndShow(new PaletteSelectorScreen(() -> minecraft.setScreenAndShow(this)));
             }
         });
         scroll.add(paletteButton);
@@ -61,7 +61,7 @@ public class ThemePickerScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         Matrix4f proj = new Matrix4f().setOrtho(0, width, height, 0, -1000, 1000);
         Renderer2D renderer = new Renderer2D(ctx, RenderAPI.getInstance().getCore(), proj);
         lastUi = new UiContext(minecraft, ctx, theme, delta, renderer);
@@ -91,7 +91,7 @@ public class ThemePickerScreen extends Screen {
 
         TextRenderer.get().end();
         RenderAPI.getInstance().getCore().flush();
-        super.render(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
     }
 
 
@@ -206,7 +206,7 @@ public class ThemePickerScreen extends Screen {
         if (lastUi != null && scroll != null && input.isAllowedChatCharacter()) {
             String s = input.codepointAsString();
             for (char c : s.toCharArray()) {
-                if (scroll.charTyped(lastUi, c, input.modifiers())) return true;
+                if (scroll.charTyped(lastUi, c, 0)) return true;
             }
         }
         return super.charTyped(input);

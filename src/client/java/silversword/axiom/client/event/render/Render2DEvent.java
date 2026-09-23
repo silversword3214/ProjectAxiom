@@ -1,15 +1,15 @@
 package silversword.axiom.client.event.render;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
 
 public class Render2DEvent extends RenderEvent {
     private final Renderer2D renderer;
-    private final GuiGraphics guiGraphics;
+    private final GuiGraphicsExtractor guiGraphics;
     private final int screenWidth;
     private final int screenHeight;
 
-    public Render2DEvent(Renderer2D renderer, float tickDelta, GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
+    public Render2DEvent(Renderer2D renderer, float tickDelta, GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight) {
         super(tickDelta);
         this.renderer = renderer;
         this.guiGraphics = guiGraphics;
@@ -21,7 +21,7 @@ public class Render2DEvent extends RenderEvent {
         return renderer;
     }
 
-    public GuiGraphics getGuiGraphics() {
+    public GuiGraphicsExtractor getGuiGraphics() {
         return guiGraphics;
     }
 

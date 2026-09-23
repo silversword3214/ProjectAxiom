@@ -54,6 +54,6 @@ public class Chunk {
     }
 
     public boolean shouldBeDeleted(int viewDistance, ChunkPos playerChunk) {
-        return Math.abs(pos.x - playerChunk.x) > viewDistance || Math.abs(pos.z - playerChunk.z) > viewDistance;
+        return Math.abs(pos.x() - playerChunk.x()) > viewDistance || Math.abs(pos.z() - playerChunk.z()) > viewDistance;
     }
 }

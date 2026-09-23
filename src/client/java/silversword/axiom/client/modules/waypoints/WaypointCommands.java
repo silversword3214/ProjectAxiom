@@ -20,7 +20,7 @@ public class WaypointCommands {
                                             client.player.getX(), client.player.getY(), client.player.getZ(),
                                             0xFF00FF00);
                                     WaypointManager.getInstance().add(wp);
-                                    client.player.displayClientMessage(Component.literal("Waypoint '" + name + "' set."), false);
+                                    client.player.sendSystemMessage(Component.literal("Waypoint '" + name + "' set."));
                                 }
                                 return 1;
                             })));

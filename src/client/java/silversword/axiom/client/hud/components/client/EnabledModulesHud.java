@@ -92,7 +92,7 @@ public final class EnabledModulesHud extends BaseHudElement {
     public int height(Minecraft mc) {
         List<String> list = enabledNames();
         double scale = textScale.getValue();
-        int count = list.isEmpty() ? (Minecraft.getInstance().screen != null ? 1 : 0) : list.size();
+        int count = list.isEmpty() ? (Minecraft.getInstance().gui.screen() != null ? 1 : 0) : list.size();
         return count * getItemHeight(scale);
     }
 

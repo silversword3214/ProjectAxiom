@@ -14,7 +14,7 @@ public class ModuleKeybindManager {
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null) return;
-            if (client.screen != null) return;
+            if (client.gui.screen() != null) return;
             long handle = client.getWindow().handle();
             if (handle == 0) return;
 

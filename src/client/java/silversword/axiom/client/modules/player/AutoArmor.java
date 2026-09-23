@@ -13,7 +13,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.phys.AABB;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -75,7 +75,7 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
     @Override
     protected void onTick() {
         if (mc.player == null || mc.level == null) return;
-        if (mc.screen != null) return; // älä tee mitään, jos inventory on auki
+        if (mc.gui.screen() != null) return; // älä tee mitään, jos inventory on auki
 
         int currentTick = tickCounter.incrementAndGet();
         if (currentTick < delay.getValue()) return;
@@ -382,19 +382,19 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
         if (toSlot == -1) return;
 
         // Click invSlot (ota esine)
-        mc.gameMode.handleInventoryMouseClick(
+        mc.gameMode.handleContainerInput(
                 mc.player.inventoryMenu.containerId,
                 fromSlot,
                 0,
-                ClickType.PICKUP,
+                ContainerInput.PICKUP,
                 mc.player
         );
         // Click armorSlot (aseta sinne)
-        mc.gameMode.handleInventoryMouseClick(
+        mc.gameMode.handleContainerInput(
                 mc.player.inventoryMenu.containerId,
                 toSlot,
                 0,
-                ClickType.PICKUP,
+                ContainerInput.PICKUP,
                 mc.player
         );
         // Jos kädessä on vielä jokin (esim. vanha panssari), klikataan takaisin invSlot

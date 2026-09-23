@@ -4,7 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -53,7 +53,7 @@ public class AutoTotem extends AxiomMod implements KeybindConfigurable {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.player == null || mc.gameMode == null) return;
 
-        if (stopInInventory.get() && mc.screen != null) return;
+        if (stopInInventory.get() && mc.gui.screen() != null) return;
 
         if (cooldown > 0) {
             cooldown--;
@@ -77,9 +77,9 @@ public class AutoTotem extends AxiomMod implements KeybindConfigurable {
 
         int syncId = player.inventoryMenu.containerId;
 
-        mc.gameMode.handleInventoryMouseClick(syncId, totemSlotId, 0, ClickType.PICKUP, player);
-        mc.gameMode.handleInventoryMouseClick(syncId, offhandSlotId, 0, ClickType.PICKUP, player);
-        mc.gameMode.handleInventoryMouseClick(syncId, totemSlotId, 0, ClickType.PICKUP, player);
+        mc.gameMode.handleContainerInput(syncId, totemSlotId, 0, ContainerInput.PICKUP, player);
+        mc.gameMode.handleContainerInput(syncId, offhandSlotId, 0, ContainerInput.PICKUP, player);
+        mc.gameMode.handleContainerInput(syncId, totemSlotId, 0, ContainerInput.PICKUP, player);
 
         cooldown = (int) cooldownTicks.getValue();
     }

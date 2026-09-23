@@ -214,7 +214,7 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
         while (processed < CHUNKS_PER_TICK && !chunksToScan.isEmpty()) {
             ChunkPos pos = chunksToScan.poll();
             if (pos != null) {
-                LevelChunk chunk = mc.level.getChunk(pos.x, pos.z);
+                LevelChunk chunk = mc.level.getChunk(pos.x(), pos.z());
                 if (chunk != null && chunk.getPos().equals(pos)) {
                     scanChunk(chunk);
                 }
@@ -237,7 +237,7 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
     }
 
     private void onChunkUnload(LevelChunk chunk) {
-        long key = chunk.getPos().toLong();
+        long key = chunk.getPos().pack();
         Chunk espChunk = chunks.remove(key);
         if (espChunk != null) {
             for (Block block : espChunk.getBlocks()) {
@@ -253,7 +253,7 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
     public void onBlockBreak(BlockPos pos) {
         Block removed = allBlocks.remove(pos);
         if (removed != null) {
-            long key = new ChunkPos(pos).toLong();
+            long key = ChunkPos.containing(pos).pack();
             Chunk chunk = chunks.get(key);
             if (chunk != null) {
                 chunk.removeBlock(pos);
@@ -274,7 +274,7 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
                     BlockPos neighbourPos = center.offset(dx, dy, dz);
                     Block neighbour = allBlocks.get(neighbourPos);
                     if (neighbour != null) {
-                        long key = new ChunkPos(neighbourPos).toLong();
+                        long key = ChunkPos.containing(neighbourPos).pack();
                         Chunk chunk = chunks.get(key);
                         if (chunk != null) {
                             neighbour.updateNeighbours(chunk);
@@ -287,7 +287,7 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
 
     private void scanChunk(LevelChunk chunk) {
         if (targetBlocks.isEmpty()) return;
-        long key = chunk.getPos().toLong();
+        long key = chunk.getPos().pack();
         Chunk espChunk = new Chunk(chunk.getPos());
 
         int minY = mc.level.getMinY();
@@ -318,10 +318,10 @@ public final class SearchBlocks extends AxiomMod implements BlockColorSelectable
         List<LevelChunk> list = new ArrayList<>();
         int viewDist = mc.options.renderDistance().get();
         ChunkPos playerChunk = mc.player.chunkPosition();
-        for (int x = playerChunk.x - viewDist; x <= playerChunk.x + viewDist; x++) {
-            for (int z = playerChunk.z - viewDist; z <= playerChunk.z + viewDist; z++) {
+        for (int x = playerChunk.x() - viewDist; x <= playerChunk.x() + viewDist; x++) {
+            for (int z = playerChunk.z() - viewDist; z <= playerChunk.z() + viewDist; z++) {
                 LevelChunk chunk = mc.level.getChunk(x, z);
-                if (chunk != null && chunk.getPos().x == x && chunk.getPos().z == z) {
+                if (chunk != null && chunk.getPos().x() == x && chunk.getPos().z() == z) {
                     list.add(chunk);
                 }
             }

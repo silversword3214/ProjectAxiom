@@ -73,11 +73,11 @@ public final class ChunkBorders extends AxiomMod implements ColorConfigurable, K
     private void onRender(Render3DEvent event) {
         if (!isEnabled() || mc.player == null || mc.level == null) return;
 
-        int playerChunkX = mc.player.chunkPosition().x;
-        int playerChunkZ = mc.player.chunkPosition().z;
+        int playerChunkX = mc.player.chunkPosition().x();
+        int playerChunkZ = mc.player.chunkPosition().z();
         int radius = (int) renderDistance.getValue();
 
-        Vec3 camera = mc.gameRenderer.getMainCamera().position();
+        Vec3 camera = mc.gameRenderer.mainCamera().position();
         double minY = mc.level.getMinY();
         double maxY = mc.level.getMaxY();
         double playerY = mc.player.getY();

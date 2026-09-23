@@ -56,7 +56,7 @@ public final class Velocity extends AxiomMod implements KeybindConfigurable {
         if (!isEnabled()) return;
         if (mc.player == null) return;
         if (!(event.getPacket() instanceof ClientboundSetEntityMotionPacket pkt)) return;
-        if (pkt.getId() != mc.player.getId()) return;
+        if (pkt.id() != mc.player.getId()) return;
 
         if (mode.getMode().equals("Cancel")) {
             event.setCancelled(true);
@@ -64,7 +64,7 @@ public final class Velocity extends AxiomMod implements KeybindConfigurable {
             double h = horizontal.getValue() / 100.0;
             double v = vertical.getValue() / 100.0;
 
-            Vec3 original = pkt.getMovement();
+            Vec3 original = pkt.movement();
             Vec3 modified = new Vec3(
                     original.x * h,
                     original.y * v,
@@ -72,7 +72,7 @@ public final class Velocity extends AxiomMod implements KeybindConfigurable {
             );
 
             // Käytetään event.setPacket(), ei mc.player.setDeltaMovement()
-            event.setPacket(new ClientboundSetEntityMotionPacket(pkt.getId(), modified));
+            event.setPacket(new ClientboundSetEntityMotionPacket(pkt.id(), modified));
         }
     }
 }

@@ -7,7 +7,7 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
@@ -134,7 +134,7 @@ public final class PotionRefill extends AxiomMod implements KeybindConfigurable 
         loadSettings();
         if (selectedEffects.isEmpty()) return;
 
-        boolean isInvOpen = mc.screen instanceof InventoryScreen;
+        boolean isInvOpen = mc.gui.screen() instanceof InventoryScreen;
         boolean isStill = player.onGround() && player.getDeltaMovement().horizontalDistanceSqr() < 0.001;
 
         if (isInvOpen || isStill) {
@@ -211,7 +211,7 @@ public final class PotionRefill extends AxiomMod implements KeybindConfigurable 
 
     private void moveItem(Minecraft mc, Player player, int sourceSlot, int targetHotbarIndex) {
         int containerId = player.inventoryMenu.containerId;
-        mc.gameMode.handleInventoryMouseClick(containerId, sourceSlot, targetHotbarIndex, ClickType.SWAP, player);
+        mc.gameMode.handleContainerInput(containerId, sourceSlot, targetHotbarIndex, ContainerInput.SWAP, player);
     }
 
     @Override

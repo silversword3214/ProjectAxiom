@@ -1,7 +1,7 @@
 package silversword.axiom.client.utils.render;
 
 import net.minecraft.resources.Identifier;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 
 import java.util.ArrayList;
@@ -18,12 +18,12 @@ public final class DrawTexture {
         commands.add(new TextureCommand(textureId, (float) x, (float) y, (float) width, (float) height, (float) rotation, color.getARGB()));
     }
 
-    public static void renderAll() {
+    public static void renderAll(Renderer2D renderer) {
         for (TextureCommand cmd : commands) {
             if (cmd.rotation == 0) {
-                RenderAPI.getInstance().getCore().addTexture(cmd.textureId, cmd.x, cmd.y, cmd.w, cmd.h, cmd.color);
+                renderer.drawTexture(cmd.textureId, cmd.x, cmd.y, cmd.w, cmd.h, cmd.color);
             } else {
-                RenderAPI.getInstance().getCore().addRotatedTexture(cmd.textureId, cmd.x, cmd.y, cmd.w, cmd.h, cmd.rotation, cmd.color);
+                renderer.drawRotatedTexture(cmd.textureId, cmd.x, cmd.y, cmd.w, cmd.h, cmd.rotation, cmd.color);
             }
         }
         commands.clear();

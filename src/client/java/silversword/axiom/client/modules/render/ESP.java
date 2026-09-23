@@ -160,7 +160,7 @@ public final class ESP extends AxiomMod implements ColorConfigurable, KeybindCon
         if (mc.player == null || mc.level == null) return;
 
         double maxDistSq = renderDistance.getValue() * renderDistance.getValue();
-        Vec3 camera = mc.gameRenderer.getMainCamera().position();
+        Vec3 camera = mc.gameRenderer.mainCamera().position();
 
         for (Entity entity : mc.level.entitiesForRendering()) {
             if (entity == mc.player || !entity.isAlive()) continue;

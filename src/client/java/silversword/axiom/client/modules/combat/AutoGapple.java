@@ -54,8 +54,6 @@ public class AutoGapple extends AxiomMod implements KeybindConfigurable {
     private boolean prevUsePressed = false;
     private int targetSlot = -1;
 
-    private static final ItemStack PEARL_STACK = new ItemStack(Items.ENDER_PEARL);
-
     public AutoGapple() {
         super("Auto Gapple", "Eats gapples automatically", ModuleCategory.COMBAT);
         addSetting(triggerHealth);
@@ -84,7 +82,7 @@ public class AutoGapple extends AxiomMod implements KeybindConfigurable {
 
         tick++;
 
-        if (stopInInventory.get() && mc.screen != null) {
+        if (stopInInventory.get() && mc.gui.screen() != null) {
             stopEating(mc, true);
             return;
         }
@@ -93,7 +91,8 @@ public class AutoGapple extends AxiomMod implements KeybindConfigurable {
 
         if (p.hurtTime > 0) lastDamageTick = tick;
 
-        boolean pearlCooling = p.getCooldowns().isOnCooldown(PEARL_STACK);
+        // Tarkistetaan cooldown suoraan Item-oliolla ilman ItemStackia
+        boolean pearlCooling = p.getCooldowns().isOnCooldown(Items.ENDER_PEARL.getDefaultInstance());
         if (!prevPearlCooling && pearlCooling) lastPearlTick = tick;
         prevPearlCooling = pearlCooling;
 

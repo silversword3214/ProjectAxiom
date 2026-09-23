@@ -25,7 +25,7 @@ public class PauseMenuSettings extends Screen {
                         Component.literal("Keybinds"),
                         button -> {
                             if (this.minecraft != null) {
-                                this.minecraft.setScreen(new KeybindsScreen(this));
+                                this.minecraft.setScreenAndShow(new KeybindsScreen(this));
                             }
                         })
                 .bounds(centerX - 50, y, 100, 20)
@@ -58,7 +58,7 @@ public class PauseMenuSettings extends Screen {
     @Override
     public void onClose() {
         if (this.minecraft != null) {
-            this.minecraft.setScreen(parent);
+            this.minecraft.setScreenAndShow(parent);
         }
     }
 }

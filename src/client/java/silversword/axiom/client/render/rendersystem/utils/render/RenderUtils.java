@@ -3,7 +3,7 @@ package silversword.axiom.client.render.rendersystem.utils.render;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -29,9 +29,11 @@ public class RenderUtils {
 
     public static Matrix4f getProjectionMatrix(float tickDelta) {
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
-        Camera camera = gameRenderer.getMainCamera();
-        float fov = gameRenderer.getFov(camera, tickDelta, true);
-        return gameRenderer.getProjectionMatrix(fov);
+        Camera camera = gameRenderer.mainCamera();
+        float fov = camera.getFov();
+        var window = Minecraft.getInstance().getWindow();
+        float aspect = (float) window.getWidth() / (float) window.getHeight();
+        return new Matrix4f().perspective((float) Math.toRadians(fov), aspect, 0.05f, 4096.0f);
     }
 
     public static Matrix4f getViewMatrix(Camera camera) {
@@ -108,7 +110,7 @@ public class RenderUtils {
         center = new Vec3(center4.x, center4.y, center4.z);
     }
 
-    public static Matrix4f getScaledProjection(GuiGraphics graphics) {
+    public static Matrix4f getScaledProjection(GuiGraphicsExtractor graphics) {
         int w = graphics.guiWidth();
         int h = graphics.guiHeight();
         return new Matrix4f().setOrtho(0, w, h, 0, -1000, 1000);

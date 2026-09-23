@@ -2,7 +2,7 @@ package silversword.axiom.client.gui.screen;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
@@ -42,12 +42,12 @@ public final class HudEditScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         // Estetään vaniljan taustan piirto
     }
 
     @Override
-    public void render(GuiGraphics vanillaCtx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor vanillaCtx, int mouseX, int mouseY, float delta) {
         this.lastMouseX = mouseX;
         this.lastMouseY = mouseY;
         Matrix4f proj = RenderUtils.getScaledProjection(vanillaCtx);
@@ -95,7 +95,7 @@ public final class HudEditScreen extends Screen {
 
         RenderAPI.getInstance().getCore().flush();
 
-        super.render(vanillaCtx, mouseX, mouseY, delta);
+        super.extractRenderState(vanillaCtx, mouseX, mouseY, delta);
     }
 
     private void drawGrid(UiContext ctx) {

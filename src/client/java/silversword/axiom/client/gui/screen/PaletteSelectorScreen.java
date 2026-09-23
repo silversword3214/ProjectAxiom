@@ -1,6 +1,6 @@
 package silversword.axiom.client.gui.screen;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.*;
 import net.minecraft.network.chat.Component;
@@ -57,10 +57,10 @@ public class PaletteSelectorScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float deltaTicks) {}
+    public void extractBackground(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {}
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         Matrix4f proj = new Matrix4f().setOrtho(0, width, height, 0, -1000, 1000);
         Renderer2D renderer = new Renderer2D(ctx, RenderAPI.getInstance().getCore(), proj);
         Theme theme = ThemeManager.getCurrentTheme();
@@ -82,7 +82,7 @@ public class PaletteSelectorScreen extends Screen {
         scrollContainer.render(lastUi, mouseX, mouseY, delta);
 
         TextRenderer.get().end();
-        super.render(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
     }
 
 
@@ -144,7 +144,7 @@ public class PaletteSelectorScreen extends Screen {
         if (lastUi != null && scrollContainer != null && input.isAllowedChatCharacter()) {
             String s = input.codepointAsString();
             for (char c : s.toCharArray()) {
-                if (scrollContainer.charTyped(lastUi, c, input.modifiers())) return true;
+                if (scrollContainer.charTyped(lastUi, c, 0)) return true;
             }
         }
         return super.charTyped(input);

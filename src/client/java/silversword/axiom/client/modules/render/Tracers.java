@@ -113,7 +113,7 @@ public final class Tracers extends AxiomMod implements ColorConfigurable, Keybin
         if (!isEnabled()) return;
         if (mc.player == null || mc.level == null) return;
 
-        Camera camera = mc.gameRenderer.getMainCamera();
+        Camera camera = mc.gameRenderer.mainCamera();
         Vec3 cameraPos = camera.position();
         Vec3 cameraDir = mc.player.getViewVector(event.getTickDelta());
         double maxDistSq = renderDistance.getValue() * renderDistance.getValue();

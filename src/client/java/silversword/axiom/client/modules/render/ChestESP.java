@@ -112,11 +112,11 @@ public final class ChestESP extends AxiomMod implements ColorConfigurable, Keybi
         if (mc.player == null || mc.level == null) return;
 
         double maxDistSq = renderDistance.getValue() * renderDistance.getValue();
-        Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
+        Vec3 cameraPos = mc.gameRenderer.mainCamera().position();
 
         int chunkRadius = (int) Math.ceil(renderDistance.getValue() / 16.0) + 1;
-        int playerChunkX = mc.player.chunkPosition().x;
-        int playerChunkZ = mc.player.chunkPosition().z;
+        int playerChunkX = mc.player.chunkPosition().x();
+        int playerChunkZ = mc.player.chunkPosition().z();
 
         for (int cx = playerChunkX - chunkRadius; cx <= playerChunkX + chunkRadius; cx++) {
             for (int cz = playerChunkZ - chunkRadius; cz <= playerChunkZ + chunkRadius; cz++) {

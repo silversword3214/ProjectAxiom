@@ -20,6 +20,6 @@ public interface CameraAccessor {
     void axiom$setRotation(float yaw, float pitch);
 
     @Accessor("entity")
-    void setEntity(Entity entity);
+    void axiom$setEntity(Entity entity);
 
 }

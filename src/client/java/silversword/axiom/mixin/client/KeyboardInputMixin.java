@@ -48,7 +48,7 @@ public abstract class KeyboardInputMixin extends ClientInput {
         InvWalk invWalk = ModuleManager.getInstance().getModule(InvWalk.class);
         if (invWalk == null || !invWalk.isEnabled()) return;
 
-        Screen screen = mc.screen;
+        Screen screen = mc.gui.screen();
         if (screen == null) return;
 
         boolean isHandledScreen = screen instanceof AbstractContainerScreen;

@@ -49,7 +49,7 @@ public class LabeledColorPicker implements UiComponent {
                 int sw = mc.getWindow().getGuiScaledWidth();
                 int sh = mc.getWindow().getGuiScaledHeight();
                 var picker = new HsvColorPicker(color, () -> {});
-                factory.openCustomWindow("color_picker", "Pick Color", sw, sh, picker);
+                factory.openColorPickerWindow("color_picker", "Pick Color", sw, sh, picker);
             }
             return true;
         }

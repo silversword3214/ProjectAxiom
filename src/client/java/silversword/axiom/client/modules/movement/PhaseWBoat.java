@@ -77,7 +77,7 @@ public final class PhaseWBoat extends AxiomMod implements KeybindConfigurable {
                 TUTORIAL_TEXT,
                 () -> {
                     // OK clicked: close the GUI and start the module (if in a boat)
-                    mc.setScreen(null); // close any open screen (clickgui)
+                    mc.gui.setScreen(null); // close any open screen (clickgui)
 
                     // Check again if the player is in a boat – if not, disable the module
                     if (!(mc.player.getVehicle() instanceof net.minecraft.world.entity.vehicle.boat.AbstractBoat)) {

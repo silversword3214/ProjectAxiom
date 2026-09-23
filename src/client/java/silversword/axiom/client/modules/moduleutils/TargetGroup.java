@@ -1,7 +1,7 @@
 package silversword.axiom.client.modules.moduleutils;
 
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.ambient.AmbientCreature;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.animal.fish.WaterAnimal; // Oikea luokka kaloille
@@ -23,9 +23,9 @@ public enum TargetGroup {
         if (entity instanceof Player) return PLAYER;
 
         // Bossit ja erikoisvastustajat
-        EntityType<?> type = entity.getType();
-        if (type == EntityType.ENDER_DRAGON || type == EntityType.WITHER ||
-                type == EntityType.WARDEN || entity instanceof IronGolem) {
+        var type = entity.getType();
+        if (type == EntityTypes.ENDER_DRAGON || type == EntityTypes.WITHER ||
+                type == EntityTypes.WARDEN || entity instanceof IronGolem) {
             return BOSS;
         }
 

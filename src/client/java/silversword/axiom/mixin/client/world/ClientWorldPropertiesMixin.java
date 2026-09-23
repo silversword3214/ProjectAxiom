@@ -10,7 +10,7 @@ import silversword.axiom.client.modules.world.TimeChanger;
 @Mixin(targets = "net.minecraft.client.multiplayer.ClientLevel$ClientLevelData")
 public class ClientWorldPropertiesMixin {
 
-    @Inject(method = "getDayTime", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "getGameTime", at = @At("RETURN"), cancellable = true)
     private void onGetTimeOfDay(CallbackInfoReturnable<Long> cir) {
         TimeChanger mod = ModuleManager.getInstance().getModule(TimeChanger.class);
         if (mod != null && mod.isEnabled()) {

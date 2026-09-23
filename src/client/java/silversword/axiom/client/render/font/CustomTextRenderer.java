@@ -4,6 +4,7 @@ package silversword.axiom.client.render.font;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -116,6 +117,30 @@ public class CustomTextRenderer implements TextRenderer {
             SHADOW_COLOR.a = preShadowA;
         } else {
             width = font.render(core, text, x, y, color, scale / 2.3);
+        }
+
+        if (!wasBuilding) end();
+        return width;
+    }
+
+    public double render(GuiGraphicsExtractor graphics, String text, double x, double y, Color color, boolean shadow) {
+        boolean wasBuilding = building;
+        if (!wasBuilding) begin();
+
+        double renderScale = scale / 1.5;
+        double width;
+        if (shadow) {
+            int previousAlpha = SHADOW_COLOR.a;
+            SHADOW_COLOR.a = (int) (color.a / 255.0 * previousAlpha);
+            width = font.render(graphics, text,
+                    x + fontScale * renderScale,
+                    y + fontScale * renderScale,
+                    SHADOW_COLOR,
+                    renderScale);
+            font.render(graphics, text, x, y, color, renderScale);
+            SHADOW_COLOR.a = previousAlpha;
+        } else {
+            width = font.render(graphics, text, x, y, color, renderScale);
         }
 
         if (!wasBuilding) end();

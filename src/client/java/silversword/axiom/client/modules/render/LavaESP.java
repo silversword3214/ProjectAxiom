@@ -67,8 +67,8 @@ public final class LavaESP extends AxiomMod implements KeybindConfigurable {
         Vec3 playerPos = mc.player.position();
 
         int chunkRadius = (int) Math.ceil(renderDistance.getValue() / 16.0) + 1;
-        int playerChunkX = mc.player.chunkPosition().x;
-        int playerChunkZ = mc.player.chunkPosition().z;
+        int playerChunkX = mc.player.chunkPosition().x();
+        int playerChunkZ = mc.player.chunkPosition().z();
         int bottomY = mc.level.getMinY();
         int topY = mc.level.getMaxY();
 

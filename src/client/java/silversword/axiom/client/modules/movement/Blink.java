@@ -76,11 +76,11 @@ public class Blink extends AxiomMod implements KeybindConfigurable {
             // MOODI: Cancel - Tyhjennä paketit ja palauta sijainti
             BlinkManager.getInstance().cancel();
             mc.player.snapTo(startPos.x, startPos.y, startPos.z, startYaw, startPitch);
-            mc.player.displayClientMessage(Component.literal("§cBlink: Movement Cancelled"), true);
+            mc.player.sendOverlayMessage(Component.literal("§cBlink: Movement Cancelled"));
         } else {
             // MOODI: Post - Lähetä paketit palvelimelle (pysyt uudessa paikassa)
             BlinkManager.getInstance().stop();
-            mc.player.displayClientMessage(Component.literal("§aBlink: Movement Posted"), true);
+            mc.player.sendOverlayMessage(Component.literal("§aBlink: Movement Posted"));
         }
 
         startPos = null;

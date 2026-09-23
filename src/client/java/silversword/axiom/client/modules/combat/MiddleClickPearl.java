@@ -21,7 +21,7 @@ public final class MiddleClickPearl extends AxiomMod {
         if (!isEnabled()) return;
 
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.options == null || mc.screen != null) return;
+        if (mc.player == null || mc.options == null || mc.gui.screen() != null) return;
 
         boolean isPressed = mc.mouseHandler.isMiddlePressed();
 

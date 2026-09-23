@@ -70,8 +70,8 @@ public final class CaveESP extends AxiomMod implements KeybindConfigurable {
         int bottomY = mc.level.getMinY();
 
         int chunkRadius = (int) Math.ceil(maxDist / 16.0) + 1;
-        int playerChunkX = mc.player.chunkPosition().x;
-        int playerChunkZ = mc.player.chunkPosition().z;
+        int playerChunkX = mc.player.chunkPosition().x();
+        int playerChunkZ = mc.player.chunkPosition().z();
 
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 

@@ -59,7 +59,7 @@ public class NoFog extends AxiomMod implements KeybindConfigurable {
     @Override
     protected void onDisable() {
         if (mc.player != null)
-            mc.levelRenderer.allChanged();
+            mc.levelRenderer.resetLevelRenderData();
     }
 
     @Override
@@ -70,7 +70,7 @@ public class NoFog extends AxiomMod implements KeybindConfigurable {
     private void refreshRenderer() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.levelRenderer != null) {
-            mc.levelRenderer.allChanged();
+            mc.levelRenderer.resetLevelRenderData();
         }
     }
 }

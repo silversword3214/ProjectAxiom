@@ -13,7 +13,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
@@ -325,8 +324,9 @@ public class CrystalAura extends AxiomMod implements KeybindConfigurable {
             Rotations.rotate(rotations[0], rotations[1]);
         }
 
-        ServerboundInteractPacket packet = ServerboundInteractPacket.createAttackPacket(crystal, mc.player.isShiftKeyDown());
-        mc.getConnection().send(packet);
+        if (mc.gameMode != null) {
+            mc.gameMode.attack(mc.player, crystal);
+        }
     }
 
     // ==================== APUMETODIT ====================

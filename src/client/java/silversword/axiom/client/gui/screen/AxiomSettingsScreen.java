@@ -1,6 +1,6 @@
 package silversword.axiom.client.gui.screen;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.*;
 import net.minecraft.network.chat.Component;
@@ -35,13 +35,13 @@ public class AxiomSettingsScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float deltaTicks) {}
+    public void extractBackground(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {}
 
     private void rebuild() {
         scroll.clear();
 
         scroll.add(new Button("HUD Edit", () -> {
-            if (minecraft != null) minecraft.setScreen(new HudEditScreen());
+            if (minecraft != null) minecraft.setScreenAndShow(new HudEditScreen());
         }));
 
         scroll.add(new Button("HUD Components", () -> {
@@ -51,11 +51,11 @@ public class AxiomSettingsScreen extends Screen {
         }));
 
         scroll.add(new Button("Theme Settings", () -> {
-            if (minecraft != null) minecraft.setScreen(new ThemePickerScreen(() -> minecraft.setScreen(this)));
+            if (minecraft != null) minecraft.setScreenAndShow(new ThemePickerScreen(() -> minecraft.setScreenAndShow(this)));
         }));
 
         scroll.add(new Button("Font Settings", () -> {
-            if (minecraft != null) minecraft.setScreen(new FontSettingsScreen(() -> minecraft.setScreen(this)));
+            if (minecraft != null) minecraft.setScreenAndShow(new FontSettingsScreen(() -> minecraft.setScreenAndShow(this)));
         }));
 
         // Etsi AxiomSettingsScreen.java:n rebuild() -metodista tämä kohta:
@@ -64,7 +64,7 @@ public class AxiomSettingsScreen extends Screen {
             gui.init(this.width, this.height);
             gui.resetWindows();
 
-            if (minecraft != null) minecraft.setScreen(new ClickGuiScreen());
+            if (minecraft != null) minecraft.setScreenAndShow(new ClickGuiScreen());
         }));
 
         scroll.add(new Toggle("Rainbow wave for modules",
@@ -83,7 +83,7 @@ public class AxiomSettingsScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         Matrix4f proj = new Matrix4f().setOrtho(0, width, height, 0, -1000, 1000);
         Renderer2D renderer = new Renderer2D(ctx, RenderAPI.getInstance().getCore(), proj);
         lastUi = new UiContext(minecraft, ctx, theme, delta, renderer);
@@ -103,7 +103,7 @@ public class AxiomSettingsScreen extends Screen {
         scroll.render(lastUi, mouseX, mouseY, delta);
 
         TextRenderer.get().end();
-        super.render(ctx, mouseX, mouseY, delta);
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
     }
 
 
@@ -164,7 +164,7 @@ public class AxiomSettingsScreen extends Screen {
         if (lastUi != null && scroll != null && input.isAllowedChatCharacter()) {
             String s = input.codepointAsString();
             for (char c : s.toCharArray()) {
-                if (scroll.charTyped(lastUi, c, input.modifiers())) return true;
+                if (scroll.charTyped(lastUi, c, 0)) return true;
             }
         }
         return super.charTyped(input);

@@ -4,7 +4,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -17,7 +17,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 public class FreecamCameraEntity extends Entity {
 
     public FreecamCameraEntity(Level level) {
-        super(EntityType.PLAYER, level); // Using PLAYER type ensures correct collision behavior (none)
+        super(EntityTypes.PLAYER, level); // Using PLAYER type ensures correct collision behavior (none)
         this.noPhysics = true;
         this.setInvulnerable(true);
         this.setNoGravity(true);
