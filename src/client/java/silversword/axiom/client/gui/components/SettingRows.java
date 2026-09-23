@@ -22,6 +22,14 @@ abstract class SettingRowBase implements UiComponent {
     protected int rowH() { return 26; }
     @Override public int getPreferredHeight() { return rowH(); }
 
+    /** UUSI: piirretään rivin tausta, jotta komponentti näkyy paneelin päällä. */
+    protected void drawRowBackground(UiContext ui, int mouseX, int mouseY) {
+        boolean hover = bounds.contains(mouseX, mouseY);
+        int bg = hover ? ui.theme.buttonHover : ui.theme.panel;
+        ui.fillRounded(bounds, bg, 3);
+        ui.drawRoundedOutline(bounds, hover ? ui.theme.accent : ui.theme.border, 3, 1.0);
+    }
+
     protected static double clamp01(double t) { return max(0.0, min(1.0, t)); }
 
     protected static float smoothToward(float current, float target, float delta) {
@@ -46,14 +54,12 @@ final class SettingFallbackRow extends SettingRowBase {
 
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
+        drawRowBackground(ui, mouseX, mouseY);
         boolean hover = bounds.contains(mouseX, mouseY);
-        // No background for the row
-
         String name = s.getName() == null ? "" : s.getName();
         int textY = getTextY(ui);
         int nameColor = hover ? ui.theme.accent : ui.theme.text;
         ui.text(name, bounds.x + 8, textY, nameColor);
-
         String v = fmt(s.getValue());
         int vw = ui.textWidth(v);
         ui.text(v, bounds.right() - vw - 8, textY, ui.theme.textDim);
@@ -572,9 +578,9 @@ final class SettingRangeRow extends SettingRowBase {
         // Aktiivinen alue pallojen välissä (teeman korostusväri)
         ui.fill(minX, barY, maxX - minX, barH, ui.theme.accent);
 
-        // Nupit (pienet valkoiset neliöt tai pyöristetyt suorakaiteet)
-        ui.fill(minX - 2, barY - 3, 4, 9, 0xFFFFFFFF); // Vasen nuppi
-        ui.fill(maxX - 2, barY - 3, 4, 9, 0xFFFFFFFF); // Oikea nuppi
+        int knobRadius = 4;
+        ui.fillCircle(minX, barY + barH / 2, knobRadius, 0xFFFFFFFF);
+        ui.fillCircle(maxX, barY + barH / 2, knobRadius, 0xFFFFFFFF);
     }
 
     @Override

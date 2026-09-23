@@ -1,6 +1,5 @@
 package silversword.axiom.client.gui.core;
 
-import silversword.axiom.client.render.font.TextRenderer;
 import silversword.axiom.client.utils.render.TextUtils;
 
 import java.util.ArrayList;
@@ -40,16 +39,14 @@ public final class TooltipStack {
         String[] lines = text.split("\n");
         int lineCount = lines.length;
 
-        // Lasketaan maksimileveys käyttäen TextRendererin getWidth-metodia
+        // Tooltip uses the same GUI font metrics as the rest of the ClickGUI.
         double maxWidth = 0;
         for (String line : lines) {
-            // Käytetään samaa korjauskerrointa (1.5 / 2.3) kuin sateenkaaressa,
-            // jotta laatikko vastaa piirrettyä tekstiä
-            double lineWidth = (TextRenderer.get().getWidth(line, false) * 1.5) / 2.3;
+            double lineWidth = ui.textWidth(line);
             if (lineWidth > maxWidth) maxWidth = lineWidth;
         }
 
-        double fontHeight = (TextRenderer.get().getHeight(false) * 1.5) / 2.3;
+        double fontHeight = ui.fontHeight();
 
         int boxWidth = (int) maxWidth + (PADDING * 2);
         int boxHeight = (int) (lineCount * fontHeight + (PADDING * 2));

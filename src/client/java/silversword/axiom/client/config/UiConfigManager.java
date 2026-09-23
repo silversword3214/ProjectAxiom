@@ -73,7 +73,7 @@ public final class UiConfigManager {
     // =========================
     // LOAD EXISTING WINDOW LAYOUT (for windows that already exist)
     // =========================
-    public static boolean loadGui(WindowManager wm) {
+    public static boolean loadGui(WindowManager wm, int screenW, int screenH) {
         try {
             UiData data = loadOrCreate();
             if (data.gui == null || data.gui.windows == null || data.gui.windows.isEmpty()) return false;
@@ -84,10 +84,10 @@ public final class UiConfigManager {
                 Window w = wm.getWindowById(ws.id);
                 if (w == null) continue;
 
-                w.x = ws.x;
-                w.y = ws.y;
-                w.width = Math.max(Window.MIN_WIDTH, ws.w);
-                w.height = Math.max(Window.MIN_HEIGHT, ws.h);
+                w.width = Math.min(Math.max(Window.MIN_WIDTH, ws.w), Math.max(Window.MIN_WIDTH, screenW));
+                w.height = Math.min(Math.max(Window.MIN_HEIGHT, ws.h), Math.max(Window.MIN_HEIGHT, screenH));
+                w.x = Math.max(0, Math.min(ws.x, Math.max(0, screenW - w.width)));
+                w.y = Math.max(0, Math.min(ws.y, Math.max(0, screenH - w.height)));
                 if (ws.title != null) w.setTitle(ws.title);
 
                 if (ws.minimized != w.isMinimized()) {

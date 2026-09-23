@@ -56,12 +56,12 @@ public final class FontSettingsScreen extends Screen {
         if (texOff == null) texOff = TextureManager.getTexture(CHECKBOX_OFF);
         if (texOn == null) texOn = TextureManager.getTexture(CHECKBOX_ON);
 
-        int containerWidth = Math.min(560, this.width - 60);
+        int containerWidth = Math.max(160, Math.min(560, this.width - 48));
         int containerX = (this.width - containerWidth) / 2;
         int searchBarY = 55;
         int searchBarHeight = 22;
         int containerY = searchBarY + searchBarHeight + 10;
-        int containerHeight = this.height - containerY - 30;
+        int containerHeight = Math.max(40, this.height - containerY - 30);
 
         searchBar = new SearchBar(
                 () -> filterText,
@@ -108,13 +108,13 @@ public final class FontSettingsScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
         Matrix4f proj = new Matrix4f().setOrtho(0, width, height, 0, -1000, 1000);
         Renderer2D renderer = new Renderer2D(ctx, RenderAPI.getInstance().getCore(), proj);
         lastUi = new UiContext(this.minecraft, ctx, theme, delta, renderer);
 
         boolean textOk = false;
         try {
-            TextRenderer.get().begin(1.0, false, false);
             textOk = true;
         } catch (Exception e) {}
 
@@ -126,10 +126,10 @@ public final class FontSettingsScreen extends Screen {
 
             searchBar.render(lastUi, mouseX, mouseY, delta);
             scrollContainer.render(lastUi, mouseX, mouseY, delta);
+            lastUi.renderTexts();
         }
 
-        if (textOk) TextRenderer.get().end();
-        super.extractRenderState(ctx, mouseX, mouseY, delta);
+        RenderAPI.getInstance().getCore().flush();
     }
 
 

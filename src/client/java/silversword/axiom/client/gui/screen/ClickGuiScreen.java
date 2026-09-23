@@ -73,7 +73,7 @@ public final class ClickGuiScreen extends Screen {
         lastFactory = windowFactory;
 
         createCategoryWindows(sw, sh);
-        UiConfigManager.loadGui(windowManager);
+        UiConfigManager.loadGui(windowManager, sw, sh);
         HudConfigManager.load(HudManager.get());
     }
 
@@ -84,6 +84,7 @@ public final class ClickGuiScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
         windowManager.updateAnimations();
 
         int width = ctx.guiWidth();
@@ -93,8 +94,6 @@ public final class ClickGuiScreen extends Screen {
         Renderer2D renderer = new Renderer2D(ctx, RenderAPI.getInstance().getCore(), proj);
 
         lastUi = new UiContext(this.minecraft, ctx, theme, delta, renderer);
-
-        TextRenderer.get().begin(1.0, false, false);
 
         if (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen()) {
             windowManager.render(lastUi, mouseX, mouseY);
@@ -109,9 +108,6 @@ public final class ClickGuiScreen extends Screen {
             currentDropdown.render(lastUi, mouseX, mouseY, delta);
         }
 
-        TextRenderer.get().end();
-        super.extractRenderState(ctx, mouseX, mouseY, delta);
-
         RenderCore core = RenderAPI.getInstance().getCore();
         boolean wasScissor = core.isScissorEnabled();
         int sx = core.getScissorX();
@@ -123,6 +119,7 @@ public final class ClickGuiScreen extends Screen {
             core.enableScissor(sx, sy, sw, sh);
         }
 
+        // 1. Tekstuurit ensin (esim. Gear-ikonit)
         DrawTexture.renderAll(renderer);
 
         if (wasScissor) {
@@ -131,7 +128,12 @@ public final class ClickGuiScreen extends Screen {
             core.disableScissor();
         }
 
+        // 2. Tooltipit (tausta piirretään heti, teksti menee jonoon)
         TooltipStack.renderAll(lastUi);
+
+        // 3. KAIKKI tekstit vasta tässä vaiheessa → piirretään taustojen päälle
+        lastUi.renderTexts();
+
         core.flush();
     }
 

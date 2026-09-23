@@ -94,9 +94,16 @@ public class HudComponentSettingsPanel implements UiComponent {
                         bool::set
                 );
             }
+        } else if (setting instanceof SettingMode mode) {
+            return new SettingModeRow(mode);
+        } else if (setting instanceof SettingTime time) {
+            return new SettingTimeFieldRow(time);
+        } else if (setting instanceof SettingString string) {
+            return new SettingStringRow(string);
+        } else if (setting instanceof SettingRangeSlider range) {
+            return new SettingRangeRow(range);
         }
-        // Muut asetustyypit (SettingMode) voidaan lisätä myöhemmin
-        return null;
+        return new SettingFallbackRow(setting);
     }
 
     @Override

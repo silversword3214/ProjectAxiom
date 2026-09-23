@@ -61,8 +61,36 @@ public class LevelRendererMixin {
         AxiomInitialize.EVENT_BUS.post(event);
 
         api.end();
+    }
 
+    @Inject(
+            method = "resetLevelRenderData()V",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void axiom$safeResetLevelRenderData(CallbackInfo ci) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.level == null) return;
 
+        axiom$invokeSafeChunkReload((LevelRenderer) (Object) this);
+        ci.cancel();
+    }
+
+    private static void axiom$invokeSafeChunkReload(LevelRenderer lr) {
+        for (String name : new String[] { "invalidateCompiledGeometry", "allChanged" }) {
+            try {
+                java.lang.reflect.Method m = LevelRenderer.class.getDeclaredMethod(name);
+                m.setAccessible(true);
+                m.invoke(lr);
+                return;
+            } catch (NoSuchMethodException ignored) {
+            } catch (Throwable t) {
+                System.err.println("[Axiom] LevelRenderer." + name + " failed: " + t);
+                return;
+            }
+        }
+        System.err.println("[Axiom] No safe chunk-reload method found on LevelRenderer. "
+                + "resetLevelRenderData() was cancelled to prevent a crash.");
     }
 }
 

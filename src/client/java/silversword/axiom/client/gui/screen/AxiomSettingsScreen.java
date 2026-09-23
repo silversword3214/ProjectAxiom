@@ -84,26 +84,26 @@ public class AxiomSettingsScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
         Matrix4f proj = new Matrix4f().setOrtho(0, width, height, 0, -1000, 1000);
         Renderer2D renderer = new Renderer2D(ctx, RenderAPI.getInstance().getCore(), proj);
         lastUi = new UiContext(minecraft, ctx, theme, delta, renderer);
 
-        TextRenderer.get().begin(1.0, false, false);
         lastUi.fill(0, 0, width, height, 0xDD000000);
 
         String title = "Settings";
         int titleW = lastUi.textWidth(title);
         lastUi.text(title, (width - titleW) / 2, 22, theme.text);
 
-        int containerW = Math.min(440, width - 100);
+        int containerW = Math.max(160, Math.min(440, width - 48));
         int containerX = (width - containerW) / 2;
         int containerY = 55;
-        int containerH = height - containerY - 30;
+        int containerH = Math.max(40, height - containerY - 30);
         scroll.setBounds(new Rect(containerX, containerY, containerW, containerH));
         scroll.render(lastUi, mouseX, mouseY, delta);
 
-        TextRenderer.get().end();
-        super.extractRenderState(ctx, mouseX, mouseY, delta);
+        lastUi.renderTexts();
+        RenderAPI.getInstance().getCore().flush();
     }
 
 

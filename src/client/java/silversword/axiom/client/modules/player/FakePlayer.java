@@ -7,9 +7,12 @@ import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.setting.SettingKeybind;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.UUID;
+
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
 public class FakePlayer extends AxiomMod implements KeybindConfigurable {
+    private static int nextFakeEntityId = -1;
     private final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", GLFW.GLFW_KEY_UNKNOWN);
     private RemotePlayer fakePlayer;
     private int spawnDelay = 0;
@@ -36,6 +39,8 @@ public class FakePlayer extends AxiomMod implements KeybindConfigurable {
         }
 
         fakePlayer = new RemotePlayer(mc.level, mc.player.getGameProfile());
+        fakePlayer.setId(nextFakeEntityId--);
+        fakePlayer.setUUID(UUID.randomUUID());
         fakePlayer.copyPosition(mc.player);
         fakePlayer.setHealth(mc.player.getHealth());
         fakePlayer.setPose(mc.player.getPose());

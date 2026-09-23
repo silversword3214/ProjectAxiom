@@ -26,6 +26,7 @@ public class CustomTextRenderer implements TextRenderer {
     private double fontScale = 1;
     private double scale = 1;
 
+
     private RenderCore core;
 
     public CustomTextRenderer(FontFace fontFace) {
@@ -51,6 +52,13 @@ public class CustomTextRenderer implements TextRenderer {
     @Override
     public void setAlpha(double a) {
 
+    }
+
+    @Override
+    public double getCharAdvance(char c) {
+        Font f = building ? this.font : fonts[0];
+        // Sama skaalaus kuin renderöinnissä
+        return f.getCharAdvance(c) * scale / 1.5;
     }
 
     @Override
@@ -103,6 +111,8 @@ public class CustomTextRenderer implements TextRenderer {
         return (f.getHeight() + 1 + (shadow ? 1 : 0)) * scale / 1.5;
     }
 
+
+
     @Override
     public double render(String text, double x, double y, Color color, boolean shadow) {
         boolean wasBuilding = building;
@@ -110,13 +120,15 @@ public class CustomTextRenderer implements TextRenderer {
 
         double width;
         if (shadow) {
+            // KORJAUS: pyöristä varjon offset kokonaisiin pikseleihin
+            double offset = Math.max(1.0, Math.round(fontScale * scale / 1.5));
             int preShadowA = SHADOW_COLOR.a;
             SHADOW_COLOR.a = (int) (color.a / 255.0 * preShadowA);
-            width = font.render(core, text, x + fontScale * scale / 1.5, y + fontScale * scale / 1.5, SHADOW_COLOR, scale / 1.5);
-            font.render(core, text, x, y, color, scale / 1.5);
+            font.render(core, text, Math.round(x + offset), Math.round(y + offset), SHADOW_COLOR, scale / 1.5);
+            width = font.render(core, text, Math.round(x), Math.round(y), color, scale / 1.5);
             SHADOW_COLOR.a = preShadowA;
         } else {
-            width = font.render(core, text, x, y, color, scale / 2.3);
+            width = font.render(core, text, Math.round(x), Math.round(y), color, scale / 1.5);
         }
 
         if (!wasBuilding) end();
@@ -130,17 +142,14 @@ public class CustomTextRenderer implements TextRenderer {
         double renderScale = scale / 1.5;
         double width;
         if (shadow) {
+            double offset = Math.max(1.0, Math.round(fontScale * renderScale));
             int previousAlpha = SHADOW_COLOR.a;
             SHADOW_COLOR.a = (int) (color.a / 255.0 * previousAlpha);
-            width = font.render(graphics, text,
-                    x + fontScale * renderScale,
-                    y + fontScale * renderScale,
-                    SHADOW_COLOR,
-                    renderScale);
-            font.render(graphics, text, x, y, color, renderScale);
+            font.render(graphics, text, Math.round(x + offset), Math.round(y + offset), SHADOW_COLOR, renderScale);
+            width = font.render(graphics, text, Math.round(x), Math.round(y), color, renderScale);
             SHADOW_COLOR.a = previousAlpha;
         } else {
-            width = font.render(graphics, text, x, y, color, renderScale);
+            width = font.render(graphics, text, Math.round(x), Math.round(y), color, renderScale);
         }
 
         if (!wasBuilding) end();

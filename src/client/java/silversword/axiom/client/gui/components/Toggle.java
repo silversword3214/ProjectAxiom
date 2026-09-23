@@ -57,7 +57,11 @@ public final class Toggle implements UiComponent {
 
         float t = knobAnim.getValue();
         int bgColor = interpolateColor(ui.theme.toggleOff, ui.theme.toggleOn, t);
+
+        // KORJAUS: piirretään pill ja sen reuna, jotta se ei katoa taustaan
         ui.fillRounded(sx, sy, pillW, pillH, bgColor, pillH / 2.0);
+        ui.drawRoundedOutline(new Rect(sx, sy, pillW, pillH),
+                hover ? ui.theme.accent : ui.theme.border, pillH / 2.0, 1.0);
 
         // Knob
         int knobSize = pillH - 4;
@@ -68,7 +72,7 @@ public final class Toggle implements UiComponent {
         int knobX = (int) (minKnobX + (maxKnobX - minKnobX) * eased);
         int knobY = sy + 2 + knobRadius;
 
-        ui.fillCircle(knobX, knobY, knobRadius, ui.theme.textDim);
+        ui.fillCircle(knobX, knobY, knobRadius, ui.theme.text);
         ui.fillCircle(knobX, knobY, knobRadius - 1, ui.theme.panel);
     }
 

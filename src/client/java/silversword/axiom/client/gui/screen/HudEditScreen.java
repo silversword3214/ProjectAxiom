@@ -48,6 +48,7 @@ public final class HudEditScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor vanillaCtx, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(vanillaCtx, mouseX, mouseY, delta);
         this.lastMouseX = mouseX;
         this.lastMouseY = mouseY;
         Matrix4f proj = RenderUtils.getScaledProjection(vanillaCtx);
@@ -91,11 +92,10 @@ public final class HudEditScreen extends Screen {
             drawElementName(uiCtx, e);
         }
 
+        hudCtx.renderTexts();
         TextRenderer.get().end();
 
         RenderAPI.getInstance().getCore().flush();
-
-        super.extractRenderState(vanillaCtx, mouseX, mouseY, delta);
     }
 
     private void drawGrid(UiContext ctx) {

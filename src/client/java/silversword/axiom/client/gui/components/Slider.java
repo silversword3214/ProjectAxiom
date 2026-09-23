@@ -53,21 +53,13 @@ public final class Slider implements UiComponent {
         return clamp(snapped);
     }
 
-    // Apumetodi, joka laskee leveyden olettaen, että jokainen merkki on tasan 6 pikseliä leveä
-    private int getHardcodedTextWidth(String text) {
-        if (text == null) return 0;
-        return text.length() * 6;
-    }
-
     private Rect calculateSliderArea(UiContext ui, double valueForWidth) {
-        // Korvattu ui.textWidth() kovakoodatulla laskennalla
-        int labelWidth = getHardcodedTextWidth(label);
+        int labelWidth = ui.textWidth(label);
         String valStr = formatValue(valueForWidth);
-        int valWidth = getHardcodedTextWidth(valStr);
+        int valWidth = ui.textWidth(valStr);
 
         int labelEnd = bounds.x + ui.theme.innerPadding + labelWidth;
         int valueStart = bounds.right() - ui.theme.innerPadding - valWidth;
-
         int sliderX = labelEnd + PADDING;
         int sliderWidth = valueStart - sliderX - EXTRA_PADDING;
 
@@ -120,8 +112,7 @@ public final class Slider implements UiComponent {
         double value = applyStep(raw);
         String valStr = formatValue(value);
 
-        // Korvattu ui.textWidth() kovakoodatulla laskennalla
-        int valWidth = getHardcodedTextWidth(valStr);
+        int valWidth = ui.textWidth(valStr);
         int valX = bounds.right() - ui.theme.innerPadding - valWidth;
         ui.text(valStr, valX, textY, ui.theme.textDim);
 
@@ -129,19 +120,18 @@ public final class Slider implements UiComponent {
         Rect sliderArea = (dragging && dragSliderArea != null) ? dragSliderArea : getSliderArea(ui);
 
         int trackY = sliderArea.y;
-        int radius = 3;
-
-        // Track
-        ui.fillRounded(sliderArea.x, trackY, sliderArea.w, 6, ui.theme.sliderTrack, radius);
-        // Fill
-        double pct = (value - min) / (max - min);
+        // Keep the track in the normal UiContext fill path so it cannot disappear
+        // behind a deferred text element or a rounded-shape rasterization edge.
+        ui.fill(sliderArea.x, trackY, sliderArea.w, 6, ui.theme.sliderTrack);
+        double range = max - min;
+        double pct = range <= 0 ? 0 : (value - min) / range;
         int fillW = (int) Math.round(sliderArea.w * pct);
-        ui.fillRounded(sliderArea.x, trackY, fillW, 6, ui.theme.sliderFill, radius);
+        if (fillW > 0) ui.fill(sliderArea.x, trackY, fillW, 6, ui.theme.sliderFill);
 
         // Knob
         int knobSize = 12;
         int knobX = sliderArea.x + fillW - knobSize / 2;
-        int knobY = trackY - (knobSize - 6) / 2;
+        int knobY = trackY - (knobSize - sliderArea.h) / 2;
         int knobCenterX = knobX + knobSize / 2;
         int knobCenterY = knobY + knobSize / 2;
 

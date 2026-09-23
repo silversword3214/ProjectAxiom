@@ -5,7 +5,6 @@ import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.utils.render.DrawTexture;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -181,7 +180,7 @@ public final class Window {
             int iconSize = 10;
             int iconX = keyBtn.x + (keyBtn.w - iconSize) / 2;
             int iconY = keyBtn.y + (keyBtn.h - iconSize) / 2;
-            DrawTexture.add(KEYBIND_TEXTURE, iconX, iconY, iconSize, iconSize, new Color(255,255,255,255));
+            ui.addTexture(KEYBIND_TEXTURE, iconX, iconY, iconSize, iconSize, new Color(255,255,255,255));
         }
         if (minimizable) {
             Rect minBtn = headerButtonRect(btnIndex++, header);

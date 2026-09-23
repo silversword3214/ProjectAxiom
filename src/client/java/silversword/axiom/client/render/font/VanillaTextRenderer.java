@@ -44,6 +44,11 @@ public final class VanillaTextRenderer implements TextRenderer {
     }
 
     @Override
+    public double getCharAdvance(char c) {
+        return (mc.font.width(String.valueOf(c))) * scale;
+    }
+
+    @Override
     public double render(String text, double x, double y, Color color, boolean shadow) {
         boolean wasBuilding = building;
         if (!wasBuilding) begin();

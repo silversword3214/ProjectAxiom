@@ -7,6 +7,8 @@ public interface TextRenderer {
         return Fonts.getRenderer();
     }
 
+    double getCharAdvance(char c);
+
     void setAlpha(double a);
 
     void begin(double scale, boolean scaleOnly, boolean big);

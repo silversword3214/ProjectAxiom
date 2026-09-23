@@ -95,7 +95,7 @@ public class VertexBufferManager implements AutoCloseable {
     private GpuBuffer createBuffer(int size, int index) {
         return RenderSystem.getDevice().createBuffer(
                 () -> BUFFER_NAMES[index],
-                GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_MAP_WRITE,
+                GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_MAP_WRITE | GpuBuffer.USAGE_COPY_DST,
                 size
         );
     }

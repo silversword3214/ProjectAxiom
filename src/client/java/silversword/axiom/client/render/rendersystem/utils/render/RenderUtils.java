@@ -19,14 +19,6 @@ public class RenderUtils {
 
     public static final Matrix4f projection = new Matrix4f();
 
-
-    /**
-     * Gets the current game's projection matrix for world rendering.
-     *
-     * @param tickDelta The partial tick time (from DeltaTracker)
-     * @return The projection matrix
-     */
-
     public static Matrix4f getProjectionMatrix(float tickDelta) {
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
         Camera camera = gameRenderer.mainCamera();

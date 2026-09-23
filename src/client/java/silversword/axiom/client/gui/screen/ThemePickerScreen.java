@@ -62,11 +62,11 @@ public class ThemePickerScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
         Matrix4f proj = new Matrix4f().setOrtho(0, width, height, 0, -1000, 1000);
         Renderer2D renderer = new Renderer2D(ctx, RenderAPI.getInstance().getCore(), proj);
         lastUi = new UiContext(minecraft, ctx, theme, delta, renderer);
 
-        TextRenderer.get().begin(1.0, false, false);
         lastUi.fill(0, 0, width, height, 0xDD000000);
 
         String title = "Theme Settings";
@@ -74,24 +74,26 @@ public class ThemePickerScreen extends Screen {
         lastUi.text(title, (width - titleW) / 2, 22, theme.text);
 
 
-        int leftWidth = Math.min(300, width - 360);
-        int rightWidth = width - leftWidth - 70;
-        int containerX = 35;
+        int margin = 24;
+        int availableWidth = Math.max(160, width - margin * 2);
+        int gap = availableWidth >= 520 ? 25 : 12;
+        int leftWidth = availableWidth >= 520 ? Math.min(300, (availableWidth - gap) / 2) : availableWidth;
+        int rightWidth = availableWidth >= 520 ? availableWidth - leftWidth - gap : 0;
+        int containerX = (width - availableWidth) / 2;
         int containerY = 55;
-        int containerH = height - containerY - 30;
+        int containerH = Math.max(40, height - containerY - 30);
 
         scroll.setBounds(new Rect(containerX, containerY, leftWidth, containerH));
         scroll.render(lastUi, mouseX, mouseY, delta);
 
-        int previewX = containerX + leftWidth + 25;
+        int previewX = containerX + leftWidth + gap;
         int previewY = containerY;
         int previewW = rightWidth;
         int previewH = containerH;
-        drawPreview(lastUi, previewX, previewY, previewW, previewH);
+        if (previewW > 0) drawPreview(lastUi, previewX, previewY, previewW, previewH);
 
-        TextRenderer.get().end();
+        lastUi.renderTexts();
         RenderAPI.getInstance().getCore().flush();
-        super.extractRenderState(ctx, mouseX, mouseY, delta);
     }
 
 

@@ -28,11 +28,9 @@ public final class WindowManager {
             }
         }
 
-        // Remove finished windows and handle overlay stack
         for (Window w : toRemove) {
             windows.remove(w);
             if (w == currentOverlay) {
-                // Current overlay has finished closing
                 if (!overlayStack.isEmpty()) {
                     currentOverlay = overlayStack.remove(overlayStack.size() - 1);
                 } else {
@@ -55,7 +53,6 @@ public final class WindowManager {
             overlayStack.add(currentOverlay);
         }
         currentOverlay = w;
-        // Ensure the window is in the main list (should already be)
         if (!windows.contains(w)) {
             windows.add(w);
         }
@@ -69,10 +66,8 @@ public final class WindowManager {
 
     public void closeOverlay() {
         if (currentOverlay != null) {
-            currentOverlay.close(); // start closing animation
-            // Do not remove yet; will be removed after animation in updateAnimations
+            currentOverlay.close();
         }
-        // If there's a component overlay, just clear it immediately
         if (overlayComponent != null) {
             overlayComponent = null;
         }
@@ -101,7 +96,7 @@ public final class WindowManager {
 
     public boolean removeWindow(Window window) {
         if (window == null) return false;
-        window.close(); // start closing animation
+        window.close();
         return true;
     }
 
@@ -130,6 +125,8 @@ public final class WindowManager {
             overlayComponent.render(ui, mouseX, mouseY, ui.delta);
             return;
         }
+        // Renderöidään listan järjestyksessä: viimeisin = päällimmäisin.
+        // bringToFront pitää huolen siitä, että viimeksi koskettu ikkuna on listan lopussa.
         for (Window w : windows) {
             w.render(ui, mouseX, mouseY, ui.delta);
         }
@@ -171,7 +168,11 @@ public final class WindowManager {
 
         for (int i = windows.size() - 1; i >= 0; i--) {
             Window w = windows.get(i);
-            if (w.mouseDragged(ui, mouseX, mouseY, button, dx, dy)) return true;
+            if (w.mouseDragged(ui, mouseX, mouseY, button, dx, dy)) {
+                // Jos jokin ikkuna (tai sen lapsi) nappasi dragin, nosta se päällimmäiseksi.
+                bringToFront(w);
+                return true;
+            }
         }
         return false;
     }
@@ -182,7 +183,14 @@ public final class WindowManager {
 
         for (int i = windows.size() - 1; i >= 0; i--) {
             Window w = windows.get(i);
-            if (w.getBounds().contains(mouseX, mouseY)) return w.mouseScrolled(ui, mouseX, mouseY, amount);
+            if (w.getBounds().contains(mouseX, mouseY)) {
+                boolean consumed = w.mouseScrolled(ui, mouseX, mouseY, amount);
+                if (consumed) {
+                    // Skrollattu ikkuna nousee päällimmäiseksi.
+                    bringToFront(w);
+                }
+                return consumed;
+            }
         }
         return false;
     }
@@ -194,7 +202,10 @@ public final class WindowManager {
         for (int i = windows.size() - 1; i >= 0; i--) {
             Window w = windows.get(i);
             if (w.isMinimized()) continue;
-            if (w.keyPressed(ui, keyCode, scanCode, modifiers)) return true;
+            if (w.keyPressed(ui, keyCode, scanCode, modifiers)) {
+                bringToFront(w);
+                return true;
+            }
         }
         return false;
     }
@@ -206,7 +217,10 @@ public final class WindowManager {
         for (int i = windows.size() - 1; i >= 0; i--) {
             Window w = windows.get(i);
             if (w.isMinimized()) continue;
-            if (w.charTyped(ui, chr, modifiers)) return true;
+            if (w.charTyped(ui, chr, modifiers)) {
+                bringToFront(w);
+                return true;
+            }
         }
         return false;
     }

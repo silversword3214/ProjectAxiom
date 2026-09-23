@@ -45,7 +45,9 @@ public class Texture extends AbstractTexture {
         buffer.rewind();
         MemoryUtil.memCopy(MemoryUtil.memAddress(buffer), image.getPointer(), buffer.remaining());
 
-        RenderSystem.getDevice().createCommandEncoder().writeToTexture(texture, image);
+        var encoder = RenderSystem.getDevice().createCommandEncoder();
+        encoder.writeToTexture(texture, image);
+        encoder.submit();
 
         image.close();
     }

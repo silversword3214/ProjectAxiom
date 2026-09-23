@@ -41,8 +41,8 @@ public final class WindowFactory {
     }
 
     private void centerWindow(Window win, int screenW, int screenH) {
-        win.x = (screenW - win.width) / 2;
-        win.y = (screenH - win.height) / 2;
+        win.x = Math.max(0, Math.min((screenW - win.width) / 2, Math.max(0, screenW - win.width)));
+        win.y = Math.max(0, Math.min((screenH - win.height) / 2, Math.max(0, screenH - win.height)));
     }
 
     public Window ensureMainWindow(
