@@ -2,6 +2,7 @@ package silversword.axiom.client.modules.combat;
 
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.AABB;
@@ -282,12 +283,11 @@ public class KillAura extends AxiomMod implements KeybindConfigurable, ColorConf
             mc.player.setYRot(oldYaw + (float)((Math.random() - 0.5) * jitter));
             mc.player.setXRot(oldPitch + (float)((Math.random() - 0.5) * jitter * 0.5));
             mc.gameMode.attack(mc.player, target);
-            mc.player.swing(mc.player.getUsedItemHand());
+            mc.player.swing(mc.player.getUsedItemHand(), SwingAnimation.DEFAULT, false);
             mc.player.setYRot(oldYaw);
             mc.player.setXRot(oldPitch);
         } else {
             mc.gameMode.attack(mc.player, target);
-            mc.player.swing(mc.player.getUsedItemHand());
         }
         attackController.recordAttack();
     }

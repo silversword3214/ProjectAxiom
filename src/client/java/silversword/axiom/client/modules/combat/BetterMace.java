@@ -279,7 +279,11 @@ public final class BetterMace extends AxiomMod {
     private void performAttack(LivingEntity target) {
         if (mc.gameMode == null || mc.level == null) return;
         mc.gameMode.attack(mc.player, target);
-        mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+        mc.player.swing(
+                net.minecraft.world.InteractionHand.MAIN_HAND,
+                net.minecraft.world.item.component.SwingAnimation.DEFAULT,
+                false
+        );
         lastAttackTime = System.currentTimeMillis();
         if (infiniteWindBurst.get()) {
             int swordSlot = findSwordSlot();

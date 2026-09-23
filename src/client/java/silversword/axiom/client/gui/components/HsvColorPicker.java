@@ -101,7 +101,7 @@ public class HsvColorPicker implements UiComponent {
 
         int padding = 8;
         int hueWidth = 16;
-        int topAreaHeight = 180; // Kasvatettu korkeus ympyrälle
+        int topAreaHeight = 180; // Kasvatettu korkeus ympyrÃ¤lle
         int rightColumnWidth = 80;
 
         pickerRect = new Rect(
@@ -211,7 +211,7 @@ public class HsvColorPicker implements UiComponent {
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-        if (button != 0) return false;
+        if (button != 1) return false;
 
         for (UiComponent comp : children) {
             if (comp == speedSlider && !rainbow) continue;
@@ -366,7 +366,7 @@ public class HsvColorPicker implements UiComponent {
             gradientDirty = false;
         }
 
-        // Täysi tarkkuus ympyrälle, step on aina 1
+        // TÃ¤ysi tarkkuus ympyrÃ¤lle, step on aina 1
         int step = 1;
         int offsetX = pickerRect.x + (pickerRect.w - size) / 2;
         int offsetY = pickerRect.y + (pickerRect.h - size) / 2;

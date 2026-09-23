@@ -1,29 +1,31 @@
 package silversword.axiom.client.modules.player;
 
-import net.minecraft.world.level.block.state.BlockState;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Camera;
-import net.minecraft.world.item.BlockItem;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraft.world.level.ClipContext;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.setting.SettingKeybind;
-import org.lwjgl.glfw.GLFW;
 
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
 public class ClickTP extends AxiomMod implements KeybindConfigurable {
-    private final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", GLFW.GLFW_KEY_UNKNOWN);
+    // 26.3: GLFW_KEY_UNKNOWN → InputConstants.UNKNOWN.getValue() (-1)
+    private final SettingKeybind toggleKey =
+            new SettingKeybind("Toggle Key", InputConstants.UNKNOWN.getValue());
 
     public ClickTP() {
         super("ClickTP", "Teleports you to the block you click on", ModuleCategory.MOVEMENT);
@@ -52,7 +54,7 @@ public class ClickTP extends AxiomMod implements KeybindConfigurable {
                     mc.player.interactOn(entityHit.getEntity(), InteractionHand.MAIN_HAND, entityHit.getLocation()) != InteractionResult.PASS) {
                 return;
             }
-            // Jos osoitetaan blockiin ja kädessä on BlockItem, älä teleporttaa (anna sijoittaa blocki)
+            // Jos osoitetaan blockiin ja kädessä on BlockItem, älä teleporttaa
             if (mc.hitResult.getType() == HitResult.Type.BLOCK &&
                     mc.player.getMainHandItem().getItem() instanceof BlockItem) {
                 return;
@@ -63,7 +65,7 @@ public class ClickTP extends AxiomMod implements KeybindConfigurable {
         Camera camera = mc.gameRenderer.mainCamera();
         Vec3 cameraPos = camera.position();
 
-        // Lasketaan katsesuunta ja kerrotaan 210:llä (max kantama)
+        // Katsesuunta × 210 (max kantama)
         Vec3 direction = Vec3.directionFromRotation(camera.xRot(), camera.yRot()).scale(210);
         Vec3 targetPos = cameraPos.add(direction);
 
@@ -95,7 +97,6 @@ public class ClickTP extends AxiomMod implements KeybindConfigurable {
                     pos.getZ() + 0.5 + side.getStepZ()
             );
 
-
             double distance = mc.player.position().distanceTo(newPos);
             int packetsRequired = (int) Math.ceil(distance / 10) - 1;
             if (packetsRequired > 19) packetsRequired = 0;
@@ -104,7 +105,6 @@ public class ClickTP extends AxiomMod implements KeybindConfigurable {
                 mc.player.connection.send(new ServerboundMovePlayerPacket.StatusOnly(true, true));
             }
 
-            // Lähetetään varsinainen liikepaketti
             mc.player.connection.send(new ServerboundMovePlayerPacket.Pos(newPos.x, newPos.y, newPos.z, true, true));
             mc.player.setPos(newPos);
         }

@@ -132,7 +132,6 @@ public class TPAura extends AxiomMod implements KeybindConfigurable {
 
                 // Hyökkää
                 mc.gameMode.attack(mc.player, target);
-                mc.player.swing(mc.player.getUsedItemHand());
                 attackController.recordAttack();
             }
         }

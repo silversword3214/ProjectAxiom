@@ -137,7 +137,11 @@ public class MaceElytraMode {
             mc.getConnection().send(new ServerboundPlayerCommandPacket(mc.player, ServerboundPlayerCommandPacket.Action.START_FALL_FLYING));
         }
         mc.gameMode.attack(mc.player, currentTarget);
-        mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+        mc.player.swing(
+                net.minecraft.world.InteractionHand.MAIN_HAND,
+                net.minecraft.world.item.component.SwingAnimation.DEFAULT,
+                false
+        );
         lastAttackTime = System.currentTimeMillis();
 
         // 4. Optionally switch back to sword after attack (for next loop)

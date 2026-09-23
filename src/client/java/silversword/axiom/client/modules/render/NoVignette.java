@@ -1,6 +1,6 @@
 package silversword.axiom.client.modules.render;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -12,7 +12,8 @@ public class NoVignette extends AxiomMod implements KeybindConfigurable {
 
     public NoVignette() {
         super("No Vignette", "Removes the dark vignette effect from the screen", ModuleCategory.RENDER);
-        toggleKey = new SettingKeybind("Toggle Key", GLFW.GLFW_KEY_UNKNOWN);
+        // 26.3: GLFW_KEY_UNKNOWN → InputConstants.UNKNOWN.getValue() (-1)
+        toggleKey = new SettingKeybind("Toggle Key", InputConstants.UNKNOWN.getValue());
         addHiddenSetting(toggleKey);
     }
 

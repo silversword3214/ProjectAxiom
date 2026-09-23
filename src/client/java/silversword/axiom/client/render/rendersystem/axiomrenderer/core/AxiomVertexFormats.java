@@ -1,7 +1,8 @@
 package silversword.axiom.client.render.rendersystem.axiomrenderer.core;
 
-import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.GpuFormat;
+
+import com.mojang.renderpearl.api.GpuFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 
 public abstract class AxiomVertexFormats {
     // 2D position (x,y,0)

@@ -1,7 +1,6 @@
 package silversword.axiom.client.modules.misc;
 
 import net.minecraft.world.InteractionHand;
-import org.lwjgl.glfw.GLFW;
 import silversword.axiom.client.event.KeyboardAction;
 import silversword.axiom.client.event.MouseClickEvent;
 import silversword.axiom.client.eventbus.Subscribe;
@@ -71,9 +70,9 @@ public class AutoClicker extends AxiomMod implements KeybindConfigurable {
         long actualDelay = baseDelay + randomAdd;
 
         if (onlyWhileHolding.get()) {
-            long handle = mc.getWindow().handle();
-            boolean leftHeld = GLFW.glfwGetMouseButton(handle, GLFW.GLFW_MOUSE_BUTTON_1) == GLFW.GLFW_PRESS;
-            boolean rightHeld = GLFW.glfwGetMouseButton(handle, GLFW.GLFW_MOUSE_BUTTON_2) == GLFW.GLFW_PRESS;
+            // 26.3: GLFW pois → MouseHandler
+            boolean leftHeld  = mc.mouseHandler.isLeftPressed();
+            boolean rightHeld = mc.mouseHandler.isRightPressed();
 
             if (left && leftHeld && now - lastClickTime >= actualDelay) {
                 clickLeft();
@@ -84,7 +83,7 @@ public class AutoClicker extends AxiomMod implements KeybindConfigurable {
                 lastClickTime = now;
             }
         } else {
-            // Jos ei vaadita pohjassa pitämistä, klikataan jatkuvasti
+            // Jatkuva klikkaus ilman pohjassa pitämistä
             if (now - lastClickTime >= actualDelay) {
                 if (left) clickLeft();
                 if (right) clickRight();
@@ -95,10 +94,10 @@ public class AutoClicker extends AxiomMod implements KeybindConfigurable {
 
     private void clickLeft() {
         if (mc.player == null || mc.gameMode == null) return;
+        // 26.3: gameMode.attack kutsuu swing(...) sisäisesti – erillistä kutsua ei tarvita
         if (mc.crosshairPickEntity != null) {
             mc.gameMode.attack(mc.player, mc.crosshairPickEntity);
         }
-        mc.player.swing(InteractionHand.MAIN_HAND);
     }
 
     private void clickRight() {
@@ -110,20 +109,15 @@ public class AutoClicker extends AxiomMod implements KeybindConfigurable {
     public void onMouseClick(MouseClickEvent event) {
         if (!isEnabled()) return;
 
-        boolean left = button.getMode().equals("Left") || button.getMode().equals("Both");
+        boolean left  = button.getMode().equals("Left")  || button.getMode().equals("Both");
         boolean right = button.getMode().equals("Right") || button.getMode().equals("Both");
 
-        int glfwButton = -1;
-        if (event.click.button() == 0) glfwButton = GLFW.GLFW_MOUSE_BUTTON_1;
-        else if (event.click.button() == 1) glfwButton = GLFW.GLFW_MOUSE_BUTTON_2;
-
+        // MC:n click.button(): 0 = vasen, 1 = oikea, 2 = keski.
+        // 26.3: GLFW-vakioita ei enää tarvita – vertaillaan suoraan indeksejä.
         if (event.action == KeyboardAction.PRESS) {
-            if (left && glfwButton == GLFW.GLFW_MOUSE_BUTTON_1) {
-                event.setCancelled(true);
-            }
-            if (right && glfwButton == GLFW.GLFW_MOUSE_BUTTON_2) {
-                event.setCancelled(true);
-            }
+            int btn = event.click.button();
+            if (left  && btn == 0) event.setCancelled(true);
+            if (right && btn == 1) event.setCancelled(true);
         }
     }
 }

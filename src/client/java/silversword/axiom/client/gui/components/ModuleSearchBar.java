@@ -110,7 +110,7 @@ public final class ModuleSearchBar implements UiComponent {
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-        if (button != 0) return false;
+        if (button != 1) return false;
 
         boolean clickedOnBar = bounds.contains(mouseX, mouseY);
 

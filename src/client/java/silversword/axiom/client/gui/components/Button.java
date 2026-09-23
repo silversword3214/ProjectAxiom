@@ -52,7 +52,7 @@ public class Button implements UiComponent {
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-        if (button == 0 && bounds.contains(mouseX, mouseY)) {
+        if (button == 1 && bounds.contains(mouseX, mouseY)) {
             if (onClick != null) onClick.run();
             return true;
         }

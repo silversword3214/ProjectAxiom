@@ -1,15 +1,10 @@
 package silversword.axiom.client.render.rendersystem.axiomrenderer.core;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.BindGroupLayout;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.shaders.UniformType;
-import com.mojang.blaze3d.systems.GpuDevice;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.device.GpuDevice;
+import com.mojang.renderpearl.api.pipeline.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -42,24 +37,20 @@ public final class RenderPipelines {
             RenderPipeline.builder()
                     .withBindGroupLayout(
                             BindGroupLayout.builder()
-                                    .withSampler("u_Texture")
+                                    .withUniform("u_Texture", UniformType.COMBINED_IMAGE_SAMPLER)
                                     .build()
                     )
                     .buildSnippet();
 
-    // Public pipeline fields
-    public static RenderPipeline WORLD_COLORED;
-    public static RenderPipeline WORLD_COLORED_LINES;
-    public static RenderPipeline WORLD_COLORED_DEPTH;
-    public static RenderPipeline WORLD_COLORED_LINES_DEPTH;
-    public static RenderPipeline UI_COLORED;
-    public static RenderPipeline UI_COLORED_LINES;
-    public static RenderPipeline UI_TEXTURED;
-    public static RenderPipeline UI_TEXT;
-    public static RenderPipeline ENTITY_MASK;
-    public static RenderPipeline SHADER_OUTLINE;
-    public static RenderPipeline SHADER_COMPOSITE;
-
+    // Public pipeline fields – 26.3: CompiledRenderPipeline, ei RenderPipeline
+    public static CompiledRenderPipeline WORLD_COLORED;
+    public static CompiledRenderPipeline WORLD_COLORED_LINES;
+    public static CompiledRenderPipeline WORLD_COLORED_DEPTH;
+    public static CompiledRenderPipeline WORLD_COLORED_LINES_DEPTH;
+    public static CompiledRenderPipeline UI_COLORED;
+    public static CompiledRenderPipeline UI_COLORED_LINES;
+    public static CompiledRenderPipeline UI_TEXTURED;
+    public static CompiledRenderPipeline UI_TEXT;
     private static final List<PipelineBuilder> BUILDERS = new ArrayList<>();
 
     static {
@@ -108,7 +99,7 @@ public final class RenderPipelines {
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
 
-        /// UI colored
+        // 5. UI colored
         BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS)
                 .withLocation(id("pipeline/ui_colored"))
                 .withVertexFormat(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES)
@@ -119,7 +110,7 @@ public final class RenderPipelines {
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
 
-// UI colored lines
+        // 6. UI colored lines
         BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS)
                 .withLocation(id("pipeline/ui_colored_lines"))
                 .withVertexFormat(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.DEBUG_LINES)
@@ -130,7 +121,7 @@ public final class RenderPipelines {
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
 
-// UI textured
+        // 7. UI textured
         BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS, UI_TEXTURE_BINDINGS)
                 .withLocation(id("pipeline/ui_textured"))
                 .withVertexFormat(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES)
@@ -141,7 +132,7 @@ public final class RenderPipelines {
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
 
-// UI text
+        // 8. UI text
         BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS, UI_TEXTURE_BINDINGS)
                 .withLocation(id("pipeline/ui_text"))
                 .withVertexFormat(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES)
@@ -152,86 +143,92 @@ public final class RenderPipelines {
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
 
-        // 9. Noop entity mask
-        BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS)
-                .withLocation(id("pipeline/entity_mask"))
-                .withVertexFormat(DefaultVertexFormat.ENTITY, PrimitiveTopology.QUADS)
-                .withVertexShader(id("shaders/entity/noop_mask.vert"))
-                .withFragmentShader(id("shaders/entity/noop_mask.frag"))
-                .withDepthTestFunction(CompareOp.ALWAYS_PASS)
-                .withDepthWrite(false)
-                .withBlend(BlendFunction.TRANSLUCENT)
-                .withCull(false));
-
-        // 10. Shader outline
-        BUILDERS.add(new PipelineBuilder()
-                .withLocation(id("pipeline/shader_outline"))
-                .withVertexFormat(AxiomVertexFormats.EMPTY, PrimitiveTopology.TRIANGLES)
-                .withVertexShader(id("shaders/post/outline.vert"))
-                .withFragmentShader(id("shaders/post/outline.frag"))
-                .withDepthTestFunction(CompareOp.ALWAYS_PASS)
-                .withDepthWrite(false)
-                .withBlend(BlendFunction.TRANSLUCENT)
-                .withCull(false));
-
-        // 11. Composite pass
-        BUILDERS.add(new PipelineBuilder()
-                .withLocation(id("pipeline/shader_composite"))
-                .withVertexFormat(AxiomVertexFormats.EMPTY, PrimitiveTopology.TRIANGLES)
-                .withVertexShader(id("shaders/post/outline.vert"))
-                .withFragmentShader(id("shaders/post/composite.frag"))
-                .withDepthTestFunction(CompareOp.ALWAYS_PASS)
-                .withDepthWrite(false)
-                .withBlend(BlendFunction.TRANSLUCENT)
-                .withCull(false));
     }
 
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath("projectaxiom", path);
     }
 
+    // ================================================================
+    //  ShaderSource-toteutus
+    //  (ShaderSource ei ole funktionaalinen rajapinta – 3 abstraktia
+    //   metodia: getShader, getInclude, close)
+    // ================================================================
+    private static final class ResourceShaderSource implements ShaderSource {
+        private final ResourceManager resources;
+
+        ResourceShaderSource(ResourceManager resources) {
+            this.resources = resources;
+        }
+
+        @Override
+        public String getShader(Identifier shaderId, ShaderType type) {
+            String cached = SHADER_SOURCE_CACHE.get(shaderId);
+            if (cached != null) return cached;
+
+            var optional = resources.getResource(shaderId);
+            if (optional.isEmpty()) {
+                LOGGER.error("Shader not found: " + shaderId);
+                throw new RuntimeException("Missing shader: " + shaderId);
+            }
+            try (InputStream in = optional.get().open()) {
+                String src = IOUtils.toString(in, StandardCharsets.UTF_8);
+                SHADER_SOURCE_CACHE.put(shaderId, src);
+                return src;
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to load shader: " + shaderId, e);
+            }
+        }
+
+        @Override
+        public ShaderSource.CachedIncludeSource getInclude(Identifier includeId) {
+            // Ei #include-tukea toistaiseksi
+            return null;
+        }
+
+        @Override
+        public void close() {
+            // Ei suljettavia resursseja
+        }
+    }
+
+    // ================================================================
+    //  rebuildAll
+    // ================================================================
     public static void rebuildAll() {
         GpuDevice device = RenderSystem.getDevice();
         ResourceManager resources = Minecraft.getInstance().getResourceManager();
 
+        ShaderSource source = new ResourceShaderSource(resources);
+
         int index = 0;
         for (PipelineBuilder builder : BUILDERS) {
             RenderPipeline pipeline = builder.build();
-            device.precompilePipeline(pipeline, (identifier, shaderType) -> {
-                String cached = SHADER_SOURCE_CACHE.get(identifier);
-                if (cached != null) return cached;
 
-                var optional = resources.getResource(identifier);
-                if (optional.isEmpty()) {
-                    LOGGER.error("Shader not found: {}", identifier);
-                    throw new RuntimeException("Missing shader: " + identifier); // Keskeytä alustus
-                }
-                try (InputStream in = optional.get().open()) {
-                    String source = IOUtils.toString(in, StandardCharsets.UTF_8);
-                    SHADER_SOURCE_CACHE.put(identifier, source);
-                    return source;
-                } catch (IOException e) {
-                    throw new RuntimeException("Failed to load shader: " + identifier, e);
-                }
-            });
+            // 26.3: compilePipeline on async → join() odottaa, finishCompile() purkaa
+            CompiledRenderPipeline.Pending pending = device
+                    .compilePipeline(pipeline, source, Runnable::run)
+                    .join();
+
+            CompiledRenderPipeline compiled = pending.finishCompile();
+            if (compiled == null) {
+                LOGGER.error("Pipeline compile returned null: {}", pipeline.getLocation());
+                index++;
+                continue;
+            }
 
             switch (index) {
-                case 0 -> WORLD_COLORED = pipeline;
-                case 1 -> WORLD_COLORED_LINES = pipeline;
-                case 2 -> WORLD_COLORED_DEPTH = pipeline;
-                case 3 -> WORLD_COLORED_LINES_DEPTH = pipeline;
-                case 4 -> UI_COLORED = pipeline;
-                case 5 -> UI_COLORED_LINES = pipeline;
-                case 6 -> UI_TEXTURED = pipeline;
-                case 7 -> UI_TEXT = pipeline;
-                case 8 -> ENTITY_MASK = pipeline;
-                case 9 -> SHADER_OUTLINE = pipeline;
-                case 10 -> SHADER_COMPOSITE = pipeline;
+                case 0  -> WORLD_COLORED             = compiled;
+                case 1  -> WORLD_COLORED_LINES       = compiled;
+                case 2  -> WORLD_COLORED_DEPTH       = compiled;
+                case 3  -> WORLD_COLORED_LINES_DEPTH = compiled;
+                case 4  -> UI_COLORED                = compiled;
+                case 5  -> UI_COLORED_LINES          = compiled;
+                case 6  -> UI_TEXTURED               = compiled;
+                case 7  -> UI_TEXT                   = compiled;
             }
             index++;
             LOGGER.info("Rebuilt pipeline: {}", pipeline.getLocation());
         }
     }
-
-
 }

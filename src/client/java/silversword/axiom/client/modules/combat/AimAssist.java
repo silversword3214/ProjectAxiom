@@ -1,8 +1,8 @@
 package silversword.axiom.client.modules.combat;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
-import org.lwjgl.glfw.GLFW;
 import silversword.axiom.client.event.mouse.MouseUpdateEvent;
 import silversword.axiom.client.event.player.PreMotionEvent;
 import silversword.axiom.client.eventbus.Subscribe;
@@ -85,7 +85,6 @@ public class AimAssist extends AxiomMod implements KeybindConfigurable {
             return;
         }
 
-        // Käytetään maxTurnSpeed (asteet per tick)
         float maxSpeed = (float) maxTurnSpeed.getValue();
         float yawStep = Mth.clamp(yawDiff, -maxSpeed, maxSpeed);
         float pitchStep = Mth.clamp(pitchDiff, -maxSpeed, maxSpeed);
@@ -106,11 +105,11 @@ public class AimAssist extends AxiomMod implements KeybindConfigurable {
         boolean override = manualOverride.get();
         if (!override && onlyOnHold.get() && holdKey.get() != 0) {
             int key = holdKey.get();
-            long handle = GLFW.glfwGetCurrentContext();
             boolean isMouse = key < 8;
-            boolean pressed = isMouse ?
-                    GLFW.glfwGetMouseButton(handle, key) == GLFW.GLFW_PRESS :
-                    GLFW.glfwGetKey(handle, key) == GLFW.GLFW_PRESS;
+            boolean pressed = isMouse
+                    ? isMouseButtonPressed(key)
+                    : InputConstants.isKeyDown(key);
+
             if (!pressed) {
                 currentTarget = null;
                 shouldSimulateMouse = false;
@@ -149,7 +148,18 @@ public class AimAssist extends AxiomMod implements KeybindConfigurable {
         shouldSimulateMouse = true;
     }
 
-    // Apumetodit (kopioitu KillAurasta)
+    /** Hiiren napin tila MouseHandler:in kautta (26.3: ei enää glfwGetMouseButton). */
+    private static boolean isMouseButtonPressed(int button) {
+        var mh = mc.mouseHandler;
+        return switch (button) {
+            case 0 -> mh.isLeftPressed();     // GLFW_MOUSE_BUTTON_1
+            case 1 -> mh.isRightPressed();    // GLFW_MOUSE_BUTTON_2
+            case 2 -> mh.isMiddlePressed();   // GLFW_MOUSE_BUTTON_3
+            default -> false;                 // sivunapit: ei suoraa julkista API:a
+        };
+    }
+
+    // Apumetodit
     private double getYawToTarget(LivingEntity target) {
         double diffX = target.getX() - mc.player.getX();
         double diffZ = target.getZ() - mc.player.getZ();

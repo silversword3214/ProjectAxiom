@@ -88,13 +88,12 @@ public class MultiAura extends AxiomMod implements KeybindConfigurable {
     }
 
     private void performMultiAttack(LivingEntity target) {
-        // Lasketaan suunta kohteeseen (Silent rotation periaate, mutta ei välttämättä päivitetä serverille asti jokaiselle erikseen)
+        // Lasketaan suunta kohteeseen
         float yaw = (float) getYawToTarget(target);
         float pitch = (float) getPitchToTarget(target);
 
-        // Suoritetaan hyökkäys paketteina
+        // gameMode.attack hoitaa swing-animaation automaattisesti
         mc.gameMode.attack(mc.player, target);
-        mc.player.swing(mc.player.getUsedItemHand());
     }
 
     private boolean isValidTarget(LivingEntity e) {

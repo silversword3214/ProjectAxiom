@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Momentum-pohjainen pehmeä vieritys + motion blur + hard stop reunoilla.
- * Motion bluria säädetään yhdellä luvulla: setMotionBlurIntensity(0..1)
+ * Momentum-pohjainen pehmeÃ¤ vieritys + motion blur + hard stop reunoilla.
+ * Motion bluria sÃ¤Ã¤detÃ¤Ã¤n yhdellÃ¤ luvulla: setMotionBlurIntensity(0..1)
  */
 public final class ScrollContainer implements UiComponent {
 
@@ -29,12 +29,12 @@ public final class ScrollContainer implements UiComponent {
     private double tweenRate   = 11.0;
 
     // ============================================================
-    //  MOTION BLUR – vain yksi luku (0..1)
+    //  MOTION BLUR â€“ vain yksi luku (0..1)
     // ============================================================
-    /** Ainoa blur-säätö. 0 = pois, 0.65 = oletus, 1 = voimakas. */
+    /** Ainoa blur-sÃ¤Ã¤tÃ¶. 0 = pois, 0.65 = oletus, 1 = voimakas. */
     private float motionBlurIntensity = 0f;
 
-    // Johdetut arvot – päivittyvät setMotionBlurIntensity-kutsusta
+    // Johdetut arvot â€“ pÃ¤ivittyvÃ¤t setMotionBlurIntensity-kutsusta
     private int    blurSamples  = 3;
     private double blurStretch  = 2.3;
     private float  blurStrength = 0.39f;
@@ -71,7 +71,7 @@ public final class ScrollContainer implements UiComponent {
     public void setImpulsePerTick(double p) { this.impulsePerTick = Math.max(1.0, p); }
     public void setTweenRate(double r)      { this.tweenRate = Math.max(0.1, r); }
 
-    /** Johtaa samples / stretch / strength yhdestä luvusta. */
+    /** Johtaa samples / stretch / strength yhdestÃ¤ luvusta. */
     private void applyBlurIntensity() {
         if (motionBlurIntensity <= 0.01f) {
             blurSamples  = 0;
@@ -138,7 +138,7 @@ public final class ScrollContainer implements UiComponent {
     }
 
     // ================================================================
-    //  Fysiikka – momentum + HARD STOP
+    //  Fysiikka â€“ momentum + HARD STOP
     // ================================================================
     private void stepPhysics(float delta) {
         float dt = delta * 0.05f;
@@ -258,7 +258,7 @@ public final class ScrollContainer implements UiComponent {
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-        if (button != 0 || !bounds.contains(mouseX, mouseY)) return false;
+        if (button != 1 || !bounds.contains(mouseX, mouseY)) return false;
 
         Rect thumb = getScrollbarThumbRect();
         if (thumb.contains(mouseX, mouseY)) {
@@ -281,14 +281,14 @@ public final class ScrollContainer implements UiComponent {
 
     @Override
     public void mouseReleased(UiContext ui, double mouseX, double mouseY, int button) {
-        if (button == 0) draggingScrollbar = false;
+        if (button == 1) draggingScrollbar = false;
         for (UiComponent c : children) c.mouseReleased(ui, mouseX, mouseY, button);
     }
 
     @Override
     public boolean mouseDragged(UiContext ui, double mouseX, double mouseY,
                                 int button, double dx, double dy) {
-        if (button != 0) return false;
+        if (button != 1) return false;
 
         if (draggingScrollbar) {
             updateContentHeight();

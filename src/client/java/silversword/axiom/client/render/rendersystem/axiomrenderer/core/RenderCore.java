@@ -1,18 +1,21 @@
 package silversword.axiom.client.render.rendersystem.axiomrenderer.core;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.buffers.GpuFence;
-import com.mojang.blaze3d.IndexType;
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.pipeline.*;
-import com.mojang.blaze3d.platform.CompareOp;
-import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.RenderPass;
+
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTextureView;
-import com.mojang.blaze3d.vertex.*;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.blaze3d.vertex.MeshData;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.commands.GpuFence;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
+import com.mojang.renderpearl.api.pipeline.IndexType;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
@@ -23,8 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import silversword.axiom.client.render.rendersystem.utils.texture.Texture;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.*;
 
 public class RenderCore {
@@ -33,9 +34,9 @@ public class RenderCore {
     /** Anti-aliasing -pehmeän reunan leveys pikseleinä. */
     private static final float AA_WIDTH = 1.0f;
 
-    private final Map<RenderPipeline, Batch> batches = new HashMap<>();
+    private final Map<CompiledRenderPipeline, Batch> batches = new HashMap<>();
     private final Map<Texture, Batch> textBatches = new HashMap<>();
-    private final Map<RenderPipeline, VertexBufferManager> bufferManagers = new HashMap<>();
+    private final Map<CompiledRenderPipeline, VertexBufferManager> bufferManagers = new HashMap<>();
     private final ByteBufferBuilder allocator = new ByteBufferBuilder(RenderType.SMALL_BUFFER_SIZE);
 
     private Matrix4f currentProjectionMatrix;
@@ -51,38 +52,38 @@ public class RenderCore {
     //  Pipeline-apurit: hakevat pipelinen ja rebuildaavat tarvittaessa
     // ================================================================
 
-    private static RenderPipeline uiColored() {
-        RenderPipeline p = RenderPipelines.UI_COLORED;
+    private static CompiledRenderPipeline uiColored() {
+        CompiledRenderPipeline p = RenderPipelines.UI_COLORED;
         if (p == null) { RenderPipelines.rebuildAll(); p = RenderPipelines.UI_COLORED; }
         return p;
     }
 
-    private static RenderPipeline uiColoredLines() {
-        RenderPipeline p = RenderPipelines.UI_COLORED_LINES;
+    private static CompiledRenderPipeline uiColoredLines() {
+        CompiledRenderPipeline p = RenderPipelines.UI_COLORED_LINES;
         if (p == null) { RenderPipelines.rebuildAll(); p = RenderPipelines.UI_COLORED_LINES; }
         return p;
     }
 
-    private static RenderPipeline uiTextured() {
-        RenderPipeline p = RenderPipelines.UI_TEXTURED;
+    private static CompiledRenderPipeline uiTextured() {
+        CompiledRenderPipeline p = RenderPipelines.UI_TEXTURED;
         if (p == null) { RenderPipelines.rebuildAll(); p = RenderPipelines.UI_TEXTURED; }
         return p;
     }
 
-    private static RenderPipeline uiText() {
-        RenderPipeline p = RenderPipelines.UI_TEXT;
+    private static CompiledRenderPipeline uiText() {
+        CompiledRenderPipeline p = RenderPipelines.UI_TEXT;
         if (p == null) { RenderPipelines.rebuildAll(); p = RenderPipelines.UI_TEXT; }
         return p;
     }
 
-    private static RenderPipeline worldColored() {
-        RenderPipeline p = RenderPipelines.WORLD_COLORED;
+    private static CompiledRenderPipeline worldColored() {
+        CompiledRenderPipeline p = RenderPipelines.WORLD_COLORED;
         if (p == null) { RenderPipelines.rebuildAll(); p = RenderPipelines.WORLD_COLORED; }
         return p;
     }
 
-    private static RenderPipeline worldColoredLines() {
-        RenderPipeline p = RenderPipelines.WORLD_COLORED_LINES;
+    private static CompiledRenderPipeline worldColoredLines() {
+        CompiledRenderPipeline p = RenderPipelines.WORLD_COLORED_LINES;
         if (p == null) { RenderPipelines.rebuildAll(); p = RenderPipelines.WORLD_COLORED_LINES; }
         return p;
     }
@@ -101,7 +102,7 @@ public class RenderCore {
 
     public void flush() {
         try {
-            for (Map.Entry<RenderPipeline, Batch> entry : batches.entrySet()) {
+            for (Map.Entry<CompiledRenderPipeline, Batch> entry : batches.entrySet()) {
                 drawBatch(entry.getKey(), entry.getValue());
                 entry.getValue().clear();
             }
@@ -117,7 +118,7 @@ public class RenderCore {
         }
     }
 
-    private VertexBufferManager getBufferManager(RenderPipeline pipeline) {
+    private VertexBufferManager getBufferManager(CompiledRenderPipeline pipeline) {
         return bufferManagers.computeIfAbsent(pipeline, k -> new VertexBufferManager());
     }
 
@@ -137,16 +138,11 @@ public class RenderCore {
     //  Batch-piirto
     // ================================================================
 
-    private void drawBatch(RenderPipeline pipeline, Batch batch) {
-
-        if (pipeline == null) {
-            return;
-        }
+    private void drawBatch(CompiledRenderPipeline pipeline, Batch batch) {
+        if (pipeline == null) return;
 
         MeshData mesh = buildMeshFromBatch(batch);
-        if (mesh == null) {
-            return;
-        }
+        if (mesh == null) return;
 
         MeshData.DrawState drawParams = mesh.drawState();
         VertexFormat format = drawParams.format();
@@ -159,7 +155,9 @@ public class RenderCore {
         vbm.upload(mesh.vertexBuffer(), vertexBufferSize, encoder);
         GpuBufferSlice vertices = vbm.getCurrentBuffer().slice(0, vertexBufferSize);
 
-        RenderSystem.AutoStorageIndexBuffer indexBuffer = RenderSystem.getSequentialBuffer(pipeline.getPrimitiveTopology());
+        // Käytä batchin omaa topologiaa – CompiledRenderPipeline ei tarjoa getPrimitiveTopology()
+        RenderSystem.AutoStorageIndexBuffer indexBuffer =
+                RenderSystem.getSequentialBuffer(batch.getMode());
         GpuBuffer indices = indexBuffer.getBuffer(drawParams.indexCount());
         IndexType indexType = indexBuffer.type();
 
@@ -192,7 +190,7 @@ public class RenderCore {
                     OptionalDouble.empty())) {
 
                 if (textureView != null) {
-                    renderPass.bindTexture("u_Texture", textureView, sampler);
+                    renderPass.setUniform("u_Texture", textureView, sampler);
                 }
 
                 renderPass.setPipeline(pipeline);
@@ -271,7 +269,7 @@ public class RenderCore {
     // ================================================================
 
     private void drawTextBatch(Texture texture, Batch batch) {
-        RenderPipeline pipeline = uiText();
+        CompiledRenderPipeline pipeline = uiText();
         if (pipeline == null) {
             LOGGER.error("Text pipeline is null even after rebuild");
             return;
@@ -292,7 +290,8 @@ public class RenderCore {
         vbm.upload(mesh.vertexBuffer(), vertexBufferSize, encoder);
         GpuBufferSlice vertices = vbm.getCurrentBuffer().slice(0, vertexBufferSize);
 
-        RenderSystem.AutoStorageIndexBuffer indexBuffer = RenderSystem.getSequentialBuffer(pipeline.getPrimitiveTopology());
+        RenderSystem.AutoStorageIndexBuffer indexBuffer =
+                RenderSystem.getSequentialBuffer(batch.getMode());
         GpuBuffer indices = indexBuffer.getBuffer(drawParams.indexCount());
         IndexType indexType = indexBuffer.type();
 
@@ -316,7 +315,7 @@ public class RenderCore {
                     OptionalDouble.empty())) {
 
                 if (textureView != null) {
-                    renderPass.bindTexture("u_Texture", textureView, sampler);
+                    renderPass.setUniform("u_Texture", textureView, sampler);
                 }
 
                 renderPass.setPipeline(pipeline);
@@ -519,7 +518,7 @@ public class RenderCore {
     // ================================================================
 
     public void addLine3D(double x1, double y1, double z1, double x2, double y2, double z2, float thickness, int color) {
-        RenderPipeline pipeline = worldColoredLines();
+        CompiledRenderPipeline pipeline = worldColoredLines();
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline, k -> new Batch(AxiomVertexFormats.POS3_COLOR, PrimitiveTopology.DEBUG_LINES));
         float r = ((color >> 16) & 0xFF) / 255f;
@@ -535,7 +534,7 @@ public class RenderCore {
                         double x3, double y3, double z3,
                         double x4, double y4, double z4,
                         int color) {
-        RenderPipeline pipeline = worldColored();
+        CompiledRenderPipeline pipeline = worldColored();
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline, k -> new Batch(AxiomVertexFormats.POS3_COLOR, PrimitiveTopology.TRIANGLES));
         float r = ((color >> 16) & 0xFF) / 255f;
@@ -554,7 +553,7 @@ public class RenderCore {
                             double x2, double y2, double z2,
                             double x3, double y3, double z3,
                             int color) {
-        RenderPipeline pipeline = worldColored();
+        CompiledRenderPipeline pipeline = worldColored();
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline, k -> new Batch(AxiomVertexFormats.POS3_COLOR, PrimitiveTopology.TRIANGLES));
         float r = ((color >> 16) & 0xFF) / 255f;
@@ -571,7 +570,7 @@ public class RenderCore {
     // ================================================================
 
     public void addRect2D(float x, float y, float width, float height, int color) {
-        RenderPipeline pipeline = uiColored();
+        CompiledRenderPipeline pipeline = uiColored();
         if (pipeline == null) return;
 
         Batch batch = batches.computeIfAbsent(pipeline,
@@ -585,7 +584,7 @@ public class RenderCore {
 
     public void addRectOutline2D(float x, float y, float width, float height, float thickness, int color) {
         if (thickness <= 0) return;
-        RenderPipeline pipeline = uiColoredLines();
+        CompiledRenderPipeline pipeline = uiColoredLines();
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline,
                 k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.DEBUG_LINES));
@@ -608,7 +607,7 @@ public class RenderCore {
     /** AA-viiva 2D-tasossa. */
     public void addLine2D(float x1, float y1, float x2, float y2, float thickness, int color) {
         if (thickness <= 0) return;
-        RenderPipeline pipeline = uiColored();
+        CompiledRenderPipeline pipeline = uiColored();
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline,
                 k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
@@ -663,7 +662,7 @@ public class RenderCore {
 
     public void addCircle(float cx, float cy, float radius, int color) {
         if (radius <= 0) return;
-        RenderPipeline pipeline = uiColored();
+        CompiledRenderPipeline pipeline = uiColored();
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline,
                 k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
@@ -680,7 +679,7 @@ public class RenderCore {
 
     public void addCircleOutline(float cx, float cy, float radius, float thickness, int color) {
         if (radius <= 0 || thickness <= 0) return;
-        RenderPipeline pipeline = uiColored();
+        CompiledRenderPipeline pipeline = uiColored();
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline,
                 k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
@@ -707,7 +706,7 @@ public class RenderCore {
             return;
         }
 
-        RenderPipeline pipeline = uiColored();
+        CompiledRenderPipeline pipeline = uiColored();
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline,
                 k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
@@ -737,7 +736,7 @@ public class RenderCore {
             return;
         }
 
-        RenderPipeline pipeline = uiColored();
+        CompiledRenderPipeline pipeline = uiColored();
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline,
                 k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
@@ -761,7 +760,7 @@ public class RenderCore {
                                       float radius, float thickness, int color) {
         if (w <= 0 || h <= 0 || thickness <= 0) return;
         thickness = Math.min(thickness, Math.min(w, h) * 0.5f);
-        RenderPipeline pipeline = uiColored();
+        CompiledRenderPipeline pipeline = uiColored();
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline,
                 k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
@@ -817,7 +816,7 @@ public class RenderCore {
 
     public void addTexturePart(Identifier texture, float x, float y, float width, float height,
                                float u1, float v1, float u2, float v2, int color) {
-        RenderPipeline pipeline = uiTextured();
+        CompiledRenderPipeline pipeline = uiTextured();
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline,
                 k -> new Batch(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES));
@@ -839,7 +838,7 @@ public class RenderCore {
     }
 
     public void addRotatedTexture(Identifier texture, float x, float y, float width, float height, float angleDeg, int color) {
-        RenderPipeline pipeline = uiTextured();
+        CompiledRenderPipeline pipeline = uiTextured();
         if (pipeline == null) return;
         Batch batch = batches.computeIfAbsent(pipeline,
                 k -> new Batch(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES));
@@ -884,7 +883,7 @@ public class RenderCore {
                                 float x0, float y0, float x1, float y1,
                                 float u0, float v0, float u1, float v1,
                                 float r, float g, float b, float a) {
-        RenderPipeline pipeline = uiText();
+        CompiledRenderPipeline pipeline = uiText();
         if (pipeline == null) return;
         Batch batch = textBatches.computeIfAbsent(texture,
                 k -> new Batch(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES));

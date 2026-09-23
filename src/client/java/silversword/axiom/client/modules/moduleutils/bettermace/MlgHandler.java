@@ -65,7 +65,11 @@ public class MlgHandler {
                 90f
         ));
 
-        mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+        mc.player.swing(
+                net.minecraft.world.InteractionHand.MAIN_HAND,
+                net.minecraft.world.item.component.SwingAnimation.DEFAULT,
+                false
+        );
         mlgTriggered = true;
     }
 

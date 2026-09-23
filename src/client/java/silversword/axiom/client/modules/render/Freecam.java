@@ -170,12 +170,12 @@ public class Freecam extends AxiomMod implements KeybindConfigurable {
 
         // Hardware key detection - bypasses game's key binding system
         long handle = mc.getWindow().handle();
-        forward = InputConstants.isKeyDown(mc.getWindow(), ((KeyMappingAccessor) mc.options.keyUp).getKey().getValue());
-        backward = InputConstants.isKeyDown(mc.getWindow(), ((KeyMappingAccessor) mc.options.keyDown).getKey().getValue());
-        right = InputConstants.isKeyDown(mc.getWindow(), ((KeyMappingAccessor) mc.options.keyRight).getKey().getValue());
-        left = InputConstants.isKeyDown(mc.getWindow(), ((KeyMappingAccessor) mc.options.keyLeft).getKey().getValue());
-        up = InputConstants.isKeyDown(mc.getWindow(), ((KeyMappingAccessor) mc.options.keyJump).getKey().getValue());
-        down = InputConstants.isKeyDown(mc.getWindow(), ((KeyMappingAccessor) mc.options.keyShift).getKey().getValue());
+        forward  = InputConstants.isKeyDown(((KeyMappingAccessor) mc.options.keyUp).getKey().getValue());
+        backward = InputConstants.isKeyDown(((KeyMappingAccessor) mc.options.keyDown).getKey().getValue());
+        right    = InputConstants.isKeyDown(((KeyMappingAccessor) mc.options.keyRight).getKey().getValue());
+        left     = InputConstants.isKeyDown(((KeyMappingAccessor) mc.options.keyLeft).getKey().getValue());
+        up       = InputConstants.isKeyDown(((KeyMappingAccessor) mc.options.keyJump).getKey().getValue());
+        down     = InputConstants.isKeyDown(((KeyMappingAccessor) mc.options.keyShift).getKey().getValue());
 
         // Unpress the actual keys so the player doesn't move
         mc.options.keyUp.setDown(false);

@@ -18,7 +18,7 @@ public class KeybindEditor implements UiComponent {
     private static final int BUTTON_HEIGHT = 20;
     private static final int BUTTON_Y_OFFSET = 30;
 
-    // Poistettu BOX_HEIGHT vakiokorkeus, käytetään dynaamista TextUtils.getHeight() + padding
+    // Poistettu BOX_HEIGHT vakiokorkeus, kÃ¤ytetÃ¤Ã¤n dynaamista TextUtils.getHeight() + padding
 
     public KeybindEditor(List<SettingKeybind> keybinds) {
         this.keybinds = keybinds;
@@ -67,7 +67,7 @@ public class KeybindEditor implements UiComponent {
             int boxY = rowRect.y + (rowRect.h - boxHeight) / 2;
             Rect boxRect = new Rect(boxX, boxY, boxWidth, boxHeight);
 
-            // Laatikon taustaväri
+            // Laatikon taustavÃ¤ri
             int boxBg;
             if (w) {
                 boxBg = (ui.theme.accent & 0x00FFFFFF) | 0x30000000;
@@ -77,7 +77,7 @@ public class KeybindEditor implements UiComponent {
             ui.fill(boxRect, boxBg);
             ui.drawRectOutline(boxRect, 0xFFFFFFFF, 1.0);
 
-            // Teksti laatikon sisällä (täydellinen keskitys)
+            // Teksti laatikon sisÃ¤llÃ¤ (tÃ¤ydellinen keskitys)
             int innerTextX = boxRect.x + (boxRect.w - keyWidth) / 2;
             int innerTextY = boxRect.y + (boxRect.h - fontHeight) / 2;
             int textColor = w ? ui.theme.accent : ui.theme.text;
@@ -105,7 +105,7 @@ public class KeybindEditor implements UiComponent {
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-        if (!bounds.contains(mouseX, mouseY) || button != 0) return false;
+        if (!bounds.contains(mouseX, mouseY) || button != 1) return false;
 
         int btnX = bounds.x + (bounds.w - BUTTON_WIDTH) / 2;
         int btnY = bounds.y + bounds.h - BUTTON_Y_OFFSET;

@@ -66,7 +66,7 @@ public class ModeDropdown implements UiComponent {
         if (!bounds.contains(mouseX, mouseY)) return false;
         for (int i = 0; i < modes.length; i++) {
             if (itemBounds.get(i).contains(mouseX, mouseY)) {
-                if (button == 0) {
+                if (button == 1) {
                     selected = modes[i];
                     onSelect.accept(selected);
                 }

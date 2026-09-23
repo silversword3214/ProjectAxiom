@@ -1,10 +1,11 @@
 package silversword.axiom.client.modules.combat;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.AxeItem;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -21,7 +22,7 @@ public class ShieldBreaker extends AxiomMod implements KeybindConfigurable {
 
     private int originalSlot = -1;
     private boolean actionInProgress = false;
-    private int step = 0; // 0 = idle, 1 = vaihda kirves, 2 = lyö, 3 = vaihda takaisin
+    private int step = 0;
     private long lastActionTime = 0;
     private boolean wasKeyPressed = false;
 
@@ -40,27 +41,25 @@ public class ShieldBreaker extends AxiomMod implements KeybindConfigurable {
     protected void onTick() {
         if (mc.player == null || mc.level == null) return;
 
-        // Keybindin painallus käynnistää toiminnon (ei togglaa moduulia)
+        // 26.3: GLFW pois → InputConstants.isKeyDown(int)
         int key = triggerKey.get();
         if (key != 0) {
-            long handle = mc.getWindow().handle();
-            boolean pressed = org.lwjgl.glfw.GLFW.glfwGetKey(handle, key) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+            boolean pressed = InputConstants.isKeyDown(key);
             if (pressed && !wasKeyPressed) {
                 trigger();
             }
             wasKeyPressed = pressed;
         }
 
-        // Jos toiminto on käynnissä, suorita vaiheet
         if (actionInProgress) {
             long now = System.currentTimeMillis();
-            if (now - lastActionTime < 50) return; // pieni viive vaiheiden välillä (50 ms)
+            if (now - lastActionTime < 50) return;
 
             switch (step) {
                 case 1: // Vaihda kirveeseen
                     int axeSlot = findAxeInHotbar();
                     if (axeSlot == -1) {
-                        actionInProgress = false; // ei kirvestä, lopeta
+                        actionInProgress = false;
                         break;
                     }
                     originalSlot = mc.player.getInventory().getSelectedSlot();
@@ -68,15 +67,18 @@ public class ShieldBreaker extends AxiomMod implements KeybindConfigurable {
                     step = 2;
                     lastActionTime = now;
                     break;
+
                 case 2: // Lyö
                     Player target = findTarget();
                     if (target != null) {
+                        // gameMode.attack hoitaa swingin automaattisesti –
+                        // erillistä mc.player.swing(...) -kutsua ei tarvita
                         mc.gameMode.attack(mc.player, target);
-                        mc.player.swing(InteractionHand.MAIN_HAND);
                     }
                     step = 3;
                     lastActionTime = now;
                     break;
+
                 case 3: // Vaihda takaisin
                     if (originalSlot != -1) {
                         mc.player.getInventory().setSelectedSlot(originalSlot);
@@ -113,10 +115,15 @@ public class ShieldBreaker extends AxiomMod implements KeybindConfigurable {
         return closest;
     }
 
+    /**
+     * Etsii kirveen hotbarista.
+     * MC 26.x: AxeItem-luokkaa ei ole – käytetään ItemTags.AXES-tagia,
+     * joka kattaa kaikki kirvestyypit (puu, kivi, rauta, timantti, netherite).
+     */
     private int findAxeInHotbar() {
         for (int i = 0; i < 9; i++) {
             ItemStack stack = mc.player.getInventory().getItem(i);
-            if (stack.getItem() instanceof AxeItem) {
+            if (stack.is(ItemTags.AXES)) {
                 return i;
             }
         }

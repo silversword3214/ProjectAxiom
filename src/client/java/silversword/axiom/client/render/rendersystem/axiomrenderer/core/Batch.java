@@ -1,8 +1,9 @@
 // Batch.java
 package silversword.axiom.client.render.rendersystem.axiomrenderer.core;
 
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.vertex.VertexFormat;
+
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;

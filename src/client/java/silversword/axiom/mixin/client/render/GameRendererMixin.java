@@ -83,28 +83,7 @@ public abstract class GameRendererMixin {
         }
     }
 
-    /**
-     * Totem overlay.
-     */
-    @Inject(
-            method = "displayItemActivation",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void axiom$noOverlayTotem(
-            ItemStack stack,
-            CallbackInfo ci
-    ) {
-        NoOverlay module =
-                ModuleManager.getInstance().getModule(NoOverlay.class);
 
-        if (module == null || !module.isEnabled() || !module.noTotem.get()) {
-            return;
-        }
 
-        if (stack.is(Items.TOTEM_OF_UNDYING)) {
-            ci.cancel();
-        }
-    }
 }
 

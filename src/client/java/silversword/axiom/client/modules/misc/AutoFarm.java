@@ -5,8 +5,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -17,7 +17,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.main.AxiomMod;
-import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.setting.SettingBoolean;
@@ -38,7 +37,6 @@ public class AutoFarm extends AxiomMod implements KeybindConfigurable {
 
     public AutoFarm() {
         super("Auto Farm", "Automates harvesting, hoeing and planting", ModuleCategory.MISC);
-
         addSetting(range);
         addSetting(autoHoe);
         addSetting(autoPlant);
@@ -55,7 +53,6 @@ public class AutoFarm extends AxiomMod implements KeybindConfigurable {
     protected void onTick() {
         if (!isEnabled() || mc.player == null || mc.level == null) return;
 
-        // Pieni viive (1 action / 2 tickiä) ettei serveri potki ulos
         if (timer > 0) {
             timer--;
             return;
@@ -67,18 +64,18 @@ public class AutoFarm extends AxiomMod implements KeybindConfigurable {
         for (double x = -r; x <= r; x++) {
             for (double y = -r; y <= r; y++) {
                 for (double z = -r; z <= r; z++) {
-                    BlockPos pos = playerPos.offset((int)x, (int)y, (int)z);
+                    BlockPos pos = playerPos.offset((int) x, (int) y, (int) z);
                     BlockState state = mc.level.getBlockState(pos);
                     Block block = state.getBlock();
 
-                    // 1. HARVEST (Täysikasvuiset kasvit)
+                    // 1. HARVEST
                     if (block instanceof CropBlock crops && crops.isMaxAge(state)) {
                         harvest(pos);
                         timer = 2;
                         return;
                     }
 
-                    // 2. HOE (Mullan muokkaus pelloksi)
+                    // 2. HOE
                     if (autoHoe.get() && (block == Blocks.DIRT || block == Blocks.GRASS_BLOCK)) {
                         if (mc.level.getBlockState(pos.above()).isAir()) {
                             useHoe(pos);
@@ -87,7 +84,7 @@ public class AutoFarm extends AxiomMod implements KeybindConfigurable {
                         }
                     }
 
-                    // 3. PLANT (Istutus tyhjälle pellolle)
+                    // 3. PLANT
                     if (autoPlant.get() && block == Blocks.FARMLAND) {
                         if (mc.level.getBlockState(pos.above()).isAir()) {
                             plant(pos);
@@ -107,19 +104,17 @@ public class AutoFarm extends AxiomMod implements KeybindConfigurable {
             mc.player.connection.send(new ServerboundPlayerActionPacket(
                     ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK, pos, Direction.UP));
         } else {
+            // 26.3: gameMode.destroyBlock hoitaa swing-animaation automaattisesti
             mc.gameMode.destroyBlock(pos);
         }
-        mc.player.swing(InteractionHand.MAIN_HAND);
+        // Erillinen mc.player.swing(...) poistettu – gameMode / paketit hoitavat sen
     }
 
     private void useHoe(BlockPos pos) {
         int hoeSlot = findHoe();
         if (hoeSlot != -1) {
-            int oldSlot = mc.player.getInventory().selected;
             switchToSlot(hoeSlot);
             sendInteract(pos);
-            // Jos haluat palauttaa slotin heti: switchToSlot(oldSlot);
-            mc.player.swing(InteractionHand.MAIN_HAND);
         }
     }
 
@@ -128,7 +123,6 @@ public class AutoFarm extends AxiomMod implements KeybindConfigurable {
         if (seedSlot != -1) {
             switchToSlot(seedSlot);
             sendInteract(pos);
-            mc.player.swing(InteractionHand.MAIN_HAND);
         }
     }
 
@@ -141,22 +135,30 @@ public class AutoFarm extends AxiomMod implements KeybindConfigurable {
     }
 
     private void switchToSlot(int slot) {
-        if (mc.player.getInventory().selected != slot) {
-            mc.player.getInventory().selected = slot;
+        // 26.3: getInventory().selected-kenttä on korvattu get/setSelectedSlot-metodeilla
+        if (mc.player.getInventory().getSelectedSlot() != slot) {
+            mc.player.getInventory().setSelectedSlot(slot);
             mc.player.connection.send(new ServerboundSetCarriedItemPacket(slot));
         }
     }
 
+    /**
+     * Etsii hoen hotbarista.
+     * 26.3: HoeItem-luokkaa ei ole – käytetään ItemTags.HOES-tagia.
+     */
     private int findHoe() {
         for (int i = 0; i < 9; i++) {
             ItemStack stack = mc.player.getInventory().getItem(i);
-            if (stack.getItem() instanceof HoeItem) return i;
+            if (stack.is(ItemTags.HOES)) return i;
         }
         return -1;
     }
 
     private int findSeeds() {
-        Item[] seeds = {Items.WHEAT_SEEDS, Items.POTATO, Items.CARROT, Items.BEETROOT_SEEDS, Items.PUMPKIN_SEEDS, Items.MELON_SEEDS, Items.NETHER_WART};
+        Item[] seeds = {
+                Items.WHEAT_SEEDS, Items.POTATO, Items.CARROT, Items.BEETROOT_SEEDS,
+                Items.PUMPKIN_SEEDS, Items.MELON_SEEDS, Items.NETHER_WART
+        };
         for (int i = 0; i < 9; i++) {
             ItemStack stack = mc.player.getInventory().getItem(i);
             for (Item seed : seeds) {

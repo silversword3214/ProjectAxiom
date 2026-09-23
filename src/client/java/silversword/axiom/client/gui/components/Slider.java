@@ -1,9 +1,7 @@
 package silversword.axiom.client.gui.components;
 
-import net.minecraft.client.Minecraft;
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
 
 import java.util.Locale;
 import java.util.function.DoubleConsumer;
@@ -18,12 +16,10 @@ public final class Slider implements UiComponent {
     private final java.util.function.Function<Double, String> displayFormatter;
     private boolean dragging = false;
 
-    // Tallennetaan sliderin alue raahaamisen ajaksi, jotta se ei muutu kesken kaiken
     private Rect dragSliderArea = null;
 
-    // Vakiot paddingille (entinen 4 -> nyt 8)
     private static final int PADDING = 8;
-    private static final int EXTRA_PADDING = 8; // käytetään sliderin ja arvotekstin välissä
+    private static final int EXTRA_PADDING = 8;
 
     public Slider(String label, double min, double max, double step,
                   DoubleSupplier getter, DoubleConsumer setter,
@@ -93,9 +89,8 @@ public final class Slider implements UiComponent {
 
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
-        if (dragging && !(org.lwjgl.glfw.GLFW.glfwGetMouseButton(
-                Minecraft.getInstance().getWindow().handle(),
-                org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT) == org.lwjgl.glfw.GLFW.GLFW_PRESS)) {
+        // 26.3: GLFW pois â€“ MouseHandler:in kautta
+        if (dragging && !ui.mc.mouseHandler.isLeftPressed()) {
             dragging = false;
             dragSliderArea = null;
         }
@@ -116,12 +111,10 @@ public final class Slider implements UiComponent {
         int valX = bounds.right() - ui.theme.innerPadding - valWidth;
         ui.text(valStr, valX, textY, ui.theme.textDim);
 
-        // Päätetään käytetäänkö raahauksen aikaista slider-aluetta vai lasketaanko uusi
+        // KÃ¤ytetÃ¤Ã¤n raahauksen aikaista aluetta jos sellainen on
         Rect sliderArea = (dragging && dragSliderArea != null) ? dragSliderArea : getSliderArea(ui);
 
         int trackY = sliderArea.y;
-        // Keep the track in the normal UiContext fill path so it cannot disappear
-        // behind a deferred text element or a rounded-shape rasterization edge.
         ui.fill(sliderArea.x, trackY, sliderArea.w, 6, ui.theme.sliderTrack);
         double range = max - min;
         double pct = range <= 0 ? 0 : (value - min) / range;
@@ -146,10 +139,9 @@ public final class Slider implements UiComponent {
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-        if (button != 0) return false;
+        if (button != 1) return false;
         if (!bounds.contains(mouseX, mouseY)) return false;
         dragging = true;
-        // Tallennetaan sliderin alue juuri nyt, jotta se pysyy samana koko dragin ajan
         dragSliderArea = getSliderArea(ui);
         double nv = applyStep(clamp(valueFromMouse(mouseX, dragSliderArea)));
         setter.accept(nv);

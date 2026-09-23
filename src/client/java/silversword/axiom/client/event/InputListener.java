@@ -1,7 +1,7 @@
 package silversword.axiom.client.event;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import org.lwjgl.glfw.GLFW;
 import silversword.axiom.client.gui.screen.ClickGuiScreen;
 import silversword.axiom.client.hud.util.ClickCounter;
 import silversword.axiom.client.managers.ModuleManager;
@@ -20,35 +20,35 @@ public class InputListener {
 
             // Haetaan Keybinds-moduuli
             Keybinds keybinds = ModuleManager.getInstance().getModule(Keybinds.class);
-            int clickGuiKey = GLFW.GLFW_KEY_RIGHT_SHIFT;
+            int clickGuiKey = InputConstants.KEY_RSHIFT;   // oli GLFW_KEY_RIGHT_SHIFT
             if (keybinds != null) {
                 clickGuiKey = keybinds.clickGuiKey.get();
             }
 
             long handle = client.getWindow().handle();
-            if (handle != 0) {
-                // Hiiren klikkaukset
-                boolean leftPressed = GLFW.glfwGetMouseButton(handle, GLFW.GLFW_MOUSE_BUTTON_1) == GLFW.GLFW_PRESS;
-                boolean rightPressed = GLFW.glfwGetMouseButton(handle, GLFW.GLFW_MOUSE_BUTTON_2) == GLFW.GLFW_PRESS;
+            if (handle == 0) return;
 
-                if (leftPressed && !wasLeftPressed) ClickCounter.onLeftClick();
-                if (rightPressed && !wasRightPressed) ClickCounter.onRightClick();
+            // --- Hiiren napit: luetaan MouseHandler-tilasta (glfw ei enää käytettävissä) ---
+            boolean leftPressed  = client.mouseHandler.isLeftPressed();
+            boolean rightPressed = client.mouseHandler.isRightPressed();
 
-                wasLeftPressed = leftPressed;
-                wasRightPressed = rightPressed;
+            if (leftPressed  && !wasLeftPressed)  ClickCounter.onLeftClick();
+            if (rightPressed && !wasRightPressed) ClickCounter.onRightClick();
 
-                // ClickGui-avaimen käsittely
-                boolean isPressed = GLFW.glfwGetKey(handle, clickGuiKey) == GLFW.GLFW_PRESS;
+            wasLeftPressed  = leftPressed;
+            wasRightPressed = rightPressed;
 
-                if (isPressed && !wasKeyPressed) {
-                    if (client.gui.screen() == null) {
-                        client.gui.setScreen(new ClickGuiScreen());
-                    } else if (client.gui.screen() instanceof ClickGuiScreen) {
-                        client.gui.setScreen(null);
-                    }
+            // --- Näppäin: InputConstants (oli GLFW.glfwGetKey) ---
+            boolean isPressed = InputConstants.isKeyDown(clickGuiKey);
+
+            if (isPressed && !wasKeyPressed) {
+                if (client.gui.screen() == null) {
+                    client.gui.setScreen(new ClickGuiScreen());
+                } else if (client.gui.screen() instanceof ClickGuiScreen) {
+                    client.gui.setScreen(null);
                 }
-                wasKeyPressed = isPressed;
             }
+            wasKeyPressed = isPressed;
         });
     }
 }

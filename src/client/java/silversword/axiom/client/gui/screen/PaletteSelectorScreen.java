@@ -133,7 +133,7 @@ public class PaletteSelectorScreen extends Screen {
             return true;
         }
         if (lastUi != null && scrollContainer != null) {
-            return scrollContainer.keyPressed(lastUi, input.input(), input.scancode(), input.modifiers());
+            return scrollContainer.keyPressed(lastUi, input.input(), input.keycode(), input.modifiers());
         }
         return super.keyPressed(input);
     }
@@ -194,7 +194,7 @@ public class PaletteSelectorScreen extends Screen {
 
             ui.text(palette.getName(), bounds.x + 12, bounds.y + 10, ui.theme.text);
             if (selected) {
-                ui.text("✓", bounds.x + bounds.w - 22, bounds.y + 8, ui.theme.text);
+                ui.text("âœ“", bounds.x + bounds.w - 22, bounds.y + 8, ui.theme.text);
             }
 
             int[] colors = palette.getColors();
@@ -213,7 +213,7 @@ public class PaletteSelectorScreen extends Screen {
 
         @Override
         public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-            if (button == 0 && bounds != null && bounds.contains(mouseX, mouseY)) {
+            if (button == 1 && bounds != null && bounds.contains(mouseX, mouseY)) {
                 selectedIndex = index;
                 ClickGuiConfigManager.setRainbowPalette(palette);
                 return true;

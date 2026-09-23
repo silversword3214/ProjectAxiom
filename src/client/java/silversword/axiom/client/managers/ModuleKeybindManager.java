@@ -1,7 +1,7 @@
 package silversword.axiom.client.managers;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import org.lwjgl.glfw.GLFW;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.setting.SettingKeybind;
 
@@ -15,8 +15,6 @@ public class ModuleKeybindManager {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null) return;
             if (client.gui.screen() != null) return;
-            long handle = client.getWindow().handle();
-            if (handle == 0) return;
 
             for (AxiomMod mod : ModuleManager.getInstance().getModules()) {
                 // Etsi moduulin ensimmäinen toggle-tyyppinen keybind
@@ -32,7 +30,8 @@ public class ModuleKeybindManager {
                 int keyCode = keybind.get();
                 if (keyCode <= 0 || keyCode >= 512) continue;
 
-                boolean pressed = GLFW.glfwGetKey(handle, keyCode) == GLFW.GLFW_PRESS;
+                // 26.3: InputConstants.isKeyDown(int) – ei enää handle-parametria
+                boolean pressed = InputConstants.isKeyDown(keyCode);
                 boolean prev = wasPressed.getOrDefault(keyCode, false);
 
                 if (pressed && !prev) {

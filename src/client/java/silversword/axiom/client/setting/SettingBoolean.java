@@ -49,12 +49,12 @@ public class SettingBoolean extends Setting {
 
     @Override
     public void render(int x, int y, int mouseX, int mouseY) {
-        // UI renderöidään SettingRow/ModuleSettingsView:ssä
+        // UI renderÃ¶idÃ¤Ã¤n SettingRow/ModuleSettingsView:ssÃ¤
     }
 
     @Override
     public void mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0) toggle();
+        if (button == 1) toggle();
     }
 
     // ---- JSON ----

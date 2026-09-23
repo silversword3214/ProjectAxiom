@@ -25,7 +25,7 @@ public final class SearchBar implements UiComponent {
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
         boolean hover = bounds.contains(mouseX, mouseY);
         int bg = focused ? ui.theme.panel : (hover ? ui.theme.buttonHover : ui.theme.button);
-        ui.fillRounded(bounds, bg, 4); // pyöristetty
+        ui.fillRounded(bounds, bg, 4); // pyÃ¶ristetty
 
         String text = getter.get();
         if (text == null) text = "";
@@ -39,7 +39,7 @@ public final class SearchBar implements UiComponent {
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-        if (button != 0) return false;
+        if (button != 1) return false;
         focused = bounds.contains(mouseX, mouseY);
         return focused;
     }

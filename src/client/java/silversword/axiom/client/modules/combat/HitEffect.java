@@ -81,7 +81,7 @@ public class HitEffect extends AxiomMod {
     protected void onTick() {
         if (mc.player == null || mc.level == null) return;
 
-        boolean isSwinging = mc.player.swinging;
+        boolean isSwinging = mc.player.getCurrentSwing() != null;
 
         // Jos käsi heilahti juuri tällä tickillä
         if (isSwinging && !wasSwinging) {

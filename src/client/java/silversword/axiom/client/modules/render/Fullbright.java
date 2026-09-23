@@ -1,11 +1,11 @@
 package silversword.axiom.client.modules.render;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
-import org.lwjgl.glfw.GLFW;
 
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
@@ -20,7 +20,8 @@ public class Fullbright extends AxiomMod implements KeybindConfigurable {
         noShadows = new SettingBoolean("No Shadows", false);
         addSetting(noShadows);
 
-        toggleKey = new SettingKeybind("Toggle Key", GLFW.GLFW_KEY_UNKNOWN);
+        // 26.3: GLFW_KEY_UNKNOWN → InputConstants.UNKNOWN.getValue() (-1)
+        toggleKey = new SettingKeybind("Toggle Key", InputConstants.UNKNOWN.getValue());
         addHiddenSetting(toggleKey);
     }
 
@@ -50,6 +51,10 @@ public class Fullbright extends AxiomMod implements KeybindConfigurable {
             reloadChunks();
         }
     }
+
+    // Nämä kutsuvat resetLevelRenderData()-metodia, mutta LevelRendererMixin
+    // interceptaa sen pelin aikana ja korvaa turvallisella chunk-rebuildilla
+    // (invalidateCompiledGeometry). Ei tarvitse muuttaa moduulia.
 
     private void reloadChunks() {
         if (mc != null && mc.levelRenderer != null) {

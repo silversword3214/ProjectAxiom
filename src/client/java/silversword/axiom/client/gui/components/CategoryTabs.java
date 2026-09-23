@@ -44,7 +44,7 @@ public final class CategoryTabs implements UiComponent {
         int usable = Math.max(0, totalWidth - OUTER_PAD_X * 2);
         if (usable <= 0) return 1;
 
-        // Käytetään vanilla tekstin leveyttä? Tässä lasketaan vain rivien määrää, joten vanilla riittää
+        // KÃ¤ytetÃ¤Ã¤n vanilla tekstin leveyttÃ¤? TÃ¤ssÃ¤ lasketaan vain rivien mÃ¤Ã¤rÃ¤Ã¤, joten vanilla riittÃ¤Ã¤
         Font tr = Minecraft.getInstance().font;
         int x = 0;
         int rows = 1;
@@ -61,7 +61,7 @@ public final class CategoryTabs implements UiComponent {
         return rows;
     }
 
-    // CategoryTabs.java – render-metodi
+    // CategoryTabs.java â€“ render-metodi
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
         ui.fill(bounds, ui.theme.header);
@@ -88,7 +88,7 @@ public final class CategoryTabs implements UiComponent {
             int bg;
             if (isSel) {
                 int accent = ui.theme.accent;
-                bg = (accent & 0x00FFFFFF) | 0x30000000; // 50% läpinäkyvyys
+                bg = (accent & 0x00FFFFFF) | 0x30000000; // 50% lÃ¤pinÃ¤kyvyys
             } else {
                 bg = hover ? ui.theme.buttonHover : ui.theme.button;
             }
@@ -103,7 +103,7 @@ public final class CategoryTabs implements UiComponent {
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-        if (button != 0) return false;
+        if (button != 1) return false;
         if (!bounds.contains(mouseX, mouseY)) return false;
 
         int x0 = bounds.x + OUTER_PAD_X;

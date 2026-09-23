@@ -154,7 +154,7 @@ public class AxiomSettingsScreen extends Screen {
             return true;
         }
         if (lastUi != null && scroll != null) {
-            return scroll.keyPressed(lastUi, input.input(), input.scancode(), input.modifiers());
+            return scroll.keyPressed(lastUi, input.input(), input.keycode(), input.modifiers());
         }
         return super.keyPressed(input);
     }

@@ -65,12 +65,12 @@ public class SettingMode extends Setting {
 
     @Override
     public void render(int x, int y, int mouseX, int mouseY) {
-        // UI renderöidään SettingRow/ModuleSettingsView:ssä
+        // UI renderÃ¶idÃ¤Ã¤n SettingRow/ModuleSettingsView:ssÃ¤
     }
 
     @Override
     public void mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0) next();
+        if (button == 1) next();
         if (button == 1) previous();
     }
 
@@ -82,17 +82,17 @@ public class SettingMode extends Setting {
 
     @Override
     public Object getJsonValue() {
-        return getMode(); // ✅ EI getModeName
+        return getMode(); // âœ… EI getModeName
     }
 
     @Override
     public void setJsonValue(Object v) {
         if (v instanceof String s) {
-            setMode(s);   // ✅ EI setModeByName
+            setMode(s);   // âœ… EI setModeByName
             return;
         }
         if (v instanceof Number n) {
-            setValue(n.doubleValue()); // tukee myös indexillä
+            setValue(n.doubleValue()); // tukee myÃ¶s indexillÃ¤
         }
     }
 }

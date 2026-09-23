@@ -36,8 +36,8 @@ public class AttackController {
 
         if (mc.player != null && mc.gameMode != null) {
             // Suoritetaan hyökkäys
+            // gameMode.attack hoitaa swing-animaation sisäisesti
             mc.gameMode.attack(mc.player, queuedTarget);
-            mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
 
             // Päivitetään viiveet
             recordAttack();

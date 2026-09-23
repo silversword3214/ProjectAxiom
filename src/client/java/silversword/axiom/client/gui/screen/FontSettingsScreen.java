@@ -156,8 +156,8 @@ public final class FontSettingsScreen extends Screen {
             return true;
         }
         if (lastUi != null) {
-            if (searchBar.keyPressed(lastUi, input.input(), input.scancode(), input.modifiers())) return true;
-            if (scrollContainer != null && scrollContainer.keyPressed(lastUi, input.input(), input.scancode(), input.modifiers())) return true;
+            if (searchBar.keyPressed(lastUi, input.input(), input.keycode(), input.modifiers())) return true;
+            if (scrollContainer != null && scrollContainer.keyPressed(lastUi, input.input(), input.keycode(), input.modifiers())) return true;
         }
         return super.keyPressed(input);
     }
@@ -263,7 +263,7 @@ public final class FontSettingsScreen extends Screen {
 
         @Override
         public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-            if (button == 0 && bounds != null && bounds.contains(mouseX, mouseY)) {
+            if (button == 1 && bounds != null && bounds.contains(mouseX, mouseY)) {
                 onClick.run();
                 return true;
             }

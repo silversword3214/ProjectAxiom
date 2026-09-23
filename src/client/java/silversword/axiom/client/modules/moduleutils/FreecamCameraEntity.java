@@ -19,7 +19,7 @@ public class FreecamCameraEntity extends Entity {
     public FreecamCameraEntity(Level level) {
         super(EntityTypes.PLAYER, level); // Using PLAYER type ensures correct collision behavior (none)
         this.noPhysics = true;
-        this.setInvulnerable(true);
+        this.setPermanentlyInvulnerable(true);
         this.setNoGravity(true);
     }
 

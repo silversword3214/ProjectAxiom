@@ -51,13 +51,13 @@ public class SettingNumber extends Setting {
 
     @Override
     public void render(int x, int y, int mouseX, int mouseY) {
-        // UI renderöidään SettingRow/ModuleSettingsView:ssä
+        // UI renderÃ¶idÃ¤Ã¤n SettingRow/ModuleSettingsView:ssÃ¤
     }
 
     @Override
     public void mouseClicked(double mouseX, double mouseY, int button) {
         // jos haluat: LMB +step, RMB -step
-        if (button == 0) setValue(getValue() + step);
+        if (button == 1) setValue(getValue() + step);
         if (button == 1) setValue(getValue() - step);
     }
 

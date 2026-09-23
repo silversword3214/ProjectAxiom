@@ -46,6 +46,10 @@ public final class ModuleRow implements UiComponent {
     private float hoverTime = 0f;
     private static final float TOOLTIP_DELAY = 20f;
 
+    private boolean toggleCancelledByDrag = false;   // UUSI
+
+
+
     public ModuleRow(AxiomMod module, Consumer<AxiomMod> onOpenSettings, String ownerWindowId, int rowIndex, boolean isLast) {
         this.module = module;
         this.onOpenSettings = onOpenSettings;
@@ -133,16 +137,16 @@ public final class ModuleRow implements UiComponent {
         String displayName = module.getName();
         if (displayName == null) displayName = "";
 
-        // TruncateToFit poistettu kokonaan! Piirretään suoraan displayName.
+        // TruncateToFit poistettu kokonaan! PiirretÃ¤Ã¤n suoraan displayName.
         if (ClickGuiConfigManager.isRainbowWaveEnabled()) {
-            // x ja y ovat ne samat nameX ja nameY kuin tavallisella tekstillä
+            // x ja y ovat ne samat nameX ja nameY kuin tavallisella tekstillÃ¤
             ui.drawRainbowText(displayName, nameX, nameY, rowIndex);
         } else {
             ui.text(displayName, nameX, nameY, ui.theme.text);
         }
 
         if (hover && !gearHover) {
-            // Lisätään aikaa deltan verran (delta on yleensä sekunnin murto-osa)
+            // LisÃ¤tÃ¤Ã¤n aikaa deltan verran (delta on yleensÃ¤ sekunnin murto-osa)
             hoverTime += delta;
 
             if (hoverTime >= TOOLTIP_DELAY) {
@@ -152,7 +156,7 @@ public final class ModuleRow implements UiComponent {
                 }
             }
         } else {
-            // Nollataan laskuri heti, kun hiiri poistuu tai siirtyy rattaan päälle
+            // Nollataan laskuri heti, kun hiiri poistuu tai siirtyy rattaan pÃ¤Ã¤lle
             hoverTime = 0f;
         }
     }
@@ -161,32 +165,48 @@ public final class ModuleRow implements UiComponent {
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
         if (!bounds.contains(mouseX, mouseY)) return false;
-        if (button == 0) {
-            leftDown = true;
-            dragStarted = false;
-            pressX = mouseX;
-            pressY = mouseY;
-            if (gearRect.contains(mouseX, mouseY)) {
-                leftDown = false;
-                // Special settings
-                // Waypoints
-                if (module instanceof WaypointModule)
-                    ((WaypointModule) module).openManager();
-                // NoParticle
-                else if (module instanceof NoParticleModule)
-                    ((NoParticleModule) module).openManager();
-                // DeathLocation
-                else if (module instanceof DeathLocationModule)
-                    ((DeathLocationModule) module).openListWindow();
-                // AutoPot
-                else if (module instanceof PotionRefill) {
-                    ((PotionRefill) module).openManager();
-                }
+        if (button != 1) return false;
 
-                // Normal se
-                else onOpenSettings.accept(module);
-                return true;
+        // Gear-nappi: avaa asetukset, ei togglea
+        if (gearRect.contains(mouseX, mouseY)) {
+            leftDown = false;
+            if (module instanceof WaypointModule) ((WaypointModule) module).openManager();
+            else if (module instanceof NoParticleModule) ((NoParticleModule) module).openManager();
+            else if (module instanceof DeathLocationModule) ((DeathLocationModule) module).openListWindow();
+            else if (module instanceof PotionRefill) ((PotionRefill) module).openManager();
+            else onOpenSettings.accept(module);
+            return true;
+        }
+
+        // Tallenna drag-tilaa varten
+        leftDown = true;
+        dragStarted = false;
+        toggleCancelledByDrag = false;
+        pressX = mouseX;
+        pressY = mouseY;
+
+        // Toggle HETI (kuten muut UiComponentit)
+        module.toggle();
+        return true;
+    }
+
+    @Override
+    public boolean mouseDragged(UiContext ui, double mouseX, double mouseY,
+                                int button, double dx, double dy) {
+        if (button != 1 || !leftDown) return false;
+        if (dragStarted) return true;
+        if (gearRect.contains(pressX, pressY)) return false;
+
+        double dist = Math.hypot(mouseX - pressX, mouseY - pressY);
+        if (dist >= DRAG_THRESHOLD) {
+            dragStarted = true;
+
+            // Perutaan optimistinen toggle â€” drag alkoi
+            if (!toggleCancelledByDrag) {
+                module.toggle();
+                toggleCancelledByDrag = true;
             }
+            DragState.start(module, ownerWindowId, rowIndex, pressX, pressY);
             return true;
         }
         return false;
@@ -194,30 +214,15 @@ public final class ModuleRow implements UiComponent {
 
     @Override
     public void mouseReleased(UiContext ui, double mouseX, double mouseY, int button) {
-        if (button != 0) return;
-        boolean wasDown = leftDown;
+        if (button != 1) return;
         leftDown = false;
-        if (dragStarted) return;
-        if (wasDown && bounds.contains(mouseX, mouseY)) {
-            if (gearRect.contains(mouseX, mouseY)) return;
-            module.toggle();
-        }
+        dragStarted = false;
+        toggleCancelledByDrag = false;
+        // Ei enÃ¤Ã¤ togglea tÃ¤Ã¤llÃ¤ â€” se tehtiin mouseClickedissa
     }
 
-    @Override
-    public boolean mouseDragged(UiContext ui, double mouseX, double mouseY, int button, double dx, double dy) {
-        if (button != 0) return false;
-        if (!leftDown) return false;
-        if (dragStarted) return true;
-        if (gearRect.contains(pressX, pressY)) return false;
-        double dist = Math.hypot(mouseX - pressX, mouseY - pressY);
-        if (dist >= DRAG_THRESHOLD) {
-            dragStarted = true;
-            DragState.start(module, ownerWindowId, rowIndex, pressX, pressY);
-            return true;
-        }
-        return false;
-    }
+
+
 
     public AxiomMod getModule() { return module; }
 

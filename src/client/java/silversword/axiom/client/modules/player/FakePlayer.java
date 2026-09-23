@@ -1,11 +1,11 @@
 package silversword.axiom.client.modules.player;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.player.RemotePlayer;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.setting.SettingKeybind;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.UUID;
 
@@ -13,7 +13,9 @@ import static silversword.axiom.client.main.AxiomInitialize.mc;
 
 public class FakePlayer extends AxiomMod implements KeybindConfigurable {
     private static int nextFakeEntityId = -1;
-    private final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", GLFW.GLFW_KEY_UNKNOWN);
+    // 26.3: GLFW_KEY_UNKNOWN → InputConstants.UNKNOWN.getValue() (-1)
+    private final SettingKeybind toggleKey =
+            new SettingKeybind("Toggle Key", InputConstants.UNKNOWN.getValue());
     private RemotePlayer fakePlayer;
     private int spawnDelay = 0;
 
@@ -29,12 +31,12 @@ public class FakePlayer extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onEnable() {
-        spawnDelay = 0; // Odotetaan 5 tickiä ennen spawnausta
+        spawnDelay = 0;
     }
 
     private void spawnFakePlayer() {
         if (mc.level == null || mc.player == null) {
-            toggle(); // Jos maailma ei ole valmis, sammutetaan
+            toggle();
             return;
         }
 
@@ -47,7 +49,7 @@ public class FakePlayer extends AxiomMod implements KeybindConfigurable {
         fakePlayer.setYHeadRot(mc.player.yHeadRot);
         fakePlayer.setYBodyRot(mc.player.yBodyRot);
         fakePlayer.getInventory().replaceWith(mc.player.getInventory());
-        fakePlayer.setInvulnerable(true);
+        fakePlayer.setPermanentlyInvulnerable(true);
 
         mc.level.addEntity(fakePlayer);
     }

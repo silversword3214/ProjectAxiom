@@ -58,7 +58,7 @@ public final class Toggle implements UiComponent {
         float t = knobAnim.getValue();
         int bgColor = interpolateColor(ui.theme.toggleOff, ui.theme.toggleOn, t);
 
-        // KORJAUS: piirretään pill ja sen reuna, jotta se ei katoa taustaan
+        // KORJAUS: piirretÃ¤Ã¤n pill ja sen reuna, jotta se ei katoa taustaan
         ui.fillRounded(sx, sy, pillW, pillH, bgColor, pillH / 2.0);
         ui.drawRoundedOutline(new Rect(sx, sy, pillW, pillH),
                 hover ? ui.theme.accent : ui.theme.border, pillH / 2.0, 1.0);
@@ -97,7 +97,7 @@ public final class Toggle implements UiComponent {
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-        if (button != 0) return false;
+        if (button != 1) return false;
         if (!bounds.contains(mouseX, mouseY)) return false;
 
         boolean newValue = !getter.getAsBoolean();

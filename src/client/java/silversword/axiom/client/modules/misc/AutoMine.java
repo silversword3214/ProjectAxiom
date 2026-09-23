@@ -1,6 +1,7 @@
 package silversword.axiom.client.modules.misc;
 
 import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Blocks;
@@ -688,7 +689,7 @@ public class AutoMine extends AxiomMod implements BlockSelectable, KeybindConfig
             // Vaihtoehtoisesti joillain versioilla voi tarvita interactItem tai swing ennen/ jälkeen;
             // tässä swingataan jos sijoitus hyväksyttiin.
             if (result.consumesAction()) {
-                mc.player.swing(InteractionHand.OFF_HAND);
+                mc.player.swing(InteractionHand.OFF_HAND, SwingAnimation.DEFAULT, false);
                 // Palauta kamera vanhaksi (valinnainen)
                 mc.player.setYRot(oldYaw);
                 mc.player.setXRot(oldPitch);

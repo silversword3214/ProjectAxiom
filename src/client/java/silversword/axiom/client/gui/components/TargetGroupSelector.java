@@ -35,7 +35,7 @@ public class TargetGroupSelector implements UiComponent {
         if (!bounds.contains(mouseX, mouseY)) return false;
         TargetGroup[] values = TargetGroup.values();
         int index = getter.get().ordinal();
-        if (button == 0) index = (index + 1) % values.length;
+        if (button == 1) index = (index + 1) % values.length;
         else if (button == 1) index = (index - 1 + values.length) % values.length;
         setter.accept(values[index]);
         return true;

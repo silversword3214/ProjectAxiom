@@ -198,7 +198,7 @@ public class ThemePickerScreen extends Screen {
             return true;
         }
         if (lastUi != null && scroll != null) {
-            return scroll.keyPressed(lastUi, input.input(), input.scancode(), input.modifiers());
+            return scroll.keyPressed(lastUi, input.input(), input.keycode(), input.modifiers());
         }
         return super.keyPressed(input);
     }
@@ -252,7 +252,7 @@ public class ThemePickerScreen extends Screen {
         }
         @Override
         public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-            if (button == 0 && bounds != null && bounds.contains(mouseX, mouseY)) {
+            if (button == 1 && bounds != null && bounds.contains(mouseX, mouseY)) {
                 ClickGuiConfigManager.setThemeName(themeName);
                 return true;
             }

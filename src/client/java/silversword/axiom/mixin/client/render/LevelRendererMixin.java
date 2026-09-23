@@ -1,7 +1,8 @@
 package silversword.axiom.mixin.client.render;
 
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
+
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -26,7 +27,7 @@ public class LevelRendererMixin {
 
     @Inject(method = "render", at = @At("TAIL"))
     private void axiom$onRenderLevelTail(
-            GraphicsResourceAllocator resourceAllocator, DeltaTracker deltaTracker, boolean renderOutline, CameraRenderState cameraState, Matrix4fc modelViewMatrix, GpuBufferSlice terrainFog, Vector4f fogColor, boolean shouldRenderSky, CallbackInfo ci
+            GraphicsResourceAllocator resourceAllocator, boolean renderOutline, CameraRenderState cameraState, GpuBufferSlice terrainFog, Vector4f fogColor, boolean shouldRenderSky, boolean consistentDepthRequired, CallbackInfo ci
     ) {
         Minecraft mc = Minecraft.getInstance();
 

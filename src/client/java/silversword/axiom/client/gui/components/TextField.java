@@ -15,7 +15,7 @@ public class TextField implements UiComponent {
     private static final float BLINK_INTERVAL = 10f;
     private Consumer<String> onChange = null;
 
-    private static TextField focusedField = null; // globaali fokusoitu kenttä
+    private static TextField focusedField = null; // globaali fokusoitu kenttÃ¤
 
     @Override
     public void setBounds(Rect bounds) { this.bounds = bounds; }
@@ -78,7 +78,7 @@ public class TextField implements UiComponent {
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-        if (button != 0) return false;
+        if (button != 1) return false;
         boolean nowFocused = bounds.contains(mouseX, mouseY);
 
         if (nowFocused) {
@@ -91,7 +91,7 @@ public class TextField implements UiComponent {
             int bestPos = 0;
             int bestDist = Integer.MAX_VALUE;
 
-            // Käytetään TextUtils.getWidth() jokaiselle pituudelle, jotta klikkaus on tarkka
+            // KÃ¤ytetÃ¤Ã¤n TextUtils.getWidth() jokaiselle pituudelle, jotta klikkaus on tarkka
             for (int i = 0; i <= text.length(); i++) {
                 String before = text.substring(0, i);
                 int charX = textX + TextUtils.getWidth(before);

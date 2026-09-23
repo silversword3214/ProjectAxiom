@@ -132,7 +132,6 @@ public class GodBridge extends AxiomMod {
         Vec3 hitVec = getAccurateHitVec(targetPos, targetSide);
         BlockHitResult hitResult = new BlockHitResult(hitVec, targetSide, targetPos, false);
         mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
-        mc.player.swing(InteractionHand.MAIN_HAND);
         mc.player.getInventory().selected = oldSlot;
     }
 

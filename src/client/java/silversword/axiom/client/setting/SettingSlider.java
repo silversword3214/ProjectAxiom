@@ -83,7 +83,7 @@ public class SettingSlider extends Setting {
 
     @Override
     public void mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0) next();
+        if (button == 1) next();
         if (button == 1) previous();
     }
 }

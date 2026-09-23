@@ -28,7 +28,7 @@ public final class Window {
     private static final int RESIZE_HANDLE = 8;
     private boolean autoLayoutVertical = true;
 
-    // Täydellisesti kiinnittyvät moduulit
+    // TÃ¤ydellisesti kiinnittyvÃ¤t moduulit
     private int padding = 2;
     private int gap = 0;
 
@@ -59,7 +59,7 @@ public final class Window {
         this.title = title == null ? "" : title;
         this.x = x;
         this.y = y;
-        // Käytetään keskitettyä minimimittoja
+        // KÃ¤ytetÃ¤Ã¤n keskitettyÃ¤ minimimittoja
         this.width = Math.max(MIN_WIDTH, width);
         this.height = Math.max(MIN_HEIGHT, height);
     }
@@ -145,7 +145,7 @@ public final class Window {
         else if (animState == AnimState.CLOSING) renderY = (int) (y - (y + height) * (1 - progress));
         else renderY = y;
 
-        // --- KÄYTETÄÄN KESKITETTYÄ MINIMIMITTAA ---
+        // --- KÃ„YTETÃ„Ã„N KESKITETTYÃ„ MINIMIMITTAA ---
         width = Math.max(MIN_WIDTH, width);
         height = Math.max(minimized ? (headerH + 2) : MIN_HEIGHT, height);
 
@@ -161,7 +161,7 @@ public final class Window {
             ui.fill(x, sepY, width, 2, ui.theme.accent);
         }
 
-        // OTSIKKO: nyt täsmälleen samalla X-koordinaatilla kuin moduulirivien teksti
+        // OTSIKKO: nyt tÃ¤smÃ¤lleen samalla X-koordinaatilla kuin moduulirivien teksti
         int titleX = x + 4;
         int titleY = header.y + (header.h - ui.fontHeight()) / 2 + 4;
         ui.text(title, titleX, titleY, ui.theme.text);
@@ -233,7 +233,7 @@ public final class Window {
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
         Rect win = getBounds();
         if (!win.contains(mouseX, mouseY)) return false;
-        if (button == 0) {
+        if (button == 1) {
             int btnIndex = 0;
             if (closable && headerButtonRect(btnIndex++, headerRect()).contains(mouseX, mouseY)) {
                 if (onClose != null) onClose.run();
@@ -248,13 +248,13 @@ public final class Window {
                 return true;
             }
         }
-        if (headerRect().contains(mouseX, mouseY) && button == 0) {
+        if (headerRect().contains(mouseX, mouseY) && button == 1) {
             dragging = true;
             dragOffX = (int) mouseX - x;
             dragOffY = (int) mouseY - y;
             return true;
         }
-        if (!minimized && resizeRect(y).contains(mouseX, mouseY) && button == 0) {
+        if (!minimized && resizeRect(y).contains(mouseX, mouseY) && button == 1) {
             resizing = true;
             return true;
         }
@@ -287,7 +287,7 @@ public final class Window {
         if (dragging) { x = (int) mouseX - dragOffX; y = (int) mouseY - dragOffY; return true; }
         if (resizing && !minimized) {
             int newW = (int) mouseX - x, newH = (int) mouseY - y;
-            // --- KÄYTETÄÄN KESKITETTYÄ MINIMIMITTAA ---
+            // --- KÃ„YTETÃ„Ã„N KESKITETTYÃ„ MINIMIMITTAA ---
             width = Math.max(MIN_WIDTH, newW);
             height = Math.max(MIN_HEIGHT, newH);
             return true;
@@ -329,7 +329,7 @@ public final class Window {
 
     public void setBounds(Rect rect) {
         this.x = rect.x; this.y = rect.y;
-        // --- KÄYTETÄÄN KESKITETTYÄ MINIMIMITTAA ---
+        // --- KÃ„YTETÃ„Ã„N KESKITETTYÃ„ MINIMIMITTAA ---
         this.width = Math.max(MIN_WIDTH, rect.w);
         this.height = Math.max(minimized ? (headerH + 2) : MIN_HEIGHT, rect.h);
     }

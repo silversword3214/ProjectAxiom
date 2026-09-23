@@ -2,6 +2,7 @@ package silversword.axiom.client.modules.player;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -167,7 +168,7 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
         // Pudota nykyinen panssari (jos on)
         ItemStack current = mc.player.getItemBySlot(slot);
         if (!current.isEmpty()) {
-            mc.player.drop(current, false);
+            mc.player.drop(current, false, Prediction.SERVER_ONLY);
             mc.player.setItemSlot(slot, ItemStack.EMPTY);
         }
 
@@ -176,7 +177,7 @@ public final class AutoArmor extends AxiomMod implements KeybindConfigurable {
             int worstSlot = findWorstItemInInventory();
             if (worstSlot != -1) {
                 ItemStack worst = mc.player.getInventory().getItem(worstSlot);
-                mc.player.drop(worst, false);
+                mc.player.drop(worst, false, Prediction.SERVER_ONLY);
                 mc.player.getInventory().removeItemNoUpdate(worstSlot);
             }
         }

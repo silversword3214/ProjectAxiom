@@ -100,7 +100,6 @@ public class TriggerBot extends AxiomMod implements KeybindConfigurable {
     private void performAttack(LivingEntity target) {
         if (!isEnabled() || target == null || !target.isAlive()) return;
         mc.gameMode.attack(mc.player, target);
-        mc.player.swing(mc.player.getUsedItemHand());
         attackController.recordAttack();
     }
 }

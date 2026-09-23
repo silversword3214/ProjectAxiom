@@ -201,50 +201,53 @@ public final class ClickGuiScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
+
         int mouseX = (int) click.x();
         int mouseY = (int) click.y();
 
-        if (click.button() == 0) {
-            int toggleW = 70;
-            int toggleH = 16;
-            int gap = 4;
+        // 1. Dropdown
+        if (currentDropdown != null && lastUi != null) {
+            if (currentDropdown.getBounds().contains(mouseX, mouseY)) {
+                if (currentDropdown.mouseClicked(lastUi, mouseX, mouseY, click.button())) return true;
+            } else {
+                currentDropdown = null;
+            }
+        }
+
+        // 2. Top bar (vain vasen klikki)
+        if (click.button() == 1) {
+            int toggleW = 70, toggleH = 16, gap = 4;
             int centerX = this.width / 2;
             int topY = 6;
-
             int clickGuiX = centerX - toggleW - gap / 2;
             int settingsX = centerX + gap / 2;
 
-            if (currentDropdown != null && lastUi != null) {
-                if (currentDropdown.getBounds().contains(mouseX, mouseY)) {
-                    if (currentDropdown.mouseClicked(lastUi, mouseX, mouseY, click.button())) return true;
-                } else {
-                    currentDropdown = null;
-                }
-            }
-
-            if (mouseX >= clickGuiX && mouseX <= clickGuiX + toggleW && mouseY >= topY && mouseY <= topY + toggleH) {
+            if (mouseX >= clickGuiX && mouseX <= clickGuiX + toggleW
+                    && mouseY >= topY && mouseY <= topY + toggleH) {
                 topMode = TopMode.CLICKGUI;
                 return true;
             }
-            if (mouseX >= settingsX && mouseX <= settingsX + toggleW && mouseY >= topY && mouseY <= topY + toggleH) {
-                // Avaa asetusscreen
+            if (mouseX >= settingsX && mouseX <= settingsX + toggleW
+                    && mouseY >= topY && mouseY <= topY + toggleH) {
                 this.minecraft.setScreenAndShow(new AxiomSettingsScreen(() -> {
                     this.minecraft.setScreenAndShow(new ClickGuiScreen());
                 }));
                 return true;
             }
-
-            // Hakupalkin klikkaus
             if (topMode == TopMode.CLICKGUI) {
                 if (moduleSearchBar.mouseClicked(lastUi, mouseX, mouseY, click.button())) return true;
             }
         }
 
-        boolean consumed = super.mouseClicked(click, doubled);
-        if (!consumed && lastUi != null && (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen())) {
-            consumed = windowManager.mouseClicked(lastUi, mouseX, mouseY, click.button());
+        // 3. WindowManager ENNEN superia
+        if (lastUi != null && (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen())) {
+            if (windowManager.mouseClicked(lastUi, mouseX, mouseY, click.button())) {
+                return true;
+            }
         }
-        return consumed;
+
+        // 4. Vasta viimeisenä vanilla-käsittely
+        return super.mouseClicked(click, doubled);
     }
 
     private void locateAndHighlightModule(AxiomMod module) {
@@ -360,11 +363,11 @@ public final class ClickGuiScreen extends Screen {
                 return true;
             }
         }
-        if (topMode == TopMode.CLICKGUI && moduleSearchBar.keyPressed(lastUi, input.input(), input.scancode(), input.modifiers())) {
+        if (topMode == TopMode.CLICKGUI && moduleSearchBar.keyPressed(lastUi, input.input(), input.keycode(), input.modifiers())) {
             return true;
         }
         if (lastUi != null && (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen())) {
-            if (windowManager.keyPressed(lastUi, input.input(), input.scancode(), input.modifiers())) return true;
+            if (windowManager.keyPressed(lastUi, input.input(), input.keycode(), input.modifiers())) return true;
         }
         return super.keyPressed(input);
     }

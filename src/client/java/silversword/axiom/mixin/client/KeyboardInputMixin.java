@@ -102,7 +102,7 @@ public abstract class KeyboardInputMixin extends ClientInput {
     private boolean isKeyPressed(Minecraft mc, KeyMapping keyBinding) {
         InputConstants.Key key = ((KeyMappingAccessor) keyBinding).getKey();
         Window window = mc.getWindow();
-        return InputConstants.isKeyDown(window, key.getValue());
+        return InputConstants.isKeyDown(key.getValue());
     }
 
     private static float getMovementFactor(boolean positive, boolean negative) {

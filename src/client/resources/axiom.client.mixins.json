@@ -19,6 +19,7 @@
     "accessors.CameraAccessor",
     "accessors.ClientboundEntityEventPacketAccessor",
     "accessors.EntityFireTicksAccessor",
+    "render.ScreenEffectRendererMixin",
     "block.BlockMixin",
     "block.BlockBehaviourMixin",
     "block.CactusBlockMixin",
@@ -61,6 +62,7 @@
     "render.xray.XRayQuadViewImplMixin",
     "render.xray.XRayShouldDrawSideMixin",
     "render.xray.XRaySideCullingMixin",
+    "render.ScreenEffectRendererMixin",
     "world.ClientWorldPropertiesMixin"
   ],
   "injectors": {

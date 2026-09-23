@@ -1,7 +1,8 @@
 package silversword.axiom.mixin.client.render;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
 
+
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import silversword.axiom.client.mixininterface.ILineSmoothing;

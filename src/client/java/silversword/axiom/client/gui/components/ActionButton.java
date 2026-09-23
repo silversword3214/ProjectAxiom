@@ -28,14 +28,14 @@ public final class ActionButton implements UiComponent {
         // Yksinkertainen pystysuuntainen keskitys (kuten ModuleRow)
         int textY = bounds.y + bounds.h / 2 - ui.fontHeight() / 2 + 4;
 
-        // Pakotetaan väri valkoiseksi testiksi, tai käytä teeman text
+        // Pakotetaan vÃ¤ri valkoiseksi testiksi, tai kÃ¤ytÃ¤ teeman text
         ui.text(label, textX, textY, hover ? ui.theme.scrollbarHover : ui.theme.text);
     }
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
         if (!bounds.contains(mouseX, mouseY)) return false;
-        if (button == 0 && onClick != null) onClick.run();
+        if (button == 1 && onClick != null) onClick.run();
         return true;
     }
 

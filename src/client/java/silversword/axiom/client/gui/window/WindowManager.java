@@ -125,8 +125,8 @@ public final class WindowManager {
             overlayComponent.render(ui, mouseX, mouseY, ui.delta);
             return;
         }
-        // Renderöidään listan järjestyksessä: viimeisin = päällimmäisin.
-        // bringToFront pitää huolen siitä, että viimeksi koskettu ikkuna on listan lopussa.
+        // RenderÃ¶idÃ¤Ã¤n listan jÃ¤rjestyksessÃ¤: viimeisin = pÃ¤Ã¤llimmÃ¤isin.
+        // bringToFront pitÃ¤Ã¤ huolen siitÃ¤, ettÃ¤ viimeksi koskettu ikkuna on listan lopussa.
         for (Window w : windows) {
             w.render(ui, mouseX, mouseY, ui.delta);
         }
@@ -156,7 +156,7 @@ public final class WindowManager {
         for (Window w : windows) {
             w.mouseReleased(ui, mouseX, mouseY, button);
         }
-        if (button == 0 && DragState.isActive()) {
+        if (button == 1 && DragState.isActive()) {
             handleDrop(mouseX, mouseY);
             DragState.stop();
         }
@@ -169,7 +169,7 @@ public final class WindowManager {
         for (int i = windows.size() - 1; i >= 0; i--) {
             Window w = windows.get(i);
             if (w.mouseDragged(ui, mouseX, mouseY, button, dx, dy)) {
-                // Jos jokin ikkuna (tai sen lapsi) nappasi dragin, nosta se päällimmäiseksi.
+                // Jos jokin ikkuna (tai sen lapsi) nappasi dragin, nosta se pÃ¤Ã¤llimmÃ¤iseksi.
                 bringToFront(w);
                 return true;
             }
@@ -186,7 +186,7 @@ public final class WindowManager {
             if (w.getBounds().contains(mouseX, mouseY)) {
                 boolean consumed = w.mouseScrolled(ui, mouseX, mouseY, amount);
                 if (consumed) {
-                    // Skrollattu ikkuna nousee päällimmäiseksi.
+                    // Skrollattu ikkuna nousee pÃ¤Ã¤llimmÃ¤iseksi.
                     bringToFront(w);
                 }
                 return consumed;

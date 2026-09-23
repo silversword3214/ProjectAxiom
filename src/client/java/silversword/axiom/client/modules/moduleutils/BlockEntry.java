@@ -66,7 +66,7 @@ public class BlockEntry implements UiComponent {
         String name = block.getName().getString();
         ui.text(name, bounds.x + 22, bounds.y + 6, ui.theme.text);
 
-        // Väriläikkä (jos moduuli tukee värejä)
+        // VÃ¤rilÃ¤ikkÃ¤ (jos moduuli tukee vÃ¤rejÃ¤)
         if (module instanceof BlockColorSelectable) {
             BlockColorSelectable colorModule = (BlockColorSelectable) module;
             SettingColor sc = colorModule.getBlockColor(block);
@@ -81,7 +81,7 @@ public class BlockEntry implements UiComponent {
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-        if (button != 0) return false;
+        if (button != 1) return false;
 
         if (module instanceof BlockColorSelectable && colorSwatchRect.contains(mouseX, mouseY)) {
             openColorPicker((BlockColorSelectable) module);
