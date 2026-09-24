@@ -16,8 +16,12 @@ public final class EntityMaskRenderTarget extends RenderTarget {
     private GpuSampler sampler;
     private int trackedW = -1, trackedH = -1;
 
+    public EntityMaskRenderTarget(String label) {
+        super(label, GpuFormat.RGBA8_UNORM, GpuFormat.D32_FLOAT);
+    }
+
     public EntityMaskRenderTarget() {
-        super("ShaderEspMask", GpuFormat.RGBA8_UNORM, GpuFormat.D32_FLOAT);
+        this("ShaderEspMask");
     }
 
     public void syncToWindow(int downscale) {

@@ -1105,12 +1105,38 @@ public class RenderCore {
         addGpuTextureQuadWithPipeline(uiTextured(), view, sampler,
                 x, y, w, h, u0, v0, u1, v1, color);
     }
+    public void addTextureWithPipeline(Identifier texture, CompiledRenderPipeline pipeline,
+                                        float x, float y, float w, float h,
+                                        float u1, float v1, float u2, float v2,
+                                        int color) {
+        addTextureWithPipeline(texture, pipeline, x, y, w, h,
+                u1, v1, u2, v2, 0f, color);
+    }
 
     public void addTextureWithPipeline(Identifier texture, CompiledRenderPipeline pipeline,
                                        float x, float y, float w, float h,
                                        float u1, float v1, float u2, float v2,
-                                       int color) {
-        addTexturePart(texture, x, y, w, h, u1, v1, u2, v2, color);
+                                       float param, int color) {
+        if (w <= 0 || h <= 0) return;
+
+        Batch batch = getOrCreateTextureBatch(texture);
+
+        float r = ((color >> 16) & 0xFF) / 255f;
+        float g = ((color >>  8) & 0xFF) / 255f;
+        float b = ((color      ) & 0xFF) / 255f;
+        float a = ((color >> 24) & 0xFF) / 255f;
+
+        float x2 = x + w;
+        float y2 = y + h;
+
+        // Z = param (paksuus)
+        batch.vertexUV(x,  y,  param, u1, v1, r, g, b, a);
+        batch.vertexUV(x2, y,  param, u2, v1, r, g, b, a);
+        batch.vertexUV(x,  y2, param, u1, v2, r, g, b, a);
+        batch.vertexUV(x,  y2, param, u1, v2, r, g, b, a);
+        batch.vertexUV(x2, y,  param, u2, v1, r, g, b, a);
+        batch.vertexUV(x2, y2, param, u2, v2, r, g, b, a);
+
         texturePipelines.put(texture, pipeline);
     }
 

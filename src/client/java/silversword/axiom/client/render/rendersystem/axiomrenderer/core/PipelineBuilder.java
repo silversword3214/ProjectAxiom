@@ -64,11 +64,9 @@ public final class PipelineBuilder {
     }
 
     public RenderPipeline build() {
-        // 1. Color target formaatti – sama kuin mainRenderTarget().getColorTexture()
         innerBuilder.withColorTargetState(
                 new ColorTargetState(blend));
 
-        // 2. Depth/stencil formaatti – sama kuin mainRenderTarget().getDepthTexture()
         innerBuilder.withDepthStencilState(
                 new DepthStencilState(depthTest, depthWrite));
 

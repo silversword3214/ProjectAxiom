@@ -35,6 +35,7 @@
     "boat.BoatPhaseDismountMixin",
     "boat.BoatPhaseMixin",
     "entity.EntityMixin",
+    "entity.EntityRenderDispatcherMixin",
     "entity.EntityRenderStateMixin",
     "entity.LivingEntityMixin",
     "entity.LocalPlayerMixin",
@@ -61,12 +62,13 @@
     "render.ScreenEffectRendererMixin",
     "render.WindowMixin",
     "render.xray.XRayAmbientOcclusionMixin",
+    "render.xray.XRayModelBlockRendererMixin",
     "render.xray.XRayOcclusionMixin",
-    "render.xray.XRayQuadViewImplMixin",
     "render.xray.XRayShouldDrawSideMixin",
     "render.xray.XRaySideCullingMixin",
     "world.ClientWorldPropertiesMixin",
-    "entity.EntityRenderDispatcherMixin"
+    "render.xray.XRayModelBlockRendererMixin",
+    "render.xray.XRayProbeMixin"
   ],
   "injectors": {
     "defaultRequire": 1

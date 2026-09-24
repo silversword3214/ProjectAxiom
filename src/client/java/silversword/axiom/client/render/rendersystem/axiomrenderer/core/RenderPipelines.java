@@ -51,6 +51,7 @@ public final class RenderPipelines {
     public static CompiledRenderPipeline UI_TEXTURED;
     public static CompiledRenderPipeline UI_TEXT;
     public static CompiledRenderPipeline UI_ENTITY_EDGE;
+    public static CompiledRenderPipeline UI_ENTITY_FILL;
 
     private static final List<PipelineBuilder> BUILDERS = new ArrayList<>();
 
@@ -154,6 +155,17 @@ public final class RenderPipelines {
                 .withDepthWrite(false)
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
+
+        // 10. UI entity fill
+        BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS, UI_TEXTURE_BINDINGS)
+                .withLocation(id("pipeline/entity_fill"))
+                .withVertexFormat(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES)
+                .withVertexShader(id("shaders/ui_textured.vert"))
+                .withFragmentShader(id("shaders/entity_fill.frag"))
+                .withDepthTestFunction(CompareOp.ALWAYS_PASS)
+                .withDepthWrite(false)
+                .withBlend(BlendFunction.TRANSLUCENT)
+                .withCull(false));
     }
 
     private static Identifier id(String path) {
@@ -232,6 +244,7 @@ public final class RenderPipelines {
                 case 6 -> UI_TEXTURED               = compiled;
                 case 7 -> UI_TEXT                   = compiled;
                 case 8 -> UI_ENTITY_EDGE            = compiled;
+                case 9 -> UI_ENTITY_FILL            = compiled;
             }
             index++;
             LOGGER.info("Compiled pipeline: {}", pipeline.getLocation());

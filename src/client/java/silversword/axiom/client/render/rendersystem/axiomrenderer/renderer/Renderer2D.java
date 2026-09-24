@@ -464,19 +464,25 @@ public class Renderer2D {
         core.addGpuTextureQuad(view, sampler, x, y, w, h, 0f, 0f, 1f, 1f, color);
     }
 
-    public void drawEntityEdge(com.mojang.renderpearl.api.textures.GpuTextureView maskView,
-                               com.mojang.renderpearl.api.textures.GpuSampler sampler,
-                               float x, float y, float w, float h, int outlineColor) {
+    public void drawEntityChams(Identifier textureId, float x, float y, float w, float h, int tint) {
+        // Käyttää oletus UI_TEXTURED-pipelinea
+        core.addTexturePart(textureId, x, y, w, h, 0f, 1f, 1f, 0f, tint);
+    }
 
+    public void drawEntityFill(Identifier textureId, float x, float y, float w, float h, int fillColor) {
+        core.addTextureWithPipeline(textureId, RenderPipelines.UI_ENTITY_FILL,
+                x, y, w, h, 0f, 1f, 1f, 0f, fillColor);
+    }
 
-        // Käytä samaa polkua kuin Chams (textureBatches), mutta eri pipeline
+    public void drawEntityEdge(Identifier textureId, float x, float y, float w, float h,
+                               int outlineColor, float thickness) {
         core.addTextureWithPipeline(
-                silversword.axiom.client.render.rendersystem.axiomrenderer.shaderesp.ShaderEspRenderer.OUTLINE_TEXTURE_ID,
+                textureId,
                 RenderPipelines.UI_ENTITY_EDGE,
                 x, y, w, h,
-                0f, 1f, 1f, 0f,
+                0f, 1f, 1f, 0f,     // UV (V flip)
+                thickness,          // ← Z = paksuus
                 outlineColor);
-
     }
 
 }

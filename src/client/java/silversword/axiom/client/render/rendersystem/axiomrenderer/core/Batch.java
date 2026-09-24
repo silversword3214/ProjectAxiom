@@ -30,6 +30,8 @@ public class Batch {
         this.mode = mode;
     }
 
+
+
     public VertexFormat getFormat() { return format; }
     public PrimitiveTopology getMode() { return mode; }
     public int vertexCount() { return vertices.size(); }
@@ -51,10 +53,15 @@ public class Batch {
     }
 
     public void vertexUV(float x, float y, float u, float v, float r, float g, float b, float a) {
+        vertexUV(x, y, 0f, u, v, r, g, b, a);
+    }
+
+    public void vertexUV(float x, float y, float z, float u, float v,
+                         float r, float g, float b, float a) {
         if (format != AxiomVertexFormats.POS2_UV_COLOR) {
             throw new IllegalStateException("Wrong vertex format, expected POS2_UV_COLOR");
         }
-        vertices.add(new float[]{x, y, 0f, u, v, r, g, b, a});
+        vertices.add(new float[]{x, y, z, u, v, r, g, b, a});
     }
 
     public void clear() {

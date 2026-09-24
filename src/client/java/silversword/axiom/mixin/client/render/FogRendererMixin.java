@@ -16,7 +16,7 @@ import silversword.axiom.client.modules.render.NoFog;
 @Mixin(FogRenderer.class)
 public class FogRendererMixin {
 
-    // TODO(Ravel): target method applyFog is ambiguous
+
     @Inject(method = "setupFog", at = @At("HEAD"), cancellable = true)
     private void onSetupFog(Camera camera,
                             int viewDistance,
