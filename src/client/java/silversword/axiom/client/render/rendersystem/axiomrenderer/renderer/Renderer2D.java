@@ -6,6 +6,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix4f;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderPipelines;
 
 public class Renderer2D {
     private final GuiGraphicsExtractor g;
@@ -457,6 +458,23 @@ public class Renderer2D {
                     texW, texH
             );
         }
+    }
+
+    public void drawGpuTexture(
+            com.mojang.renderpearl.api.textures.GpuTextureView view,
+            com.mojang.renderpearl.api.textures.GpuSampler sampler,
+            float x, float y, float w, float h, int color) {
+        core.addGpuTextureQuad(view, sampler, x, y, w, h, 0f, 0f, 1f, 1f, color);
+    }
+
+    public void drawEntityEdge(GpuTextureView maskView, GpuSampler sampler,
+                               float x, float y, float w, float h, int outlineColor) {
+        core.addGpuTextureQuadWithPipeline(
+                RenderPipelines.UI_ENTITY_EDGE,
+                maskView, sampler,
+                x, y, w, h,
+                0f, 1f, 1f, 0f,    // ← v0 ja v1 vaihdettu (oli 0f, 0f, 1f, 1f)
+                outlineColor);
     }
 
 }

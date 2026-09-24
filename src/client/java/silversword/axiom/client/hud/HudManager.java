@@ -15,6 +15,7 @@ import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.HudEventGuard;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.shaderesp.ShaderEspRenderer;
 import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
 import silversword.axiom.client.utils.render.DrawTexture;
 
@@ -93,6 +94,10 @@ public final class HudManager {
         for (HudElement e : elements) {
             if (!e.enabled()) continue;
             e.render(ctx, tickCounter);
+        }
+
+        if (ShaderEspRenderer.isEnabled()) {
+            ShaderEspRenderer.compositeToScreen(renderer);
         }
 
         RenderAPI.getInstance().getCore().flush();

@@ -1,6 +1,7 @@
 package silversword.axiom.client.render.rendersystem.axiomrenderer.core;
 
 // ─── RenderPearl API ───────────────────────────────────────────────
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
@@ -63,6 +64,13 @@ public class RenderCore {
 
     private boolean scissorEnabled = false;
     private int scissorX, scissorY, scissorW, scissorH;
+
+    private static RenderTarget targetOverride = null;
+    public static void setTargetOverride(RenderTarget rt) { targetOverride = rt; }
+    private final Map<GpuTextureView, CompiledRenderPipeline> gpuViewPipelines = new HashMap<>();
+    private final Map<GpuTextureView, Batch> gpuViewBatches = new HashMap<>();
+    private final Map<GpuTextureView, GpuSampler> gpuViewSamplers = new HashMap<>();
+
 
     public RenderCore() {}
 
@@ -180,6 +188,22 @@ public class RenderCore {
 
             textureBatches.clear();
 
+            for (Map.Entry<GpuTextureView, Batch> entry : gpuViewBatches.entrySet()) {
+                GpuTextureView view = entry.getKey();
+                Batch batch = entry.getValue();
+                GpuSampler sampler = gpuViewSamplers.get(view);
+                CompiledRenderPipeline pipeline = gpuViewPipelines.getOrDefault(view, textured);
+
+                // Aseta sampler batchille (drawBatchWithView lukee sen täältä)
+                batch.setSampler(sampler);
+
+                drawBatchWithView(pipeline, view, batch);
+                batch.clear();
+            }
+            gpuViewBatches.clear();
+            gpuViewSamplers.clear();
+            gpuViewPipelines.clear();
+
 
             // 3. Font atlas -batchit
             for (Map.Entry<Texture, Batch> entry : textBatches.entrySet()) {
@@ -210,6 +234,11 @@ public class RenderCore {
 
     public void disableScissor() {
         this.scissorEnabled = false;
+    }
+
+    private static RenderTarget getRenderTarget() {
+        if (targetOverride != null) return targetOverride;
+        return Minecraft.getInstance().gameRenderer.mainRenderTarget();
     }
 
     // ================================================================
@@ -259,7 +288,7 @@ public class RenderCore {
             }
         }
 
-        var rt = Minecraft.getInstance().gameRenderer.mainRenderTarget();
+        var rt = getRenderTarget();
 
         try {
             try (RenderPass renderPass = encoder.createRenderPass(
@@ -416,6 +445,79 @@ public class RenderCore {
 
             GpuFence fence = encoder.createFence();
             vbm.setFence(fence);
+        } finally {
+            encoder.submit();
+        }
+
+        mesh.close();
+        vbm.rotate();
+    }
+
+    private void drawBatchWithView(CompiledRenderPipeline pipeline,
+                                   GpuTextureView view, Batch batch) {
+        if (pipeline == null) {
+            LOGGER.error("drawBatchWithView: pipeline is null, view={}", view);
+            return;
+        }
+        if (batch.vertexCount() == 0) {
+            LOGGER.warn("drawBatchWithView: empty batch");
+            return;
+        }
+
+        MeshData mesh = buildMeshFromBatch(batch);
+        if (mesh == null) return;
+
+        MeshData.DrawState drawParams = mesh.drawState();
+        int vertexBufferSize = drawParams.vertexCount()
+                * drawParams.format().getVertexSize();
+
+        VertexBufferManager vbm = getBufferManager(pipeline);
+        vbm.ensureCapacity(vertexBufferSize);
+
+        CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
+        vbm.upload(mesh.vertexBuffer(), vertexBufferSize, encoder);
+        GpuBufferSlice vertices = vbm.getCurrentBuffer().slice(0, vertexBufferSize);
+
+        RenderSystem.AutoStorageIndexBuffer ib =
+                RenderSystem.getSequentialBuffer(batch.getMode());
+        GpuBuffer indices = ib.getBuffer(drawParams.indexCount());
+        IndexType indexType = ib.type();
+
+        Matrix4f mvp = batch.getMvp() != null
+                ? batch.getMvp()
+                : new Matrix4f(currentProjectionMatrix).mul(currentModelViewMatrix);
+
+        GpuBufferSlice dynamicTransforms =
+                RenderSystem.getDynamicUniforms().writeTransform(
+                        mvp,
+                        new Vector4f(1, 1, 1, 1),
+                        new Vector3f(0, 0, 0),
+                        new Matrix4f());
+
+        var rt = getRenderTarget();
+
+        try {
+            try (RenderPass renderPass = encoder.createRenderPass(
+                    () -> "axiom_gpu_texture",
+                    rt.getColorTextureView(),
+                    Optional.empty(),
+                    rt.getDepthTextureView(),
+                    OptionalDouble.empty())) {
+
+                renderPass.setUniform("u_Texture", view, batch.getSampler());
+                renderPass.setPipeline(pipeline);
+                if (applyScissor(renderPass)) {
+                    RenderSystem.bindDefaultUniforms(renderPass);
+                    renderPass.setUniform("DynamicTransforms", dynamicTransforms);
+                    renderPass.setVertexBuffer(0, vertices);
+                    renderPass.setIndexBuffer(indices, indexType);
+                    renderPass.drawIndexed(drawParams.indexCount(), 1, 0, 0, 0);
+                }
+            }
+            GpuFence fence = encoder.createFence();
+            vbm.setFence(fence);
+        } catch (Exception e) {
+            LOGGER.error("drawBatchWithView failed", e);
         } finally {
             encoder.submit();
         }
@@ -958,6 +1060,44 @@ public class RenderCore {
         batch.vertexUV(x0, y1, u0, v1, r, g, b, a);
         batch.vertexUV(x1, y0, u1, v0, r, g, b, a);
         batch.vertexUV(x1, y1, u1, v1, r, g, b, a);
+    }
+
+    public void addGpuTextureQuadWithPipeline(CompiledRenderPipeline pipeline,
+                                              GpuTextureView view, GpuSampler sampler,
+                                              float x, float y, float w, float h,
+                                              float u0, float v0, float u1, float v1,
+                                              int color) {
+        if (view == null || w <= 0 || h <= 0) return;
+
+        Batch batch = gpuViewBatches.computeIfAbsent(view, k -> {
+            Batch b = new Batch(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES);
+            b.setMvp(currentProjectionMatrix, currentModelViewMatrix);
+            return b;
+        });
+        batch.setSampler(sampler);
+        gpuViewSamplers.put(view, sampler);
+        if (pipeline != null) gpuViewPipelines.put(view, pipeline);
+
+        float r = ((color >> 16) & 0xFF) / 255f;
+        float g = ((color >>  8) & 0xFF) / 255f;
+        float b = ((color      ) & 0xFF) / 255f;
+        float a = ((color >> 24) & 0xFF) / 255f;
+
+        float x2 = x + w, y2 = y + h;
+        batch.vertexUV(x,  y,  u0, v0, r, g, b, a);
+        batch.vertexUV(x2, y,  u1, v0, r, g, b, a);
+        batch.vertexUV(x,  y2, u0, v1, r, g, b, a);
+        batch.vertexUV(x,  y2, u0, v1, r, g, b, a);
+        batch.vertexUV(x2, y,  u1, v0, r, g, b, a);
+        batch.vertexUV(x2, y2, u1, v1, r, g, b, a);
+    }
+
+    public void addGpuTextureQuad(GpuTextureView view, GpuSampler sampler,
+                                  float x, float y, float w, float h,
+                                  float u0, float v0, float u1, float v1,
+                                  int color) {
+        addGpuTextureQuadWithPipeline(uiTextured(), view, sampler,
+                x, y, w, h, u0, v0, u1, v1, color);
     }
 
 

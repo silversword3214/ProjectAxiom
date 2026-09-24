@@ -127,6 +127,7 @@ public final class ModuleManager {
 
         // Render
         add(new RearCamera());
+        add(new ShaderEsp());
         add(new WaypointModule());
         add(new ESP());
         add(new ChestESP());

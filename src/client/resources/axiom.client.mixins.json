@@ -19,15 +19,13 @@
     "accessors.CameraAccessor",
     "accessors.ClientboundEntityEventPacketAccessor",
     "accessors.EntityFireTicksAccessor",
-    "render.ScreenEffectRendererMixin",
-    "block.BlockMixin",
-    "block.BlockBehaviourMixin",
-    "block.CactusBlockMixin",
     "accessors.KeyMappingAccessor",
     "accessors.MinecraftAccessor",
-    "render.MinecraftMixin",
     "accessors.MultiPlayerGameModeAccessor",
     "accessors.ServerboundMovePlayerPacketAccessor",
+    "block.BlockBehaviourMixin",
+    "block.BlockMixin",
+    "block.CactusBlockMixin",
     "block.HoneyBlockMixin",
     "block.PowderSnowBlockMixin",
     "block.SlimeBlockMixin",
@@ -37,6 +35,7 @@
     "boat.BoatPhaseDismountMixin",
     "boat.BoatPhaseMixin",
     "entity.EntityMixin",
+    "entity.EntityRenderStateMixin",
     "entity.LivingEntityMixin",
     "entity.LocalPlayerMixin",
     "gui.AbstractContainerScreenMixin",
@@ -51,20 +50,23 @@
     "net.PlayerInfoMixin",
     "player.MixinServerPlayerGameMode",
     "player.PlayerAttackCooldownMixin",
+    "player.PlayerMixin",
     "render.FogRendererMixin",
     "render.FullbrightShadeMixin",
     "render.GameRendererMixin",
     "render.LevelRendererMixin",
     "render.LineSmoothingMixin",
+    "render.MinecraftMixin",
     "render.ParticleEngineMixin",
+    "render.ScreenEffectRendererMixin",
     "render.WindowMixin",
     "render.xray.XRayAmbientOcclusionMixin",
     "render.xray.XRayOcclusionMixin",
     "render.xray.XRayQuadViewImplMixin",
     "render.xray.XRayShouldDrawSideMixin",
     "render.xray.XRaySideCullingMixin",
-    "render.ScreenEffectRendererMixin",
-    "world.ClientWorldPropertiesMixin"
+    "world.ClientWorldPropertiesMixin",
+    "entity.EntityRenderDispatcherMixin"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -73,7 +75,5 @@
     "requireAnnotations": true
   },
   "mixins": [
-    "player.PlayerMixin"
-
   ]
 }

@@ -3,7 +3,7 @@
 layout(location = 0) in vec3 Position;
 layout(location = 1) in vec4 Color;
 
-layout(std140, binding = 0) uniform DynamicTransforms {
+layout(std140, binding = 0) uniform DynamicTransforms { // binding = 1?
     mat4 modelViewProjection;
     vec4 tint;
     vec3 lightDir0;

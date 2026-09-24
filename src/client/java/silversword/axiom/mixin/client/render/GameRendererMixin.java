@@ -20,8 +20,10 @@ public abstract class GameRendererMixin {
 
     @Inject(method = "close", at = @At("RETURN"))
     private void axiom$onGameRendererClose(CallbackInfo ci) {
+        silversword.axiom.client.render.rendersystem.axiomrenderer.shaderesp.ShaderEspRenderer.shutdown();
         RenderAPI.getInstance().close();
     }
+
 
     @Inject(
             method = "bobView",
@@ -74,8 +76,5 @@ public abstract class GameRendererMixin {
             cir.setReturnValue(override);
         }
     }
-
-
-
 }
 
