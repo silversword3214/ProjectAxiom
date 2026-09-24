@@ -2,7 +2,6 @@ package silversword.axiom.client.render.rendersystem.axiomrenderer.core;
 
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.renderpearl.api.device.GpuDevice;
 import com.mojang.renderpearl.api.pipeline.*;
 import net.minecraft.client.Minecraft;
@@ -42,7 +41,7 @@ public final class RenderPipelines {
                     )
                     .buildSnippet();
 
-    // Public pipeline fields – 26.3: CompiledRenderPipeline, ei RenderPipeline
+    // 26.3: kaikki pipelinet ovat CompiledRenderPipeline
     public static CompiledRenderPipeline WORLD_COLORED;
     public static CompiledRenderPipeline WORLD_COLORED_LINES;
     public static CompiledRenderPipeline WORLD_COLORED_DEPTH;
@@ -51,6 +50,7 @@ public final class RenderPipelines {
     public static CompiledRenderPipeline UI_COLORED_LINES;
     public static CompiledRenderPipeline UI_TEXTURED;
     public static CompiledRenderPipeline UI_TEXT;
+
     private static final List<PipelineBuilder> BUILDERS = new ArrayList<>();
 
     static {
@@ -142,18 +142,12 @@ public final class RenderPipelines {
                 .withDepthWrite(false)
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false));
-
     }
 
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath("projectaxiom", path);
     }
 
-    // ================================================================
-    //  ShaderSource-toteutus
-    //  (ShaderSource ei ole funktionaalinen rajapinta – 3 abstraktia
-    //   metodia: getShader, getInclude, close)
-    // ================================================================
     private static final class ResourceShaderSource implements ShaderSource {
         private final ResourceManager resources;
 
@@ -168,7 +162,7 @@ public final class RenderPipelines {
 
             var optional = resources.getResource(shaderId);
             if (optional.isEmpty()) {
-                LOGGER.error("Shader not found: " + shaderId);
+                LOGGER.error("Shader not found: {}", shaderId);
                 throw new RuntimeException("Missing shader: " + shaderId);
             }
             try (InputStream in = optional.get().open()) {
@@ -182,35 +176,34 @@ public final class RenderPipelines {
 
         @Override
         public ShaderSource.CachedIncludeSource getInclude(Identifier includeId) {
-            // Ei #include-tukea toistaiseksi
             return null;
         }
 
         @Override
         public void close() {
-            // Ei suljettavia resursseja
         }
     }
 
-    // ================================================================
-    //  rebuildAll
-    // ================================================================
     public static void rebuildAll() {
         GpuDevice device = RenderSystem.getDevice();
         ResourceManager resources = Minecraft.getInstance().getResourceManager();
-
         ShaderSource source = new ResourceShaderSource(resources);
 
         int index = 0;
         for (PipelineBuilder builder : BUILDERS) {
             RenderPipeline pipeline = builder.build();
 
-            // 26.3: compilePipeline on async → join() odottaa, finishCompile() purkaa
-            CompiledRenderPipeline.Pending pending = device
-                    .compilePipeline(pipeline, source, Runnable::run)
-                    .join();
+            CompiledRenderPipeline compiled;
+            try {
+                CompiledRenderPipeline.Pending pending = device
+                        .compilePipeline(pipeline, source, Runnable::run)
+                        .join();
+                compiled = pending.finishCompile();
+            } catch (Exception e) {
+                LOGGER.error("Pipeline compile failed: {}", pipeline.getLocation(), e);
+                compiled = null;
+            }
 
-            CompiledRenderPipeline compiled = pending.finishCompile();
             if (compiled == null) {
                 LOGGER.error("Pipeline compile returned null: {}", pipeline.getLocation());
                 index++;
@@ -218,17 +211,17 @@ public final class RenderPipelines {
             }
 
             switch (index) {
-                case 0  -> WORLD_COLORED             = compiled;
-                case 1  -> WORLD_COLORED_LINES       = compiled;
-                case 2  -> WORLD_COLORED_DEPTH       = compiled;
-                case 3  -> WORLD_COLORED_LINES_DEPTH = compiled;
-                case 4  -> UI_COLORED                = compiled;
-                case 5  -> UI_COLORED_LINES          = compiled;
-                case 6  -> UI_TEXTURED               = compiled;
-                case 7  -> UI_TEXT                   = compiled;
+                case 0 -> WORLD_COLORED             = compiled;
+                case 1 -> WORLD_COLORED_LINES       = compiled;
+                case 2 -> WORLD_COLORED_DEPTH       = compiled;
+                case 3 -> WORLD_COLORED_LINES_DEPTH = compiled;
+                case 4 -> UI_COLORED                = compiled;
+                case 5 -> UI_COLORED_LINES          = compiled;
+                case 6 -> UI_TEXTURED               = compiled;
+                case 7 -> UI_TEXT                   = compiled;
             }
             index++;
-            LOGGER.info("Rebuilt pipeline: {}", pipeline.getLocation());
+            LOGGER.info("Compiled pipeline: {}", pipeline.getLocation());
         }
     }
 }

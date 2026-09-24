@@ -18,6 +18,7 @@ import silversword.axiom.client.modules.ColorConfigurable;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.NamedColor;
+import silversword.axiom.client.render.font.CustomTextRenderer;
 import silversword.axiom.client.render.font.TextRenderer;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
@@ -36,6 +37,8 @@ import java.util.List;
 public final class BlockNametag extends AxiomMod implements ColorConfigurable, KeybindConfigurable {
     private final Minecraft mc = Minecraft.getInstance();
     private final RenderCore core = RenderAPI.getInstance().getCore();
+
+    private static Render2DEvent lastProcessedEvent = null;
 
     // --- Settings -------------------------------------------------
     private final SettingNumber scale;
@@ -120,9 +123,15 @@ public final class BlockNametag extends AxiomMod implements ColorConfigurable, K
         currentBlockName = Component.translatable(state.getBlock().getDescriptionId()).getString();
     }
 
+
+
     // --------------------------- 2D rendering -----------------------
     @Subscribe
     private void onRender2D(Render2DEvent event) {
+
+        if (event == lastProcessedEvent) return;
+        lastProcessedEvent = event;
+
         if (event.getGuiGraphics() == null) return;
         if (!isEnabled() || currentBlockPos == null || currentBlockName == null) return;
 
@@ -131,58 +140,67 @@ public final class BlockNametag extends AxiomMod implements ColorConfigurable, K
         double z = currentBlockPos.getZ() + 0.5;
         Vec3 worldPos = new Vec3(x, y, z);
 
-        Vec3 screenPos = NametagUtils.worldToScreen(worldPos);
+        Vec3 screenPos = NametagUtils.worldToScreen(
+                worldPos,
+                event.getScreenWidth(),
+                event.getScreenHeight());
         if (screenPos == null) return;
 
         double screenX = screenPos.x;
         double screenY = screenPos.y;
         double finalScale = scale.getValue();
 
-        double textWidth = TextUtils.getWidth(currentBlockName) * finalScale;
-        double textHeight = TextUtils.getHeight() * finalScale;
+        TextRenderer text = TextRenderer.get();
+        text.begin(finalScale, false, true);
 
-        double padding = 4.0 * finalScale;
-        double bgWidth = textWidth + (padding * 2);
+        // TÄRKEÄÄ: mittaa vasta begin():in jälkeen, jotta sama fontti ja skaala
+        // kuin renderöinnissä.
+        double textWidth  = text.getWidth(currentBlockName, false);
+        double textHeight = text.getHeight(false);
+
+        double padding  = 4.0 * finalScale;
+        double bgWidth  = textWidth  + (padding * 2);
         double bgHeight = textHeight + (padding * 2);
 
         double bgX = screenX - (bgWidth / 2.0);
         double bgY = screenY - (bgHeight / 2.0);
 
-        drawBackground(bgX, bgY, bgWidth, bgHeight, finalScale);
+        drawBackground(event, bgX, bgY, bgWidth, bgHeight, finalScale);
 
-        TextRenderer text = TextRenderer.get();
-        text.begin(finalScale, false, true);
-        text.render(
-                currentBlockName,
-                (float)(bgX + padding),
-                (float)(bgY + padding),
-                textColor.getCurrentColor(),
-                false
-        );
+        if (text instanceof CustomTextRenderer ctr) {
+            ctr.render(event.getGuiGraphics(), currentBlockName,
+                    bgX + padding, bgY + padding,
+                    textColor.getCurrentColor(), false);
+        } else {
+            text.render(currentBlockName, bgX + padding, bgY + padding,
+                    textColor.getCurrentColor(), false);
+        }
 
         text.end();
     }
 
-    private void drawBackground(double x, double y, double width, double height, double finalScale) {
+    private void drawBackground(Render2DEvent event, double x, double y,
+                                double width, double height, double finalScale) {
         String mode = bgMode.getMode();
         if (mode.equals("None")) return;
 
+        var r = event.getRenderer();
         int bgArgb = background.getCurrentColor().getARGB();
         int outlineArgb = outline.getCurrentColor().getARGB();
         double radius = 3.0 * finalScale;
         double thickness = Math.max(1.0, finalScale);
 
         if (mode.equals("Filled")) {
-            core.addRect2D((float) x, (float) y, (float) width, (float) height, bgArgb);
+            r.drawRect((float)x, (float)y, (float)width, (float)height, bgArgb);
         } else if (mode.equals("Outline")) {
-            // Piirretään reunus neljänä viivana
-            core.addRectOutline2D((float) x, (float) y, (float) width, (float) height, (float) thickness, outlineArgb);
+            r.drawRectOutline((float)x, (float)y, (float)width, (float)height,
+                    (float)thickness, outlineArgb);
         } else if (mode.equals("Rounded")) {
-            core.addRoundedRect((float) x, (float) y, (float) width, (float) height, (float) radius, bgArgb);
+            r.drawRoundedRect(x, y, width, height, radius, bgArgb);
         }
 
         if (!mode.equals("Outline") && outline.getCurrentColor().getAlpha() > 0) {
-            core.addRoundedRectOutline((float) x, (float) y, (float) width, (float) height, (float) radius, (float) thickness, outlineArgb);
+            r.drawRoundedRectOutline(x, y, width, height, radius, outlineArgb, thickness);
         }
     }
 

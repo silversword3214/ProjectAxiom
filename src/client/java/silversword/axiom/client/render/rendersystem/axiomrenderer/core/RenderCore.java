@@ -1,10 +1,6 @@
 package silversword.axiom.client.render.rendersystem.axiomrenderer.core;
 
-
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
-import com.mojang.blaze3d.vertex.MeshData;
+// ─── RenderPearl API ───────────────────────────────────────────────
 import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
@@ -15,15 +11,30 @@ import com.mojang.renderpearl.api.pipeline.IndexType;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
+
+// ─── Blaze3D — Minecraft-sillat (pakollisia, ei RenderPearl-vastineita) ───
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.blaze3d.vertex.MeshData;
+
+
+// ─── Minecraft ─────────────────────────────────────────────────────
 import com.mojang.renderpearl.api.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
+
+// ─── JOML ──────────────────────────────────────────────────────────
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+
+// ─── SLF4J ─────────────────────────────────────────────────────────
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+// ─── Project ───────────────────────────────────────────────────────
 import silversword.axiom.client.render.rendersystem.utils.texture.Texture;
 
 import java.util.*;
@@ -31,8 +42,7 @@ import java.util.*;
 public class RenderCore {
     private static final Logger LOGGER = LoggerFactory.getLogger(RenderCore.class);
 
-    /** Anti-aliasing -pehmeän reunan leveys pikseleinä. */
-    private static final float AA_WIDTH = 1.0f;
+    private static final float AA_WIDTH = 0.5f;
 
     private final Map<CompiledRenderPipeline, Batch> batches = new HashMap<>();
     private final Map<Texture, Batch> textBatches = new HashMap<>();
@@ -45,11 +55,10 @@ public class RenderCore {
     private boolean scissorEnabled = false;
     private int scissorX, scissorY, scissorW, scissorH;
 
-    public RenderCore() {
-    }
+    public RenderCore() {}
 
     // ================================================================
-    //  Pipeline-apurit: hakevat pipelinen ja rebuildaavat tarvittaessa
+    //  Pipeline-apurit
     // ================================================================
 
     private static CompiledRenderPipeline uiColored() {
@@ -139,55 +148,14 @@ public class RenderCore {
     // ================================================================
 
     private void drawBatch(CompiledRenderPipeline pipeline, Batch batch) {
-        if (pipeline == null) {
-            LOGGER.error("[drawBatch] pipeline NULL, {} verts", batch.vertexCount());
-            return;
-        }
+        if (pipeline == null) return;
 
         MeshData mesh = buildMeshFromBatch(batch);
-        if (mesh == null) {
-            LOGGER.warn("[drawBatch] mesh null");
-            return;
-        }
+        if (mesh == null) return;
 
         MeshData.DrawState drawParams = mesh.drawState();
         VertexFormat format = drawParams.format();
         int vertexBufferSize = drawParams.vertexCount() * format.getVertexSize();
-
-        // ============ DEBUG ALKAA ============
-        var rt = Minecraft.getInstance().gameRenderer.mainRenderTarget();
-        LOGGER.info("[DBG] RT size={}x{} colorTex={} depthTex={}",
-                rt.width, rt.height,
-                rt.getColorTextureView() != null ? "OK" : "NULL",
-                rt.getDepthTextureView() != null ? "OK" : "NULL");
-        LOGGER.info("[DBG] batch mode={} verts={} idx={} format={} vSize={} bufSize={}",
-                batch.getMode(), drawParams.vertexCount(), drawParams.indexCount(),
-                format, format.getVertexSize(), vertexBufferSize);
-
-        List<float[]> verts = batch.getVertices();
-        if (!verts.isEmpty()) {
-            float[] v0 = verts.get(0);
-            StringBuilder sb = new StringBuilder("[");
-            for (float f : v0) sb.append(String.format("%.2f ", f));
-            sb.append("]");
-            LOGGER.info("[DBG] first vertex: {}", sb);
-        }
-
-        Matrix4f mvp = new Matrix4f(currentProjectionMatrix).mul(currentModelViewMatrix);
-        LOGGER.info("[DBG] proj={}", currentProjectionMatrix);
-        LOGGER.info("[DBG] view={}", currentModelViewMatrix);
-
-        if (!verts.isEmpty()) {
-            float[] v0 = verts.get(0);
-            org.joml.Vector4f p = new org.joml.Vector4f(v0[0], v0[1], v0[2], 1.0f).mul(mvp);
-            if (p.w != 0) {
-                LOGGER.info("[DBG] v0 in NDC: ({}, {}, {}) w={}",
-                        p.x / p.w, p.y / p.w, p.z / p.w, p.w);
-            } else {
-                LOGGER.warn("[DBG] v0 w=0! Muhaha, mvp rikki");
-            }
-        }
-        // ============ DEBUG LOPPUU ============
 
         VertexBufferManager vbm = getBufferManager(pipeline);
         vbm.ensureCapacity(vertexBufferSize);
@@ -200,8 +168,8 @@ public class RenderCore {
                 RenderSystem.getSequentialBuffer(batch.getMode());
         GpuBuffer indices = indexBuffer.getBuffer(drawParams.indexCount());
         IndexType indexType = indexBuffer.type();
-        LOGGER.info("[DBG] indexType={} indices={}", indexType, indices);
 
+        Matrix4f mvp = new Matrix4f(currentProjectionMatrix).mul(currentModelViewMatrix);
         GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(
                 mvp,
                 new Vector4f(1.0f, 1.0f, 1.0f, 1.0f),
@@ -219,6 +187,8 @@ public class RenderCore {
             }
         }
 
+        var rt = Minecraft.getInstance().gameRenderer.mainRenderTarget();
+
         try {
             try (RenderPass renderPass = encoder.createRenderPass(
                     () -> "axiomrenderapi_draw",
@@ -232,18 +202,15 @@ public class RenderCore {
                 }
 
                 renderPass.setPipeline(pipeline);
-                boolean scissorOK = applyScissor(renderPass);
-                LOGGER.info("[DBG] scissorOK={}", scissorOK);
-                if (scissorOK) {
+                if (applyScissor(renderPass)) {
                     RenderSystem.bindDefaultUniforms(renderPass);
                     renderPass.setUniform("DynamicTransforms", dynamicTransforms);
                     renderPass.setVertexBuffer(0, vertices);
                     renderPass.setIndexBuffer(indices, indexType);
                     renderPass.drawIndexed(drawParams.indexCount(), 1, 0, 0, 0);
-                    LOGGER.info("[DBG] drawIndexed KUTSUTTU idx={}", drawParams.indexCount());
                 }
             } catch (Exception e) {
-                LOGGER.error("[DBG] RENDER PASS VIRHE", e);
+                LOGGER.error("Error during render pass", e);
             }
 
             GpuFence fence = encoder.createFence();
@@ -251,6 +218,7 @@ public class RenderCore {
         } finally {
             encoder.submit();
         }
+
         mesh.close();
         vbm.rotate();
     }
@@ -297,9 +265,7 @@ public class RenderCore {
         int glW = clampedMaxX - clampedMinX;
         int glH = clampedMaxY - clampedMinY;
 
-        if (glW <= 0 || glH <= 0) {
-            return false;
-        }
+        if (glW <= 0 || glH <= 0) return false;
 
         renderPass.enableScissor(glX, glY, glW, glH);
         return true;
@@ -347,12 +313,14 @@ public class RenderCore {
         GpuTextureView textureView = texture.textureView();
         GpuSampler sampler = texture.sampler();
 
+        var rt = Minecraft.getInstance().gameRenderer.mainRenderTarget();
+
         try {
             try (RenderPass renderPass = encoder.createRenderPass(
                     () -> "axiomrenderapi_text",
-                    Minecraft.getInstance().gameRenderer.mainRenderTarget().getColorTextureView(),
+                    rt.getColorTextureView(),
                     Optional.empty(),
-                    Minecraft.getInstance().gameRenderer.mainRenderTarget().getDepthTextureView(),
+                    rt.getDepthTextureView(),
                     OptionalDouble.empty())) {
 
                 if (textureView != null) {
@@ -361,7 +329,6 @@ public class RenderCore {
 
                 renderPass.setPipeline(pipeline);
                 if (applyScissor(renderPass)) {
-                    renderPass.setPipeline(pipeline);
                     RenderSystem.bindDefaultUniforms(renderPass);
                     renderPass.setUniform("DynamicTransforms", dynamicTransforms);
                     renderPass.setVertexBuffer(0, vertices);
@@ -386,11 +353,11 @@ public class RenderCore {
         if (batch.vertexCount() == 0) return null;
         BufferBuilder builder = new BufferBuilder(allocator, batch.getMode(), batch.getFormat());
         for (float[] v : batch.getVertices()) {
-            if (v.length == 9) { // POS2_UV_COLOR
+            if (v.length == 9) {
                 builder.addVertex(v[0], v[1], v[2])
                         .setUv(v[3], v[4])
                         .setColor(v[5], v[6], v[7], v[8]);
-            } else { // POS3_COLOR, POS2_COLOR
+            } else {
                 builder.addVertex(v[0], v[1], v[2])
                         .setColor(v[3], v[4], v[5], v[6]);
             }
@@ -613,7 +580,6 @@ public class RenderCore {
     public void addRect2D(float x, float y, float width, float height, int color) {
         CompiledRenderPipeline pipeline = uiColored();
         if (pipeline == null) return;
-
         Batch batch = batches.computeIfAbsent(pipeline,
                 k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
         float r = ((color >> 16) & 0xFF) / 255f;
@@ -645,7 +611,6 @@ public class RenderCore {
         batch.vertex2D(x2, y2, r, g, b, a);
     }
 
-    /** AA-viiva 2D-tasossa. */
     public void addLine2D(float x1, float y1, float x2, float y2, float thickness, int color) {
         if (thickness <= 0) return;
         CompiledRenderPipeline pipeline = uiColored();
@@ -699,8 +664,6 @@ public class RenderCore {
         batch.vertex2D(p2d_x, p2d_y, r, g, b, 0f);
     }
 
-    // --- Ympyrä (AA) ---
-
     public void addCircle(float cx, float cy, float radius, int color) {
         if (radius <= 0) return;
         CompiledRenderPipeline pipeline = uiColored();
@@ -736,8 +699,6 @@ public class RenderCore {
         List<float[]> innerB = buildCircleBoundary(cx, cy, innerR, -1f, segs);
         emitRing(batch, outerB, innerB, r, g, b, a);
     }
-
-    // --- Pyöristetty suorakaide (AA) ---
 
     public void addRoundedRect(float x, float y, float w, float h, float radius, int color) {
         if (w <= 0 || h <= 0) return;
@@ -825,10 +786,6 @@ public class RenderCore {
         emitRing(batch, outerB, innerB, r, g, b, a);
     }
 
-    // ================================================================
-    //  Bätšin apufunktiot
-    // ================================================================
-
     private void addQuad2D(Batch batch, float x, float y, float w, float h, float r, float g, float b, float a) {
         float x2 = x + w;
         float y2 = y + h;
@@ -838,13 +795,6 @@ public class RenderCore {
         batch.vertex2D(x, y2, r, g, b, a);
         batch.vertex2D(x2, y, r, g, b, a);
         batch.vertex2D(x2, y2, r, g, b, a);
-    }
-
-    private void addTriangle2D(Batch batch, float x1, float y1, float x2, float y2, float x3, float y3,
-                               float r, float g, float b, float a) {
-        batch.vertex2D(x1, y1, r, g, b, a);
-        batch.vertex2D(x2, y2, r, g, b, a);
-        batch.vertex2D(x3, y3, r, g, b, a);
     }
 
     // ================================================================
@@ -950,23 +900,9 @@ public class RenderCore {
         bufferManagers.clear();
     }
 
-    public boolean isScissorEnabled() {
-        return scissorEnabled;
-    }
-
-    public int getScissorX() {
-        return scissorX;
-    }
-
-    public int getScissorY() {
-        return scissorY;
-    }
-
-    public int getScissorW() {
-        return scissorW;
-    }
-
-    public int getScissorH() {
-        return scissorH;
-    }
+    public boolean isScissorEnabled() { return scissorEnabled; }
+    public int getScissorX() { return scissorX; }
+    public int getScissorY() { return scissorY; }
+    public int getScissorW() { return scissorW; }
+    public int getScissorH() { return scissorH; }
 }

@@ -3,36 +3,23 @@ package silversword.axiom.mixin.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.render.NoHurtCam;
-import silversword.axiom.client.modules.render.NoOverlay;
 import silversword.axiom.client.modules.render.NoViewBobbingTilt;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
 
 @Mixin(GameRenderer.class)
 public abstract class GameRendererMixin {
 
-    /**
-     * Close rendering.
-     */
     @Inject(method = "close", at = @At("RETURN"))
     private void axiom$onGameRendererClose(CallbackInfo ci) {
         RenderAPI.getInstance().close();
     }
 
-    /**
-     * View bobbing.
-     *
-     * 26.2:
-     * bobView(CameraRenderState, PoseStack)
-     */
     @Inject(
             method = "bobView",
             at = @At("HEAD"),
@@ -51,12 +38,6 @@ public abstract class GameRendererMixin {
         }
     }
 
-    /**
-     * Hurt camera.
-     *
-     * 26.2:
-     * bobHurt(CameraRenderState, PoseStack)
-     */
     @Inject(
             method = "bobHurt",
             at = @At("HEAD"),

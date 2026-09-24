@@ -2,6 +2,7 @@ package silversword.axiom.client.render.rendersystem.utils.render;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.phys.Vec3;
@@ -19,8 +20,34 @@ public class RenderUtils {
 
     public static final Matrix4f projection = new Matrix4f();
 
+    public static Matrix4f getBobCorrection(float tickDelta) {
+        Minecraft mc = Minecraft.getInstance();
+        Matrix4f bobCorrection = new Matrix4f();
+
+        NoViewBobbingTilt bobMod = ModuleManager.getInstance().getModule(NoViewBobbingTilt.class);
+        boolean bobbingCancelledByMod = (bobMod != null && bobMod.isEnabled());
+
+        if (mc.getCameraEntity() instanceof AbstractClientPlayer player) {
+            if (mc.options.bobView().get() && !bobbingCancelledByMod) {
+                var state = player.avatarState();
+                float g = state.getBackwardsInterpolatedWalkDistance(tickDelta);
+                float h = state.getInterpolatedBob(tickDelta);
+
+                float translateX = (float) Math.sin(g * (float) Math.PI) * h * 0.5F;
+                float translateY = Math.abs((float) Math.cos(g * (float) Math.PI) * h);
+                float rotateZ    = (float) Math.sin(g * (float) Math.PI) * h * 3.0F;
+                float rotateX    = Math.abs((float) Math.cos(g * (float) Math.PI - 0.2F) * h) * 5.0F;
+
+                bobCorrection.rotateX(rotateX * 0.017453292F);
+                bobCorrection.rotateZ(rotateZ * 0.017453292F);
+                bobCorrection.translate(translateX, -translateY, 0.0F);
+            }
+        }
+        return bobCorrection;
+    }
+
     public static Matrix4f getProjectionMatrix(float tickDelta) {
-        GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
+        var gameRenderer = Minecraft.getInstance().gameRenderer;
         Camera camera = gameRenderer.mainCamera();
         float fov = camera.getFov();
         var window = Minecraft.getInstance().getWindow();
@@ -33,44 +60,20 @@ public class RenderUtils {
         float tickDelta = getTickDelta();
 
         Matrix4f matrix = new Matrix4f();
-        Matrix4f bobCorrection = new Matrix4f();
+        Matrix4f bobCorrection = getBobCorrection(tickDelta);
 
         NoViewBobbingTilt bobMod = ModuleManager.getInstance().getModule(NoViewBobbingTilt.class);
         NoHurtCam hurtMod = ModuleManager.getInstance().getModule(NoHurtCam.class);
+        boolean isHurtTiltCancelled = (hurtMod != null && hurtMod.isEnabled())
+                || (bobMod != null && bobMod.isEnabled());
 
-
-        boolean bobbingCancelledByMod = (bobMod != null && bobMod.isEnabled());
-
-        boolean isHurtTiltCancelled = (hurtMod != null && hurtMod.isEnabled()) ||
-                (bobMod != null && bobMod.isEnabled());
-
-
-        if (mc.getCameraEntity() instanceof net.minecraft.client.player.AbstractClientPlayer player) {
-
-            // VIEW BOBBING
-            if (mc.options.bobView().get() && !bobbingCancelledByMod) {
-                var state = player.avatarState();
-                float g = state.getBackwardsInterpolatedWalkDistance(tickDelta);
-                float h = state.getInterpolatedBob(tickDelta);
-
-                float translateX = (float)Math.sin(g * (float)Math.PI) * h * 0.5F;
-                float translateY = Math.abs((float)Math.cos(g * (float)Math.PI) * h);
-                float rotateZ = (float)Math.sin(g * (float)Math.PI) * h * 3.0F;
-                float rotateX = Math.abs((float)Math.cos(g * (float)Math.PI - 0.2F) * h) * 5.0F;
-
-                bobCorrection.rotateX(rotateX * 0.017453292F);
-                bobCorrection.rotateZ(rotateZ * 0.017453292F);
-                bobCorrection.translate(translateX, -translateY, 0.0F);
-            }
-
-            // HURT TILT
+        if (mc.getCameraEntity() instanceof AbstractClientPlayer player) {
             if (mc.options.damageTiltStrength().get() > 0 && !isHurtTiltCancelled) {
                 float g = (float) player.hurtTime - tickDelta;
                 if (g >= 0.0F) {
                     g /= (float) player.hurtDuration;
                     g = net.minecraft.util.Mth.sin(g * g * g * g * (float) Math.PI);
                     float h = player.getHurtDir();
-
                     float strength = mc.options.damageTiltStrength().get().floatValue();
 
                     matrix.rotateY(-h * 0.017453292F);
@@ -83,15 +86,17 @@ public class RenderUtils {
         matrix.mul(bobCorrection);
         matrix.rotate(camera.rotation().conjugate());
 
-        net.minecraft.world.phys.Vec3 pos = camera.position();
+        Vec3 pos = camera.position();
         matrix.translate(-(float) pos.x, -(float) pos.y, -(float) pos.z);
 
         return matrix;
     }
 
+
     public static float getTickDelta() {
         return Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
     }
+
 
     // Screen center
     public static void updateScreenCenter(Matrix4f projection, Matrix4f view) {

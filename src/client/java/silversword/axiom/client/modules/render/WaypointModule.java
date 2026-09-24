@@ -11,8 +11,6 @@ import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.waypoints.Waypoint;
 import silversword.axiom.client.modules.waypoints.WaypointManagerWindow;
 import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.render.rendersystem.utils.render.NametagUtils;
@@ -21,7 +19,6 @@ import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingMode;
 import silversword.axiom.client.setting.SettingNumber;
 import silversword.axiom.client.utils.render.TextUtils;
-import org.joml.Matrix4f;
 
 public final class WaypointModule extends AxiomMod {
     private final Minecraft mc = Minecraft.getInstance();
@@ -66,7 +63,6 @@ public final class WaypointModule extends AxiomMod {
         if (event.getGuiGraphics() == null) return;
         if (!isEnabled() || !showWaypoints.get() || mc.level == null || mc.player == null) return;
 
-        RenderCore core = RenderAPI.getInstance().getCore();
         double maxDist = maxRenderDistance.getValue();
 
         for (Waypoint wp : WaypointManager.getInstance().getAll()) {
@@ -75,80 +71,86 @@ public final class WaypointModule extends AxiomMod {
             double dist = mc.player.position().distanceTo(new Vec3(wp.x, wp.y, wp.z));
             if (dist > maxDist) continue;
 
-            // Käytetään NametagUtilsia maailmapisteen muuntamiseen (huomioi North-bugin ja FOV:n)
             Vec3 worldPos = new Vec3(wp.x, wp.y + 0.5, wp.z);
-            Vec3 screenPos = NametagUtils.worldToScreen(worldPos);
+            Vec3 screenPos = NametagUtils.worldToScreen(
+                    worldPos,
+                    event.getScreenWidth(),
+                    event.getScreenHeight());
 
-            if (screenPos == null) continue; // Piste on kameran takana
+            if (screenPos == null) continue;
 
-            // screenPos.z sisältää w-arvon (etäisyyden), jota voidaan käyttää lisäskaalaukseen jos halutaan
-            renderWaypointPin(core, wp, screenPos.x, screenPos.y, dist, wp.scale * scale.getValue());
+            renderWaypointPin(event, wp, screenPos.x, screenPos.y, dist, wp.scale * scale.getValue());
         }
     }
 
-    private void renderWaypointPin(RenderCore core, Waypoint wp, double screenX, double screenY, double dist, double finalScale) {
-        // 1. Haetaan dynaamiset mitat (skaalalla 1.0)
+    private void renderWaypointPin(Render2DEvent event, Waypoint wp,
+                                   double screenX, double screenY,
+                                   double dist, double finalScale) {
+        var r = event.getRenderer();
+
+        // 1. Dynaamiset mitat
         String letter = wp.name.isEmpty() ? "?" : wp.name.substring(0, 1).toUpperCase();
-        double textWidth = TextUtils.getWidth(letter);
+        double textWidth  = TextUtils.getWidth(letter);
         double textHeight = TextUtils.getHeight();
         double padding = 2.0 * finalScale;
 
         double pinWidth, pinHeight;
         if (wp.shape.equals("Circle")) {
-            // Ympyrän halkaisija suurimman mitan mukaan
             double baseSize = Math.max(textWidth, textHeight) * finalScale;
             pinWidth = pinHeight = baseSize + padding * 2;
         } else {
-            pinWidth = (textWidth * finalScale) + padding * 2;
+            pinWidth  = (textWidth  * finalScale) + padding * 2;
             pinHeight = (textHeight * finalScale) + padding * 2;
         }
 
-        double pinX = screenX - pinWidth / 2;
+        double pinX = screenX - pinWidth  / 2;
         double pinY = screenY - pinHeight / 2;
 
-        // 2. Tausta ja reunus
+        // 2. Tausta
         if (wp.showBg) {
             if (wp.shape.equals("Circle")) {
-                core.addCircle((float) screenX, (float) screenY, (float) (pinWidth / 2), wp.bgColor);
+                r.drawCircle(screenX, screenY, pinWidth / 2, wp.bgColor);
             } else if (wp.shape.equals("Square")) {
-                core.addRect2D((float) pinX, (float) pinY, (float) pinWidth, (float) pinHeight, wp.bgColor);
+                r.drawRect((float) pinX, (float) pinY,
+                        (float) pinWidth, (float) pinHeight, wp.bgColor);
             } else {
-                float radius = (float) (3.0 * finalScale);
-                core.addRoundedRect((float) pinX, (float) pinY, (float) pinWidth, (float) pinHeight, radius, wp.bgColor);
+                double radius = 3.0 * finalScale;
+                r.drawRoundedRect(pinX, pinY, pinWidth, pinHeight, radius, wp.bgColor);
             }
         }
 
+        // 3. Reunus
         if (wp.showOutline) {
-            float thickness = (float) Math.max(1.0, finalScale);
+            double thickness = Math.max(1.0, finalScale);
             if (wp.shape.equals("Circle")) {
-                core.addCircleOutline((float) screenX, (float) screenY, (float) (pinWidth / 2), thickness, wp.outlineColor);
+                r.drawCircleOutline(screenX, screenY, pinWidth / 2, wp.outlineColor, thickness);
             } else if (wp.shape.equals("Square")) {
-                core.addRectOutline2D((float) pinX, (float) pinY, (float) pinWidth, (float) pinHeight, thickness, wp.outlineColor);
+                r.drawRectOutline((float) pinX, (float) pinY,
+                        (float) pinWidth, (float) pinHeight,
+                        (float) thickness, wp.outlineColor);
             } else {
-                float radius = (float) (3.0 * finalScale);
-                core.addRoundedRectOutline((float) pinX, (float) pinY, (float) pinWidth, (float) pinHeight, radius, thickness, wp.outlineColor);
+                double radius = 3.0 * finalScale;
+                r.drawRoundedRectOutline(pinX, pinY, pinWidth, pinHeight,
+                        radius, wp.outlineColor, thickness);
             }
         }
 
-        // 3. Pääkirjain (Keskitetty pinniin)
+        // 4. Pääkirjain — keskitetty pinniin
         TextRenderer text = TextRenderer.get();
         text.begin(finalScale, false, true);
 
-        // Lasketaan tekstin alkuperä niin että se keskittyy täsmälleen screenX/Y pisteeseen
-        float letterX = (float) (screenX - (textWidth * finalScale) / 2.0);
+        float letterX = (float) (screenX - (textWidth  * finalScale) / 2.0);
         float letterY = (float) (screenY - (textHeight * finalScale) / 2.0);
 
-        // Kääritään wp.color (int) Color-olioon virheiden välttämiseksi
         text.render(letter, letterX, letterY, new Color(wp.color), true);
         text.end();
 
-        // 4. Etäisyysteksti
+        // 5. Etäisyysteksti
         if (showDistance.get()) {
             String distText = (int) Math.round(dist) + "m";
             double distScale = finalScale * 0.8;
 
             double distW = TextUtils.getWidth(distText) * distScale;
-            double distH = TextUtils.getHeight() * distScale;
 
             float dX = (float) (screenX - distW / 2.0);
             float dY = (float) (pinY + pinHeight + 2 * finalScale);

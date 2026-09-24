@@ -5,19 +5,15 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.core.Direction;
-import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.level.ClipContext;
-import org.joml.Matrix4f;
-import org.joml.Vector4f;
 import silversword.axiom.client.event.player.UseBlockEvent;
 import silversword.axiom.client.event.render.Render2DEvent;
 import silversword.axiom.client.event.render.Render3DEvent;
@@ -26,12 +22,11 @@ import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.render.rendersystem.utils.misc.ShapeModeEnum;
+import silversword.axiom.client.render.rendersystem.utils.render.NametagUtils;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingMode;
@@ -45,7 +40,6 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
     public static GhostHand INSTANCE;
 
     private final Minecraft mc = Minecraft.getInstance();
-    private final RenderCore core = RenderAPI.getInstance().getCore();
 
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
     private final SettingNumber range;
@@ -76,7 +70,6 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
         renderMode = new SettingMode("Render Mode", new String[]{"Outline", "Filled", "Both"}, "Outline");
         maxBlocks = new SettingNumber("Max Blocks", 10, 200, 10, 50);
 
-        // Nametag-asetukset
         nametagEnabled = new SettingBoolean("Show Block Name", true);
         nametagScale = new SettingNumber("Nametag Scale", 0.5, 3.0, 0.1, 1.5);
         nametagOffset = new SettingNumber("Nametag Offset", -0.50, 2.0, 0.1, -0.20);
@@ -112,9 +105,7 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
         BlockState state = mc.level.getBlockState(pos);
         BlockEntity entity = mc.level.getBlockEntity(pos);
 
-        if (entity != null) {
-            return true;
-        }
+        if (entity != null) return true;
 
         net.minecraft.world.level.block.Block block = state.getBlock();
 
@@ -190,11 +181,11 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
                 if (shape.isEmpty()) shape = state.getCollisionShape(mc.level, pos);
                 if (!shape.isEmpty()) {
                     BlockHitResult hit = shape.clip(start, end, pos);
-                    if (hit != null) {
-                        return hit;
-                    }
+                    if (hit != null) return hit;
                 }
-                return new BlockHitResult(point, Direction.getApproximateNearest(direction.x, direction.y, direction.z), pos, false);
+                return new BlockHitResult(point,
+                        Direction.getApproximateNearest(direction.x, direction.y, direction.z),
+                        pos, false);
             }
         }
         return null;
@@ -221,7 +212,8 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
                     mc.player
             );
             BlockHitResult normalHit = (BlockHitResult) mc.level.clip(context);
-            if (normalHit != null && normalHit.getType() == HitResult.Type.BLOCK && normalHit.getBlockPos().equals(pos)) {
+            if (normalHit != null && normalHit.getType() == HitResult.Type.BLOCK
+                    && normalHit.getBlockPos().equals(pos)) {
                 return;
             }
         }
@@ -261,11 +253,11 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
             int sideColor;
 
             if (pos.equals(currentTarget)) {
-                lineColor = 0xFFFFFF00; // 255,255,0
-                sideColor = 0x32FFFF00; // 50,255,255,0
+                lineColor = 0xFFFFFF00;
+                sideColor = 0x32FFFF00;
             } else {
                 lineColor = 0xFFFFFFFF;
-                sideColor = 0x1EFFFFFF; // 30,255,255,255
+                sideColor = 0x1EFFFFFF;
             }
 
             ShapeModeEnum mode;
@@ -279,7 +271,10 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
         }
     }
 
-    // Nametag piirretään 2D-eventissä
+    // ═══════════════════════════════════════════════════════════════
+    //  2D nametag — käyttää event.getRenderer() ja event.getGuiGraphics()
+    // ═══════════════════════════════════════════════════════════════
+
     @Subscribe
     private void onRender2D(Render2DEvent event) {
         if (event.getGuiGraphics() == null) return;
@@ -295,10 +290,8 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
         BlockState state = mc.level.getBlockState(pos);
         if (state.isAir()) return;
 
-        // 1. Haetaan blokin nimi
         String blockName = state.getBlock().getName().getString();
 
-        // 2. Lasketaan maailman koordinaatit
         VoxelShape shape = state.getShape(mc.level, pos);
         double maxY = shape.isEmpty() ? 1.0 : shape.bounds().maxY;
 
@@ -306,73 +299,65 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
         double worldY = pos.getY() + maxY + nametagOffset.getValue();
         double worldZ = pos.getZ() + 0.5;
 
-        // 3. Muunnos ruudulle
-        Vec3 screenPos = silversword.axiom.client.render.rendersystem.utils.render.NametagUtils.worldToScreen(new Vec3(worldX, worldY, worldZ));
+        Vec3 screenPos = NametagUtils.worldToScreen(
+                new Vec3(worldX, worldY, worldZ),
+                event.getScreenWidth(),
+                event.getScreenHeight());
         if (screenPos == null) return;
 
-        double distance = screenPos.z; // w-arvo
+        double distance = screenPos.z;
 
-        // 4. Skaalaus etäisyyden mukaan
         double distanceScale = 1.0 / Math.max(1.0, distance * 0.2);
         double finalScale = nametagScale.getValue() * distanceScale;
         finalScale = Math.max(finalScale, 0.4);
 
-        // 5. Mitat dynaamisella TextUtilsilla
-        // Huom: TextUtils palauttaa koon skaalalla 1.0, joten kerrotaan se finalScalella
         double textWidth = TextUtils.getWidth(blockName) * finalScale;
         double textHeight = TextUtils.getHeight() * finalScale;
 
-        double padding = 4.0 * finalScale; // Skaalataan myös padding
+        double padding = 4.0 * finalScale;
         double bgWidth = textWidth + (padding * 2);
         double bgHeight = textHeight + (padding * 2);
 
-        // Keskitys ruudulla
         double renderX = screenPos.x - (bgWidth / 2.0);
         double renderY = screenPos.y - (bgHeight / 2.0);
 
-        // 6. Piirtäminen
-        // Asetetaan ortografinen matriisi koko ruudun kokoiseksi
-        core.beginFrame(new Matrix4f().setOrtho(0, (float)event.getScreenWidth(), (float)event.getScreenHeight(), 0, -1000, 1000), new Matrix4f().identity());
+        // Piirretään tausta Renderer2D:llä → menee oikeaan HUD-targettiin
+        drawBackground(event, renderX, renderY, bgWidth, bgHeight, finalScale);
 
-        // Piirretään tausta (oletetaan että drawBackground käyttää näitä koordinaatteja)
-        drawBackground(renderX, renderY, bgWidth, bgHeight, finalScale);
-
-        // Piirretään teksti
         TextRenderer tr = TextRenderer.get();
-
-        // Käytetään tr.begin(finalScale), jolloin TextRenderer hoitaa tekstin koon.
-        // Koska textWidth/Height laskettiin TextUtilsilla (joka huomioi 1.5/2.3 eron),
-        // teksti istuu täydellisesti laatikon sisään.
         tr.begin(finalScale, false, true);
-
-        // Piirretään teksti paddingin verran sisäänpäin.
-        // Huom: Koska tr.begin hoitaa skaalauksen, render-kutsun koordinaattien
-        // on oltava "maailman" koordinaatteja suhteessa skaalaan TAI meidän on
-        // annettava ne suoraan ruutupisteinä.
-        tr.render(blockName, (float)(renderX + padding), (float)(renderY + padding), textColor.getCurrentColor(), false);
-
+        tr.render(blockName,
+                (float)(renderX + padding),
+                (float)(renderY + padding),
+                textColor.getCurrentColor(),
+                false);
         tr.end();
     }
 
-    private void drawBackground(double x, double y, double width, double height, double finalScale) {
+    private void drawBackground(Render2DEvent event,
+                                double x, double y,
+                                double width, double height,
+                                double finalScale) {
         String mode = bgMode.getMode();
         if (mode.equals("None")) return;
 
+        var r = event.getRenderer();
         int bgArgb = backgroundColor.getCurrentColor().getARGB();
         int outlineArgb = outlineColor.getCurrentColor().getARGB();
         double radius = 3.0 * finalScale;
         double thickness = Math.max(1.0, finalScale);
 
         if (mode.equals("Filled")) {
-            core.addRect2D((float) x, (float) y, (float) width, (float) height, bgArgb);
+            r.drawRect((float) x, (float) y, (float) width, (float) height, bgArgb);
         } else if (mode.equals("Outline")) {
-            core.addRectOutline2D((float) x, (float) y, (float) width, (float) height, (float) thickness, outlineArgb);
+            r.drawRectOutline((float) x, (float) y, (float) width, (float) height,
+                    (float) thickness, outlineArgb);
         } else if (mode.equals("Rounded")) {
-            core.addRoundedRect((float) x, (float) y, (float) width, (float) height, (float) radius, bgArgb);
+            r.drawRoundedRect(x, y, width, height, radius, bgArgb);
         }
 
         if (!mode.equals("Outline") && outlineColor.getCurrentColor().getAlpha() > 0) {
-            core.addRoundedRectOutline((float) x, (float) y, (float) width, (float) height, (float) radius, (float) thickness, outlineArgb);
+            r.drawRoundedRectOutline(x, y, width, height, radius, outlineArgb, thickness);
         }
     }
 
