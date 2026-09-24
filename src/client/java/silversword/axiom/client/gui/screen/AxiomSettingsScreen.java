@@ -149,12 +149,12 @@ public class AxiomSettingsScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent input) {
-        if (input.input() == 256) {
+        if (input.isEscape()) {
             onClose();
             return true;
         }
         if (lastUi != null && scroll != null) {
-            return scroll.keyPressed(lastUi, input.input(), input.keycode(), input.modifiers());
+            return scroll.keyPressed(lastUi, input.key(), input.keycode(), input.modifiers());
         }
         return super.keyPressed(input);
     }
@@ -172,8 +172,11 @@ public class AxiomSettingsScreen extends Screen {
 
     @Override
     public void onClose() {
-        if (onClose != null) onClose.run();
-        super.onClose();
+        if (onClose != null) {
+            onClose.run();
+        } else {
+            super.onClose();
+        }
     }
 
     @Override

@@ -20,7 +20,7 @@ public abstract class AxiomVertexFormats {
     // For textured UI (2D position + UV + color)
     public static final VertexFormat POS2_UV_COLOR = VertexFormat.builder(0)
             .addAttribute("Position", GpuFormat.RGB32_FLOAT)
-            .addAttribute("UV0", GpuFormat.RG32_FLOAT)  // Vaihda "UV" -> "UV0"
+            .addAttribute("UV0", GpuFormat.RG32_FLOAT)
             .addAttribute("Color", GpuFormat.RGBA8_UNORM)
             .build();
 

@@ -138,7 +138,9 @@ public final class HudEditScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
-        if (click.button() != 0) return super.mouseClicked(click, doubled);
+        // KORJATTU: 0 → 1 (modin MouseButtonEvent käyttää 1 = vasen klikki,
+        // kuten ClickGuiScreen ja kaikki UiComponentit tekevät)
+        if (click.button() != 1) return super.mouseClicked(click, doubled);
 
         int mx = (int) click.x();
         int my = (int) click.y();
@@ -158,7 +160,6 @@ public final class HudEditScreen extends Screen {
     @Override
     public boolean mouseDragged(MouseButtonEvent click, double offsetX, double offsetY) {
         if (dragging == null) return super.mouseDragged(click, offsetX, offsetY);
-        if (click.button() != 0) return super.mouseDragged(click, offsetX, offsetY);
 
         Minecraft mc = Minecraft.getInstance();
         int newX = (int) click.x() - dragOffX;
@@ -167,11 +168,8 @@ public final class HudEditScreen extends Screen {
         int w = Math.max(1, dragging.width(mc));
         int h = Math.max(1, dragging.height(mc));
 
-        // Snap gridiin
         newX = snapToGrid(newX);
         newY = snapToGrid(newY);
-
-        // Pysy ruudun sisällä (käytetään this.width/this.height)
         newX = clamp(newX, 0, this.width - w);
         newY = clamp(newY, 0, this.height - h);
 
@@ -181,9 +179,13 @@ public final class HudEditScreen extends Screen {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent click) {
-        if (click.button() == 0) {
+        // Ei button-tarkistusta — sama kuin Sliderissa. Jos dragging oli päällä,
+        // lopetetaan se riippumatta siitä mikä button-eventti tuli.
+        if (dragging != null) {
             dragging = null;
             gridVisible = false;
+            HudConfigManager.save(HudManager.get());
+            return true;
         }
         return super.mouseReleased(click);
     }

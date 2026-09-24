@@ -89,11 +89,10 @@ public final class Slider implements UiComponent {
 
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
-        // 26.3: GLFW pois â€“ MouseHandler:in kautta
-        if (dragging && !ui.mc.mouseHandler.isLeftPressed()) {
-            dragging = false;
-            dragSliderArea = null;
-        }
+        // POISTETTU: "if (dragging && !isLeftPressed/isRightPressed)" tarkistus.
+        // Se perui dragin joka framella, koska MouseHandler-tila ei ole
+        // synkronissa event-tilan kanssa. Nyt luotetaan pelkästään
+        // mouseClicked/mouseReleased-eventteihin (kuten ScrollContainer tekee).
 
         boolean hover = bounds.contains(mouseX, mouseY);
 
@@ -111,7 +110,6 @@ public final class Slider implements UiComponent {
         int valX = bounds.right() - ui.theme.innerPadding - valWidth;
         ui.text(valStr, valX, textY, ui.theme.textDim);
 
-        // KÃ¤ytetÃ¤Ã¤n raahauksen aikaista aluetta jos sellainen on
         Rect sliderArea = (dragging && dragSliderArea != null) ? dragSliderArea : getSliderArea(ui);
 
         int trackY = sliderArea.y;

@@ -1,5 +1,6 @@
 package silversword.axiom.client.gui.components;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
 import silversword.axiom.client.main.AxiomMod;
@@ -29,10 +30,25 @@ public final class ModuleSearchBar implements UiComponent {
     }
 
     public String getText() { return text; }
+    public boolean isFocused() { return focused; }
+    public void setFocused(boolean f) { this.focused = f; }
 
     @Override public Rect getBounds() { return bounds; }
     @Override public void setBounds(Rect bounds) { this.bounds = bounds; }
     @Override public int getPreferredHeight() { return 18; }
+
+    public void appendChar(char c) {
+        if (c < 32 || c == 127 || c == 167) return; // ohita kontrollit ja §
+        text += c;
+        updateSearchResults();
+    }
+
+    public void backspace() {
+        if (!text.isEmpty()) {
+            text = text.substring(0, text.length() - 1);
+            updateSearchResults();
+        }
+    }
 
     private void updateSearchResults() {
         searchResults.clear();
@@ -59,15 +75,22 @@ public final class ModuleSearchBar implements UiComponent {
         int bg = focused ? ui.theme.panel : (hover ? ui.theme.buttonHover : ui.theme.button);
 
         boolean isOpened = currentHeight > 1;
-        ui.fillRoundedCustom(bounds, bg, 4,
-                true, true,
-                !isOpened, !isOpened
-        );
+        ui.fillRoundedCustom(bounds, bg, 4, true, true, !isOpened, !isOpened);
+
+        if (focused) {
+            ui.drawRoundedOutline(bounds, ui.theme.accent, 4, 1.5);
+        }
 
         String shown = text.isEmpty() && !focused ? "Search modules..." : text;
         int color = text.isEmpty() && !focused ? ui.theme.textDim : ui.theme.text;
-        int textY = bounds.y + bounds.h / 2 - ui.fontHeight() / 2 + 4;
-        ui.text(shown, bounds.x + ui.theme.innerPadding, textY, color);
+        int textY = bounds.y + bounds.h / 2 - ui.fontHeight() / 2 + 3;
+        int textX = bounds.x + ui.theme.innerPadding;
+        ui.text(shown, textX, textY, color);
+
+        if (focused) {
+            int caretX = textX + ui.textWidth(text);
+            ui.fill(caretX, bounds.y + 3, 1, bounds.h - 6, ui.theme.accent);
+        }
 
         if (currentHeight > 0) {
             int availableBelow = ui.mc.getWindow().getGuiScaledHeight() - bounds.bottom();
@@ -75,11 +98,8 @@ public final class ModuleSearchBar implements UiComponent {
 
             if (drawHeight > 0) {
                 Rect dropRect = new Rect(bounds.x, bounds.bottom(), bounds.w, drawHeight);
-
                 ui.fillRoundedCustom(dropRect, ui.theme.panel, ui.theme.radius,
-                        false, false,
-                        true, true
-                );
+                        false, false, true, true);
 
                 if (searchResults.isEmpty()) {
                     String msg = "No modules found";
@@ -89,19 +109,16 @@ public final class ModuleSearchBar implements UiComponent {
                     int yOffset = 2;
                     int rowHeight = 16;
                     int maxVisible = Math.min(searchResults.size(), drawHeight / rowHeight);
-
                     ui.enableScissor(dropRect.x, dropRect.y, dropRect.w, dropRect.h);
 
                     for (int i = 0; i < maxVisible; i++) {
                         AxiomMod mod = searchResults.get(i);
                         Rect rowRect = new Rect(dropRect.x + 2, dropRect.y + yOffset + i * rowHeight, dropRect.w - 4, rowHeight);
-
                         if (rowRect.contains(mouseX, mouseY)) {
                             ui.fill(rowRect, ui.theme.buttonHover);
                         }
                         ui.text(mod.getName(), rowRect.x + 4, rowRect.y + 4, ui.theme.text);
                     }
-
                     ui.disableScissor();
                 }
             }
@@ -110,6 +127,7 @@ public final class ModuleSearchBar implements UiComponent {
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
+        // 26.3: vasen klikki == 1
         if (button != 1) return false;
 
         boolean clickedOnBar = bounds.contains(mouseX, mouseY);
@@ -119,7 +137,7 @@ public final class ModuleSearchBar implements UiComponent {
             float eased = Ease.easeOutQuad(Math.min(heightAnim.getValue(), 1.0f));
             float currentHeight = eased * MAX_DROPDOWN_HEIGHT;
             if (currentHeight > 1) {
-                dropRect = new Rect(bounds.x, bounds.bottom(), bounds.w, (int)currentHeight);
+                dropRect = new Rect(bounds.x, bounds.bottom(), bounds.w, (int) currentHeight);
             }
         }
 
@@ -136,40 +154,35 @@ public final class ModuleSearchBar implements UiComponent {
             return true;
         }
 
+        boolean wasFocused = focused;
         focused = clickedOnBar;
-        if (focused) {
-            updateSearchResults();
-        }
+        if (focused) updateSearchResults();
 
-        return focused;
+        return wasFocused || focused;
     }
 
     @Override
     public boolean keyPressed(UiContext ui, int keyCode, int scanCode, int modifiers) {
         if (!focused) return false;
-        if (keyCode == 256 || keyCode == 257) {
+
+        // 26.3 / SDL: käytä InputConstants-vakioita (input.key() = scancode)
+        if (keyCode == InputConstants.KEY_ESCAPE || keyCode == InputConstants.KEY_RETURN) {
             focused = false;
             return true;
         }
-        if (keyCode == 259) {
-            if (!text.isEmpty()) {
-                text = text.substring(0, text.length() - 1);
-                updateSearchResults();
-            }
+        if (keyCode == InputConstants.KEY_BACKSPACE) {
+            backspace();
             return true;
         }
+        // Merkkinäppäimet hoidetaan parent-screenin kautta (tryHandleTyping)
         return false;
     }
 
     @Override
     public boolean charTyped(UiContext ui, char chr, int modifiers) {
         if (!focused) return false;
-        if (chr >= 32 && chr != 127) {
-            text += chr;
-            updateSearchResults();
-            return true;
-        }
-        return false;
+        appendChar(chr);
+        return true;
     }
 
     @Override public void mouseReleased(UiContext ui, double mouseX, double mouseY, int button) {}

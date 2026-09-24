@@ -33,12 +33,21 @@ import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.render.rendersystem.utils.render.NametagUtils;
 import silversword.axiom.client.setting.*;
-import silversword.axiom.client.utils.render.TextUtils;
 
 import java.util.*;
 
 public final class NameTags extends AxiomMod implements ColorConfigurable, KeybindConfigurable {
     private final Minecraft mc = Minecraft.getInstance();
+
+    private static Render2DEvent lastProcessedEvent = null;
+
+    /**
+     * Pystysuuntainen siirto, joka kompensoi sen, että CustomTextRenderer.getHeight()
+     * palauttaa koko rivilaatikon korkeuden (sis. descender-tilan), kun taas
+     * Font.render() sijoittaa glyyfit rivilaatikon yläreunaan.
+     * Ilman tätä teksti näyttää olevan liian korkealla laatikossa.
+     */
+    private static final double TEXT_VSHIFT_FACTOR = 3.5;
 
     // --- Settings -------------------------------------------------
     private final SettingNumber scale;
@@ -167,7 +176,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
     // --------------------------- Tick & Filter ----------------------
     @Override
     protected void onTick() {
-        if (!isEnabled() || mc.level == null) {
+        if (!isEnabled() || mc.level == null || mc.player == null) {
             entityList.clear();
             return;
         }
@@ -222,6 +231,9 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
     // --------------------------- 2D Renderöinti ---------------------
     @Subscribe
     private void onRender2D(Render2DEvent event) {
+        if (event == lastProcessedEvent) return;
+        lastProcessedEvent = event;
+
         if (event.getGuiGraphics() == null) return;
         if (!isEnabled() || entityList.isEmpty()) return;
 
@@ -241,7 +253,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
                     worldPos,
                     event.getScreenWidth(),
                     event.getScreenHeight());
-            if (screenPos == null) continue; // behind camera
+            if (screenPos == null) continue;
 
             double dist = Math.sqrt(entity.distanceToSqr(cameraPos));
             double distanceScale = Mth.clamp(1.0 - dist * 0.005, 0.8, 3.0);
@@ -285,11 +297,40 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         return height;
     }
 
+    /** Mittaa tekstin leveys samalla renderöijällä ja skaalalla kuin piirto. */
+    private double measureWidth(String text, double scaleVal) {
+        if (text == null || text.isEmpty()) return 0;
+        TextRenderer tr = TextRenderer.get();
+        tr.begin(scaleVal, false, true);
+        try {
+            return tr.getWidth(text, false);
+        } finally {
+            tr.end();
+        }
+    }
+
+    /** Mittaa rivilaatikon korkeus samalla renderöijällä ja skaalalla kuin piirto. */
+    private double measureFontHeight(double scaleVal) {
+        TextRenderer tr = TextRenderer.get();
+        tr.begin(scaleVal, false, true);
+        try {
+            return tr.getHeight(false);
+        } finally {
+            tr.end();
+        }
+    }
+
     /**
-     * Yhteinen tekstinpiirto. Käyttää GUI-render-state -putkea
-     * (sama kuin BlockNametag), jotta piirtoajoitus on identtinen
-     * kaikkien muiden GUI-elementtien kanssa.
+     * Pystysuuntainen siirto, joka kompensoi sen, että Font.render() sijoittaa
+     * glyyfit rivilaatikon YLÄREUNAAN, kun taas getHeight() palauttaa koko
+     * laatikon korkeuden (sis. descender-tila alaosassa).
      */
+    private double getTextVShift(double scaleVal) {
+        return TEXT_VSHIFT_FACTOR * scaleVal;
+    }
+
+    /** Yhteinen tekstinpiirto. Lisää pystysuuntaisen siirron, jotta teksti
+     *  asettuu visuaalisesti laatikon keskelle. */
     private void drawText(Render2DEvent event, String text,
                           double x, double y, Color color,
                           boolean shadow, double scaleVal) {
@@ -297,10 +338,11 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         TextRenderer tr = TextRenderer.get();
         tr.begin(scaleVal, false, true);
         try {
+            double adjustedY = y + getTextVShift(scaleVal);
             if (tr instanceof CustomTextRenderer ctr) {
-                ctr.render(g, text, x, y, color, shadow);
+                ctr.render(g, text, x, adjustedY, color, shadow);
             } else {
-                tr.render(text, x, y, color, shadow);
+                tr.render(text, x, adjustedY, color, shadow);
             }
         } finally {
             tr.end();
@@ -314,17 +356,18 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         var g = event.getGuiGraphics();
         var r = event.getRenderer();
 
-        int fontHeight = TextUtils.getHeight();
+        double fontHeight = measureFontHeight(finalScale);
+        double vShift = getTextVShift(finalScale);
 
-        // ---- Rivi 0: Terveys (sydän + numero) ----
+        // ---- Rivi 0: Terveys ----
         String healthText = "";
         double healthLineWidth = 0;
         double healthLineHeight = 0;
         double heartSize = 10 * finalScale;
         if (showHealth.get()) {
             healthText = String.valueOf(Math.round(player.getHealth()));
-            double hw = TextUtils.getWidth(healthText) * finalScale;
-            double hh = fontHeight * finalScale;
+            double hw = measureWidth(healthText, finalScale);
+            double hh = fontHeight;
             healthLineWidth = heartSize + (2 * finalScale) + hw;
             healthLineHeight = Math.max(heartSize, hh);
         }
@@ -351,8 +394,8 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
             nameBuilder.append(" ").append(dist).append("m");
         }
         String nameLine = nameBuilder.toString();
-        double nameLineWidth = TextUtils.getWidth(nameLine) * finalScale;
-        double nameLineHeight = fontHeight * finalScale;
+        double nameLineWidth = measureWidth(nameLine, finalScale);
+        double nameLineHeight = fontHeight;
 
         // ---- Rivi 2: Armor-ikonit ----
         List<ItemStack> armorStacks = new ArrayList<>();
@@ -392,7 +435,6 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
 
         drawBackground(event, bgX, bgY, bgWidth, bgHeight, finalScale);
 
-        // ---- Sisältö ----
         double yCursor = bgY + padding;
 
         // Terveysrivi
@@ -400,9 +442,11 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
             double healthX = bgX + padding;
             double hTextY = yCursor + (healthLineHeight - nameLineHeight) / 2;
 
+            // Ikoni siirretään samalla pystysiirrolla kuin teksti, jotta ne
+            // pysyvät linjassa.
             r.drawTexture(HEART_TEXTURE,
                     (float) healthX,
-                    (float) (yCursor + (healthLineHeight - heartSize) / 2),
+                    (float) (yCursor + (healthLineHeight - heartSize) / 2 + vShift),
                     (float) heartSize, (float) heartSize,
                     0xFFFFFFFF);
 
@@ -423,11 +467,12 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         // Armorrivi
         if (armorCount > 0) {
             double startX = bgX + padding;
+            double iconY = yCursor + vShift;
             for (int i = 0; i < armorStacks.size(); i++) {
                 ItemStack stack = armorStacks.get(i);
                 double iconX = startX + i * (iconSize + armorGap);
 
-                g.item(stack, (int) iconX, (int) yCursor);
+                g.item(stack, (int) iconX, (int) iconY);
 
                 if (stack.isDamageableItem()) {
                     float percent = (float) (stack.getMaxDamage() - stack.getDamageValue())
@@ -437,7 +482,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
                             : (percent >= 0.2f) ? 0xFFFF6919
                             : 0xFFFF1919;
 
-                    double barY = yCursor + iconSize + 1 * finalScale;
+                    double barY = iconY + iconSize + 1 * finalScale;
                     r.drawRect((float) iconX, (float) barY,
                             (float) iconSize, (float) (2 * finalScale),
                             0x64000000);
@@ -465,9 +510,9 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         String name = stack.getHoverName().getString();
         String count = " x" + stack.getCount();
 
-        double nameWidth = TextUtils.getWidth(name) * finalScale;
-        double countWidth = TextUtils.getWidth(count) * finalScale;
-        double textHeight = TextUtils.getHeight() * finalScale;
+        double nameWidth = measureWidth(name, finalScale);
+        double countWidth = measureWidth(count, finalScale);
+        double textHeight = measureFontHeight(finalScale);
 
         double padding = 4.0 * finalScale;
         double bgWidth = nameWidth + countWidth + padding * 2;
@@ -490,9 +535,9 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         String name = entity.getType().getDescription().getString();
         String healthText = " " + Math.round(entity.getHealth());
 
-        double nameWidth = TextUtils.getWidth(name) * finalScale;
-        double healthWidth = TextUtils.getWidth(healthText) * finalScale;
-        double textHeight = TextUtils.getHeight() * finalScale;
+        double nameWidth = measureWidth(name, finalScale);
+        double healthWidth = measureWidth(healthText, finalScale);
+        double textHeight = measureFontHeight(finalScale);
 
         double padding = 4.0 * finalScale;
         double bgWidth = nameWidth + healthWidth + padding * 2;
@@ -519,8 +564,8 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
                                       double screenX, double screenY, double finalScale) {
         String name = entity.getType().getDescription().getString();
 
-        double textWidth = TextUtils.getWidth(name) * finalScale;
-        double textHeight = TextUtils.getHeight() * finalScale;
+        double textWidth = measureWidth(name, finalScale);
+        double textHeight = measureFontHeight(finalScale);
         double padding = 4.0 * finalScale;
 
         double bgWidth = textWidth + padding * 2;
@@ -540,8 +585,8 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
                                   double screenX, double screenY, double finalScale) {
         String timeText = ticksToTime(fuseTicks);
 
-        double textWidth = TextUtils.getWidth(timeText) * finalScale;
-        double textHeight = TextUtils.getHeight() * finalScale;
+        double textWidth = measureWidth(timeText, finalScale);
+        double textHeight = measureFontHeight(finalScale);
         double padding = 4.0 * finalScale;
 
         double bgWidth = textWidth + padding * 2;

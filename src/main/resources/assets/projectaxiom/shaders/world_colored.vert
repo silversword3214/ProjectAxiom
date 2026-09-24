@@ -14,5 +14,5 @@ layout(location = 0) out vec4 v_Color;
 
 void main() {
     gl_Position = modelViewProjection * vec4(Position, 1.0);
-    v_Color = Color;
+    v_Color = Color; // joskus vielä * tint kun jaksaa
 }

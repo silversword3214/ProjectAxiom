@@ -18,7 +18,6 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 
-
 // ─── Minecraft ─────────────────────────────────────────────────────
 import com.mojang.renderpearl.api.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
@@ -44,8 +43,18 @@ public class RenderCore {
 
     private static final float AA_WIDTH = 0.5f;
 
+    // Jokainen batch tallentaa oman MVP:nsä. Näin useampi beginFrame()
+    // samassa framessa (esim. FabricHudHook + AxiomHudBootstrap) ei
+    // korvaa aiempien bätsien projektiota.
     private final Map<CompiledRenderPipeline, Batch> batches = new HashMap<>();
+
+    // Tekstuurikohtaiset batchit. Avain = tekstuurin Identifier, jotta
+    // useampi eri tekstuuri ei ylikirjoita toistensa sidontaa flushissa.
+    private final Map<Identifier, Batch> textureBatches = new HashMap<>();
+
+    // Tekstibatchit (font atlas), avain = Texture-objekti.
     private final Map<Texture, Batch> textBatches = new HashMap<>();
+
     private final Map<CompiledRenderPipeline, VertexBufferManager> bufferManagers = new HashMap<>();
     private final ByteBufferBuilder allocator = new ByteBufferBuilder(RenderType.SMALL_BUFFER_SIZE);
 
@@ -98,30 +107,90 @@ public class RenderCore {
     }
 
     // ================================================================
+    //  Batch-hallinta — tallenna MVP luontihetkellä
+    // ================================================================
+
+    /**
+     * Hakee tai luo batchin ja tallentaa sille tämänhetkisen MVP:n.
+     * Kriittinen: batch muistaa projektion, jolla sen verteksit on
+     * tuotettu. Myöhempi beginFrame() ei enää vaikuta siihen.
+     */
+    private Batch getOrCreateBatch(CompiledRenderPipeline pipeline,
+                                   VertexFormat format,
+                                   PrimitiveTopology mode) {
+        return batches.computeIfAbsent(pipeline, k -> {
+            Batch b = new Batch(format, mode);
+            b.setMvp(currentProjectionMatrix, currentModelViewMatrix);
+            return b;
+        });
+    }
+
+    /**
+     * Tekstuurikohtainen batch. Avain = Identifier, jotta eri tekstuurit
+     * eivät ylikirjoita toistensa sidontaa flushissa.
+     */
+    private Batch getOrCreateTextureBatch(Identifier texture) {
+        return textureBatches.computeIfAbsent(texture, k -> {
+            Batch b = new Batch(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES);
+            b.setTexture(k);
+            b.setMvp(currentProjectionMatrix, currentModelViewMatrix);
+            return b;
+        });
+    }
+
+    private Batch getOrCreateTextBatch(Texture texture) {
+        return textBatches.computeIfAbsent(texture, k -> {
+            Batch b = new Batch(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES);
+            b.setMvp(currentProjectionMatrix, currentModelViewMatrix);
+            return b;
+        });
+    }
+
+    // ================================================================
     //  Elinkaari
     // ================================================================
 
+    /**
+     * EI enää tyhjennä bätsejä. Pelkästään päivittää globaalin projektion.
+     * Tyhjennys tapahtuu flushissa, jotta 3D-bätsit eivät häviä kun
+     * HUD-layer vaihtaa projektion orthoksi.
+     */
     public void beginFrame(Matrix4f projection, Matrix4f modelView) {
-        batches.clear();
-        textBatches.clear();
-        allocator.clear();
         this.currentProjectionMatrix = projection;
         this.currentModelViewMatrix = modelView;
     }
 
     public void flush() {
         try {
+            // 1. Väribatchit (rect, lines, rounded, circle, 3D)
             for (Map.Entry<CompiledRenderPipeline, Batch> entry : batches.entrySet()) {
                 drawBatch(entry.getKey(), entry.getValue());
                 entry.getValue().clear();
             }
             batches.clear();
 
+
+
+            // 2. Tekstuurikohtaiset batchit
+            CompiledRenderPipeline textured = uiTextured();
+            for (Map.Entry<Identifier, Batch> entry : textureBatches.entrySet()) {
+                drawBatch(textured, entry.getValue());
+                entry.getValue().clear();
+            }
+
+            textureBatches.clear();
+
+
+            // 3. Font atlas -batchit
             for (Map.Entry<Texture, Batch> entry : textBatches.entrySet()) {
                 drawTextBatch(entry.getKey(), entry.getValue());
                 entry.getValue().clear();
             }
             textBatches.clear();
+
+            // Vasta flushissa: kaikki meshit on suljettu, joten allocator
+            // voidaan vapauttaa turvallisesti.
+            allocator.clear();
         } catch (Exception e) {
             throw new RuntimeException("Flush failed", e);
         }
@@ -169,7 +238,10 @@ public class RenderCore {
         GpuBuffer indices = indexBuffer.getBuffer(drawParams.indexCount());
         IndexType indexType = indexBuffer.type();
 
-        Matrix4f mvp = new Matrix4f(currentProjectionMatrix).mul(currentModelViewMatrix);
+        Matrix4f mvp = batch.getMvp() != null
+                ? batch.getMvp()
+                : new Matrix4f(currentProjectionMatrix).mul(currentModelViewMatrix);
+
         GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(
                 mvp,
                 new Vector4f(1.0f, 1.0f, 1.0f, 1.0f),
@@ -302,7 +374,10 @@ public class RenderCore {
         GpuBuffer indices = indexBuffer.getBuffer(drawParams.indexCount());
         IndexType indexType = indexBuffer.type();
 
-        Matrix4f mvp = new Matrix4f(currentProjectionMatrix).mul(currentModelViewMatrix);
+        Matrix4f mvp = batch.getMvp() != null
+                ? batch.getMvp()
+                : new Matrix4f(currentProjectionMatrix).mul(currentModelViewMatrix);
+
         GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(
                 mvp,
                 new Vector4f(1.0f, 1.0f, 1.0f, 1.0f),
@@ -348,6 +423,7 @@ public class RenderCore {
         mesh.close();
         vbm.rotate();
     }
+
 
     private MeshData buildMeshFromBatch(Batch batch) {
         if (batch.vertexCount() == 0) return null;
@@ -528,7 +604,8 @@ public class RenderCore {
     public void addLine3D(double x1, double y1, double z1, double x2, double y2, double z2, float thickness, int color) {
         CompiledRenderPipeline pipeline = worldColoredLines();
         if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline, k -> new Batch(AxiomVertexFormats.POS3_COLOR, PrimitiveTopology.DEBUG_LINES));
+        Batch batch = getOrCreateBatch(pipeline,
+                AxiomVertexFormats.POS3_COLOR, PrimitiveTopology.DEBUG_LINES);
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -544,7 +621,8 @@ public class RenderCore {
                         int color) {
         CompiledRenderPipeline pipeline = worldColored();
         if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline, k -> new Batch(AxiomVertexFormats.POS3_COLOR, PrimitiveTopology.TRIANGLES));
+        Batch batch = getOrCreateBatch(pipeline,
+                AxiomVertexFormats.POS3_COLOR, PrimitiveTopology.TRIANGLES);
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -563,7 +641,8 @@ public class RenderCore {
                             int color) {
         CompiledRenderPipeline pipeline = worldColored();
         if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline, k -> new Batch(AxiomVertexFormats.POS3_COLOR, PrimitiveTopology.TRIANGLES));
+        Batch batch = getOrCreateBatch(pipeline,
+                AxiomVertexFormats.POS3_COLOR, PrimitiveTopology.TRIANGLES);
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -580,8 +659,8 @@ public class RenderCore {
     public void addRect2D(float x, float y, float width, float height, int color) {
         CompiledRenderPipeline pipeline = uiColored();
         if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
+        Batch batch = getOrCreateBatch(pipeline,
+                AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES);
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -593,8 +672,8 @@ public class RenderCore {
         if (thickness <= 0) return;
         CompiledRenderPipeline pipeline = uiColoredLines();
         if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.DEBUG_LINES));
+        Batch batch = getOrCreateBatch(pipeline,
+                AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.DEBUG_LINES);
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -615,8 +694,8 @@ public class RenderCore {
         if (thickness <= 0) return;
         CompiledRenderPipeline pipeline = uiColored();
         if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
+        Batch batch = getOrCreateBatch(pipeline,
+                AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES);
 
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
@@ -668,8 +747,8 @@ public class RenderCore {
         if (radius <= 0) return;
         CompiledRenderPipeline pipeline = uiColored();
         if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
+        Batch batch = getOrCreateBatch(pipeline,
+                AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES);
 
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
@@ -685,8 +764,8 @@ public class RenderCore {
         if (radius <= 0 || thickness <= 0) return;
         CompiledRenderPipeline pipeline = uiColored();
         if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
+        Batch batch = getOrCreateBatch(pipeline,
+                AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES);
 
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
@@ -710,8 +789,8 @@ public class RenderCore {
 
         CompiledRenderPipeline pipeline = uiColored();
         if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
+        Batch batch = getOrCreateBatch(pipeline,
+                AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES);
 
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
@@ -740,8 +819,8 @@ public class RenderCore {
 
         CompiledRenderPipeline pipeline = uiColored();
         if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
+        Batch batch = getOrCreateBatch(pipeline,
+                AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES);
 
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
@@ -764,8 +843,8 @@ public class RenderCore {
         thickness = Math.min(thickness, Math.min(w, h) * 0.5f);
         CompiledRenderPipeline pipeline = uiColored();
         if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES));
+        Batch batch = getOrCreateBatch(pipeline,
+                AxiomVertexFormats.POS2_COLOR, PrimitiveTopology.TRIANGLES);
 
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
@@ -798,7 +877,7 @@ public class RenderCore {
     }
 
     // ================================================================
-    //  Tekstuurit
+    //  Tekstuurit — JOKAINEN TEKSTUURI OMaan BATCHIIN
     // ================================================================
 
     public void addTexture(Identifier texture, float x, float y, float width, float height, int color) {
@@ -807,11 +886,9 @@ public class RenderCore {
 
     public void addTexturePart(Identifier texture, float x, float y, float width, float height,
                                float u1, float v1, float u2, float v2, int color) {
-        CompiledRenderPipeline pipeline = uiTextured();
-        if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES));
-        batch.setTexture(texture);
+        if (width <= 0 || height <= 0) return;
+
+        Batch batch = getOrCreateTextureBatch(texture);  // ← avain = texture
 
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
@@ -829,11 +906,7 @@ public class RenderCore {
     }
 
     public void addRotatedTexture(Identifier texture, float x, float y, float width, float height, float angleDeg, int color) {
-        CompiledRenderPipeline pipeline = uiTextured();
-        if (pipeline == null) return;
-        Batch batch = batches.computeIfAbsent(pipeline,
-                k -> new Batch(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES));
-        batch.setTexture(texture);
+        Batch batch = getOrCreateTextureBatch(texture);  // ← avain = texture
 
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
@@ -876,8 +949,7 @@ public class RenderCore {
                                 float r, float g, float b, float a) {
         CompiledRenderPipeline pipeline = uiText();
         if (pipeline == null) return;
-        Batch batch = textBatches.computeIfAbsent(texture,
-                k -> new Batch(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES));
+        Batch batch = getOrCreateTextBatch(texture);
 
         batch.vertexUV(x0, y0, u0, v0, r, g, b, a);
         batch.vertexUV(x1, y0, u1, v0, r, g, b, a);
@@ -887,6 +959,7 @@ public class RenderCore {
         batch.vertexUV(x1, y0, u1, v0, r, g, b, a);
         batch.vertexUV(x1, y1, u1, v1, r, g, b, a);
     }
+
 
     // ================================================================
     //  Sulku & getterit

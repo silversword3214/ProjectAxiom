@@ -4,6 +4,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector4f;
 
 public final class NametagUtils {
@@ -17,7 +18,10 @@ public final class NametagUtils {
 
         Matrix4f view = new Matrix4f();
         view.mul(bobCorrection);
-        view.rotate(camera.rotation().conjugate());
+
+        Quaternionf camRotCopy = new Quaternionf(camera.rotation());
+        camRotCopy.conjugate();
+        view.rotate(camRotCopy);
 
         Vec3 camPos = camera.position();
         view.translate((float) -camPos.x, (float) -camPos.y, (float) -camPos.z);

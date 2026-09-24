@@ -1,5 +1,7 @@
 package silversword.axiom.client.render.rendersystem.axiomrenderer.renderer;
 
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix4f;
@@ -10,13 +12,17 @@ public class Renderer2D {
     public final RenderCore core;
     private final Matrix4f projection;
 
+    private static GuiGraphicsExtractor lastFrameGraphics = null;
+
     public Renderer2D(GuiGraphicsExtractor graphics, RenderCore core, Matrix4f projection) {
         this.g = graphics;
         this.core = core;
         this.projection = projection;
-        // Pidetään core valmiina – vaikka tämä Renderer2D ei enää käytä sitä muotoihin,
-        // muut järjestelmät (esim. DrawTexture) saattavat käyttää sitä.
-        this.core.beginFrame(this.projection, new Matrix4f().identity());
+
+        if (graphics != lastFrameGraphics) {
+            this.core.beginFrame(this.projection, new Matrix4f().identity());
+            lastFrameGraphics = graphics;
+        }
     }
 
     /** Kutsuttavissa, jos joku haluaa käyttää RenderCorea suoraan. */
@@ -254,9 +260,6 @@ public class Renderer2D {
         }
     }
 
-    // ================================================================
-    //  Pyöristetty suorakaide (AA)
-    // ================================================================
 
     public void drawRoundedRect(double x, double y, double w, double h, double radius, int color) {
         drawRoundedRectCustom(x, y, w, h, radius, color, true, true, true, true);
@@ -352,33 +355,108 @@ public class Renderer2D {
             }
         }
     }
-
-    // ================================================================
-    //  Tekstuurit
-    // ================================================================
-
     public void drawTexture(Identifier texture, float x, float y, float width, float height) {
         drawTexture(texture, x, y, width, height, 0xFFFFFFFF);
     }
 
     public void drawTexture(Identifier texture, float x, float y, float width, float height, int color) {
-        drawTexturePart(texture, x, y, width, height, 0, 0, 1, 1, color);
-    }
-
-    public void drawTexturePart(Identifier texture, float x, float y, float width, float height,
-                                float u1, float v1, float u2, float v2) {
-        drawTexturePart(texture, x, y, width, height, u1, v1, u2, v2, 0xFFFFFFFF);
+        drawTexturePart(texture, x, y, width, height, 0f, 0f, 1f, 1f, color);
     }
 
     public void drawTexturePart(Identifier texture, float x, float y, float width, float height,
                                 float u1, float v1, float u2, float v2, int color) {
         if (width <= 0 || height <= 0) return;
-        g.blit(texture, Math.round(x), Math.round(y),
-                Math.round(width), Math.round(height), u1, v1, u2, v2);
+
+        var abstractTexture = net.minecraft.client.Minecraft.getInstance()
+                .getTextureManager().getTexture(texture);
+        if (abstractTexture == null) return;
+
+        var gpuTex = abstractTexture.getTexture();
+        if (gpuTex == null) return;
+
+        int texW = gpuTex.getWidth(0);
+        int texH = gpuTex.getHeight(0);
+        if (texW <= 0 || texH <= 0) return;
+
+        // Normalisoidut UV:t (0..1) → pikseli-UV:t
+        float uPx = u1 * texW;
+        float vPx = v1 * texH;
+        int uW = Math.round((u2 - u1) * texW);
+        int vH = Math.round((v2 - v1) * texH);
+
+        int px = Math.round(x);
+        int py = Math.round(y);
+        int pw = Math.round(width);
+        int ph = Math.round(height);
+
+        g.blit(
+                net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
+                texture,
+                px, py,          // int x, int y
+                uPx, vPx,        // float u, float v
+                pw, ph,          // int width, int height
+                uW, vH,          // int regionWidth, int regionHeight
+                texW, texH       // int textureWidth, int textureHeight
+        );
     }
 
     public void drawRotatedTexture(Identifier texture, float x, float y, float width, float height,
                                    float angleDeg, int color) {
-        drawTexture(texture, x, y, width, height, color);
+        if (width <= 0 || height <= 0) return;
+
+        if (Math.abs(angleDeg) < 0.01f) {
+            drawTexture(texture, x, y, width, height, color);
+            return;
+        }
+
+        // Pyöristys pose-matriisilla
+        var pose = g.pose();
+        pose.pushMatrix();
+
+        float cx = x + width / 2f;
+        float cy = y + height / 2f;
+        pose.translate(cx, cy);
+        pose.rotate((float) Math.toRadians(angleDeg));
+        pose.translate(-width / 2f, -height / 2f);
+
+        drawTexture(texture, 0f, 0f, width, height, color);
+
+        pose.popMatrix();
     }
+    public void drawTextureFlippedY(Identifier texture, float x, float y,
+                                    float width, float height, int color) {
+        if (width <= 0 || height <= 0) return;
+
+        var abstractTexture = net.minecraft.client.Minecraft.getInstance()
+                .getTextureManager().getTexture(texture);
+        if (abstractTexture == null) return;
+
+        var gpuTex = abstractTexture.getTexture();
+        if (gpuTex == null) return;
+
+        int texW = gpuTex.getWidth(0);
+        int texH = gpuTex.getHeight(0);
+        if (texW <= 0 || texH <= 0) return;
+
+        // Piirretään yksi yksi-pikselin korkuinen kaistale kerrallaan
+        // alhaalta ylös, jolloin saadaan aikaan pystypeilaus ilman posen käyttöä.
+        for (int row = 0; row < texH; row++) {
+            int dstY = Math.round(y + (height * row) / texH);
+            int dstH = Math.round(y + (height * (row + 1)) / texH) - dstY;
+            if (dstH <= 0) continue;
+
+            int srcV = texH - row - 1;   // peilaa rivi
+
+            g.blit(
+                    net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
+                    texture,
+                    Math.round(x), dstY,
+                    0f, (float) srcV,
+                    Math.round(width), dstH,
+                    texW, 1,
+                    texW, texH
+            );
+        }
+    }
+
 }

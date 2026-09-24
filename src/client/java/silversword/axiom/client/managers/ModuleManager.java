@@ -126,6 +126,7 @@ public final class ModuleManager {
         add(new AntiCactus());
 
         // Render
+        add(new RearCamera());
         add(new WaypointModule());
         add(new ESP());
         add(new ChestESP());

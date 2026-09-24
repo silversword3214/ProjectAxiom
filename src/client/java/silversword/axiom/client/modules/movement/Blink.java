@@ -25,7 +25,7 @@ import silversword.axiom.client.utils.render.TextUtils;
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
 public class Blink extends AxiomMod implements KeybindConfigurable {
-    private final RenderCore core = RenderAPI.getInstance().getCore();
+    private final RenderCore core = RenderAPI.getInstance().getCore3D();
     private final SettingKeybind toggleKey;
     private final SettingMode mode;
     private final SettingNumber textScale;

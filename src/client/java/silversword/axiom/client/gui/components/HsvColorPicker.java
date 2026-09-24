@@ -36,7 +36,8 @@ public class HsvColorPicker implements UiComponent {
     private boolean draggingSide;
 
     private int[][] gradientCache;
-    private boolean gradientDirty = true;
+    private boolean squareGradientDirty = true;
+    private boolean wheelGradientDirty = true;
     private float cachedWheelValue = -1f;
 
     // Alikomponentit
@@ -68,7 +69,8 @@ public class HsvColorPicker implements UiComponent {
         this.modeToggle = new ActionButton("Style: SQUARE", () -> {
             this.mode = (this.mode == Mode.SQUARE) ? Mode.WHEEL : Mode.SQUARE;
             this.modeToggle.setLabel("Style: " + this.mode.name());
-            this.gradientDirty = true;
+            this.squareGradientDirty = true;
+            this.wheelGradientDirty = true;
         });
 
         this.rSlider = new Slider("Red", 0, 255, 1, () -> this.r, val -> { this.r = (int)val; syncRgbToHsv(); });
@@ -97,11 +99,17 @@ public class HsvColorPicker implements UiComponent {
 
     @Override
     public void setBounds(Rect bounds) {
+        // HUOM: layoutChildren kutsuu tätä JOKA FRAME. Merkitse gradientti
+        // likaiseksi vain kun koko oikeasti muuttuu.
+        boolean sizeChanged = this.bounds == null
+                || this.bounds.w != bounds.w
+                || this.bounds.h != bounds.h;
+
         this.bounds = bounds;
 
         int padding = 8;
         int hueWidth = 16;
-        int topAreaHeight = 180; // Kasvatettu korkeus ympyrÃ¤lle
+        int topAreaHeight = 180;
         int rightColumnWidth = 80;
 
         pickerRect = new Rect(
@@ -135,12 +143,15 @@ public class HsvColorPicker implements UiComponent {
         aSlider.setBounds(new Rect(bounds.x + padding, currentY, compWidth, rowHeight)); currentY += rowHeight + rowPadding;
         speedSlider.setBounds(new Rect(bounds.x + padding, currentY, compWidth, rowHeight));
 
-        gradientDirty = true;
+        if (sizeChanged) {
+            squareGradientDirty = true;
+            wheelGradientDirty = true;
+        }
     }
 
     @Override
     public int getPreferredHeight() {
-        return 1000;
+        return 480; // oli 1000 → työnsi muita komponentteja kauas alas
     }
 
     @Override
@@ -167,6 +178,7 @@ public class HsvColorPicker implements UiComponent {
         }
     }
 
+    /** Kutsutaan kun HSV on muuttunut pickerin kautta — EI merkitse gradienttia likaiseksi. */
     private void syncHsvToRgb() {
         Color c = Color.fromHsv(hue, saturation, value);
         this.r = c.r;
@@ -175,6 +187,7 @@ public class HsvColorPicker implements UiComponent {
         updateColor();
     }
 
+    /** Kutsutaan kun RGB-slideria on muutettu — hue on saattanut muuttua → kaikki likaiseksi. */
     private void syncRgbToHsv() {
         float rF = r / 255f, gF = g / 255f, bF = b / 255f;
         float max = Math.max(rF, Math.max(gF, bF));
@@ -194,7 +207,8 @@ public class HsvColorPicker implements UiComponent {
             this.hue *= 360f;
         }
 
-        gradientDirty = true;
+        this.squareGradientDirty = true;
+        this.wheelGradientDirty = true;
         updateColor();
     }
 
@@ -262,9 +276,11 @@ public class HsvColorPicker implements UiComponent {
 
     private void updatePickerTarget(double mouseX, double mouseY) {
         if (mode == Mode.SQUARE) {
+            // Square-gradient riippuu HUESTA, ei sat/valuesta → ei dirty-flagia.
             this.saturation = clamp((float) ((mouseX - pickerRect.x) / pickerRect.w), 0f, 1f);
             this.value = 1f - clamp((float) ((mouseY - pickerRect.y) / pickerRect.h), 0f, 1f);
         } else {
+            // Wheel-gradient riippuu VALUESTA, ei huesta/satista → ei dirty-flagia.
             int size = Math.min(pickerRect.w, pickerRect.h);
             float cx = pickerRect.x + (pickerRect.w / 2f);
             float cy = pickerRect.y + (pickerRect.h / 2f);
@@ -287,10 +303,10 @@ public class HsvColorPicker implements UiComponent {
         float val = clamp((float) ((mouseY - sideSliderRect.y) / sideSliderRect.h), 0f, 1f);
         if (mode == Mode.SQUARE) {
             this.hue = val * 360f;
-            gradientDirty = true;
+            this.squareGradientDirty = true;   // hue muuttui → square likaiseksi
         } else {
             this.value = 1f - val;
-            gradientDirty = true;
+            this.wheelGradientDirty = true;    // value muuttui → wheel likaiseksi
         }
         syncHsvToRgb();
     }
@@ -302,7 +318,9 @@ public class HsvColorPicker implements UiComponent {
     private void renderSquareGradientOptimized(UiContext ui) {
         if (pickerRect.w <= 0 || pickerRect.h <= 0) return;
 
-        if (gradientDirty || gradientCache == null || gradientCache.length != pickerRect.w || gradientCache[0].length != pickerRect.h) {
+        if (squareGradientDirty || gradientCache == null
+                || gradientCache.length != pickerRect.w
+                || gradientCache[0].length != pickerRect.h) {
             gradientCache = new int[pickerRect.w][pickerRect.h];
             for (int y = 0; y < pickerRect.h; y++) {
                 float v = 1f - (float) y / pickerRect.h;
@@ -311,10 +329,12 @@ public class HsvColorPicker implements UiComponent {
                     gradientCache[x][y] = Color.fromHsv(hue, s, v).getARGB();
                 }
             }
-            gradientDirty = false;
+            squareGradientDirty = false;
         }
 
-        int step = Math.max(1, Math.min(pickerRect.w, pickerRect.h) / 80);
+        // Kiinteä 4 px pala → ~1000 fill-kutsua 180×180 -alueella.
+        // Ihmisen silmä ei erota tätä pehmeämmästä gradientista tässä koossa.
+        final int step = 4;
         for (int y = 0; y < pickerRect.h; y += step) {
             for (int x = 0; x < pickerRect.w; x += step) {
                 int w = Math.min(step, pickerRect.w - x);
@@ -344,7 +364,10 @@ public class HsvColorPicker implements UiComponent {
         int cy = size / 2;
         float radius = size / 2f;
 
-        if (gradientDirty || gradientCache == null || gradientCache.length != size || gradientCache[0].length != size || Math.abs(cachedWheelValue - value) > 0.01f) {
+        if (wheelGradientDirty || gradientCache == null
+                || gradientCache.length != size
+                || gradientCache[0].length != size
+                || Math.abs(cachedWheelValue - value) > 0.01f) {
             gradientCache = new int[size][size];
             for (int y = 0; y < size; y++) {
                 for (int x = 0; x < size; x++) {
@@ -363,11 +386,12 @@ public class HsvColorPicker implements UiComponent {
                 }
             }
             cachedWheelValue = value;
-            gradientDirty = false;
+            wheelGradientDirty = false;
         }
 
-        // TÃ¤ysi tarkkuus ympyrÃ¤lle, step on aina 1
-        int step = 1;
+        // Sama kuin square: kiinteä 4 px pala → ~2000 fill-kutsua, joista
+        // ympyrän ulkopuoliset ohitetaan.
+        final int step = 4;
         int offsetX = pickerRect.x + (pickerRect.w - size) / 2;
         int offsetY = pickerRect.y + (pickerRect.h - size) / 2;
 
@@ -375,7 +399,9 @@ public class HsvColorPicker implements UiComponent {
             for (int x = 0; x < size; x += step) {
                 int color = gradientCache[x][y];
                 if (color != 0) {
-                    ui.fill(offsetX + x, offsetY + y, 1, 1, color);
+                    int w = Math.min(step, size - x);
+                    int h = Math.min(step, size - y);
+                    ui.fill(offsetX + x, offsetY + y, w, h, color);
                 }
             }
         }
@@ -402,7 +428,6 @@ public class HsvColorPicker implements UiComponent {
             int hy = (int) (sideSliderRect.y + (hue / 360f) * sideSliderRect.h);
             ui.fill(sideSliderRect.x - 2, hy - 2, sideSliderRect.w + 4, 4, 0xFFFFFFFF);
             ui.fill(sideSliderRect.x - 1, hy - 1, sideSliderRect.w + 2, 2, 0xFF000000);
-
         } else {
             int size = Math.min(pickerRect.w, pickerRect.h);
             float cx = pickerRect.x + (pickerRect.w / 2f);

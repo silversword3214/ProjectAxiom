@@ -138,7 +138,7 @@ public final class FontSettingsScreen extends Screen {
         int mx = (int) click.x(), my = (int) click.y();
         int btnW = 70, btnH = 24, btnX = width - btnW - 16, btnY = 12;
         Rect btnRect = new Rect(btnX, btnY, btnW, btnH);
-        if (click.button() == 0 && btnRect.contains(mx, my)) {
+        if (click.button() == 1 && btnRect.contains(mx, my)) {  // ← 0 → 1
             onClose();
             return true;
         }
@@ -151,15 +151,33 @@ public final class FontSettingsScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent input) {
-        if (input.input() == 256) {
+        if (input.isEscape()) {                                 // ← input.input() == 256
             onClose();
             return true;
         }
+
+        // Jos hakupalkki on fokusoitu, älä consumoi merkkinäppäimiä
+        // – muuten charTyped ei laukea ja kirjoittaminen ei toimi.
+        if (searchBar.isFocused() && !isSpecialKey(input.key())) {
+            return false;
+        }
+
         if (lastUi != null) {
-            if (searchBar.keyPressed(lastUi, input.input(), input.keycode(), input.modifiers())) return true;
-            if (scrollContainer != null && scrollContainer.keyPressed(lastUi, input.input(), input.keycode(), input.modifiers())) return true;
+            if (searchBar.keyPressed(lastUi, input.key(), input.keycode(), input.modifiers())) return true;
+            if (scrollContainer != null && scrollContainer.keyPressed(lastUi, input.key(), input.keycode(), input.modifiers())) return true;
         }
         return super.keyPressed(input);
+    }
+
+    /** Palauttaa true vain erikoisnäppäimille (ESC, Enter, Tab, Backspace, Delete, nuolet, F-näppäimet). */
+    private static boolean isSpecialKey(int key) {
+        if (key == 256 || key == 257 || key == 258) return true;   // ESC, Enter, Tab
+        if (key == 259 || key == 261) return true;                 // Backspace, Delete
+        if (key >= 262 && key <= 265) return true;                 // Nuolet
+        if (key >= 266 && key <= 269) return true;                 // Home, End, PageUp, PageDown
+        if (key >= 290 && key <= 314) return true;                 // F1–F25
+        if (key >= 340 && key <= 347) return true;                 // Shift, Ctrl, Alt, Super
+        return false;
     }
 
     @Override
@@ -201,8 +219,11 @@ public final class FontSettingsScreen extends Screen {
 
     @Override
     public void onClose() {
-        if (onCloseCallback != null) onCloseCallback.run();
-        super.onClose();
+        if (onCloseCallback != null) {
+            onCloseCallback.run();
+        } else {
+            super.onClose();
+        }
     }
 
     @Override

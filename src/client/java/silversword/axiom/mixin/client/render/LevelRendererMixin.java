@@ -45,7 +45,7 @@ public class LevelRendererMixin {
         RenderAPI api = RenderAPI.getInstance();
 
         Renderer3D renderer = new Renderer3D(
-                api.getCore(),
+                api.getCore3D(),
                 projection,
                 view,
                 tickDelta

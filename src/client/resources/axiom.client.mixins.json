@@ -25,6 +25,7 @@
     "block.CactusBlockMixin",
     "accessors.KeyMappingAccessor",
     "accessors.MinecraftAccessor",
+    "render.MinecraftMixin",
     "accessors.MultiPlayerGameModeAccessor",
     "accessors.ServerboundMovePlayerPacketAccessor",
     "block.HoneyBlockMixin",

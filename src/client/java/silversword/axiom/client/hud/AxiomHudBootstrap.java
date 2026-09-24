@@ -19,6 +19,7 @@ public final class AxiomHudBootstrap {
         HudManager.get().register(new HardwareHud());
         HudManager.get().register(new FpsHud());
         HudManager.get().register(new InventoryViewer());
+        HudManager.get().register(new RearCameraHud());
 
         if (!layerRegistered) {
             HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("projectaxiom", "hud"), (ctx, tickCounter) -> {

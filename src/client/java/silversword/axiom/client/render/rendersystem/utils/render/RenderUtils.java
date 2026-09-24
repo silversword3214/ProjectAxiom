@@ -84,7 +84,10 @@ public class RenderUtils {
         }
 
         matrix.mul(bobCorrection);
-        matrix.rotate(camera.rotation().conjugate());
+        matrix.rotate(camera.rotation().conjugate()); /* If problems occur later from worldToScreen etc switch this to "
+                                                                                                                         Quaternionf camRotCopy = new Quaternionf(camera.rotation());
+                                                                                                                         camRotCopy.conjugate();
+                                                                                                                         matrix.rotate(camRotCopy);"*/
 
         Vec3 pos = camera.position();
         matrix.translate(-(float) pos.x, -(float) pos.y, -(float) pos.z);

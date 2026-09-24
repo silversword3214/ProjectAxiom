@@ -20,6 +20,7 @@ import silversword.axiom.client.modules.waypoints.WaypointCommands;
 import silversword.axiom.client.render.font.Fonts;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderPipelines;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.FabricHudHook;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.rearcamera.RearCameraRenderer;
 import silversword.axiom.client.sound.CustomSounds;
 
 public final class AxiomInitialize implements ClientModInitializer {
@@ -75,6 +76,7 @@ public final class AxiomInitialize implements ClientModInitializer {
         HudConfigManager.load(HudManager.get());
         CustomSounds.initialize();
         WaypointCommands.register();
+        RearCameraRenderer.init();
         PauseUiConfigManager.load(pauseWindowManager);
 
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {

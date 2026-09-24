@@ -1,5 +1,6 @@
 package silversword.axiom.client.gui.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -7,6 +8,7 @@ import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 import org.joml.Matrix4f;
+import org.lwjgl.sdl.SDLKeyboard;
 import silversword.axiom.client.config.HudConfigManager;
 import silversword.axiom.client.config.SettingsConfigManager;
 import silversword.axiom.client.config.UiConfigManager;
@@ -18,10 +20,10 @@ import silversword.axiom.client.gui.window.WindowManager;
 import silversword.axiom.client.hud.HudManager;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.managers.ModuleManager;
-import silversword.axiom.client.render.font.TextRenderer;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
+import silversword.axiom.client.utils.KeyNames;
 import silversword.axiom.client.utils.render.DrawTexture;
 
 import java.util.List;
@@ -36,18 +38,17 @@ public final class ClickGuiScreen extends Screen {
     private WindowFactory windowFactory;
     private TopMode topMode = TopMode.CLICKGUI;
 
-    private static final int BTN_W = 80;
-    private static final int BTN_H = 18;
-    private static final int RESET_BTN_W = 60;
-    private static final int RESET_BTN_H = 18;
-
     private ModuleSearchBar moduleSearchBar;
-    private AxiomMod pendingHighlight = null;
-    private long highlightStartTime = 0;
-    private static final long HIGHLIGHT_DURATION = 1000;
+
+    private long lastOverlayCloseTime = 0;
+    private static final long OVERLAY_ESC_COOLDOWN_MS = 250;
 
     public static WindowFactory lastFactory = null;
     public static ModeDropdown currentDropdown = null;
+
+    // Estää saman merkin tuplasyötön (keyPressed hoitaa, charTyped dedupataan)
+    private long lastKeyHandledCharNs = 0L;
+    private static final long CHAR_DEDUP_WINDOW_NS = 100_000_000L;
 
     public ClickGuiScreen() {
         super(Component.literal("Axiom"));
@@ -98,12 +99,10 @@ public final class ClickGuiScreen extends Screen {
         if (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen()) {
             windowManager.render(lastUi, mouseX, mouseY);
         }
-
         if (!windowManager.isOverlayOpen()) {
             drawTopBar(lastUi, mouseX, mouseY);
             drawSearchBar(lastUi, mouseX, mouseY, delta);
         }
-
         if (currentDropdown != null) {
             currentDropdown.render(lastUi, mouseX, mouseY, delta);
         }
@@ -115,25 +114,13 @@ public final class ClickGuiScreen extends Screen {
         int sw = core.getScissorW();
         int sh = core.getScissorH();
 
-        if (wasScissor) {
-            core.enableScissor(sx, sy, sw, sh);
-        }
-
-        // 1. Tekstuurit ensin (esim. Gear-ikonit)
+        if (wasScissor) core.enableScissor(sx, sy, sw, sh);
         DrawTexture.renderAll(renderer);
+        if (wasScissor) core.enableScissor(sx, sy, sw, sh);
+        else core.disableScissor();
 
-        if (wasScissor) {
-            core.enableScissor(sx, sy, sw, sh);
-        } else {
-            core.disableScissor();
-        }
-
-        // 2. Tooltipit (tausta piirretään heti, teksti menee jonoon)
         TooltipStack.renderAll(lastUi);
-
-        // 3. KAIKKI tekstit vasta tässä vaiheessa → piirretään taustojen päälle
         lastUi.renderTexts();
-
         core.flush();
     }
 
@@ -145,13 +132,10 @@ public final class ClickGuiScreen extends Screen {
     }
 
     private void drawTopBar(UiContext ui, int mouseX, int mouseY) {
-        int toggleW = 70;
-        int toggleH = 16;
-        int gap = 4;
+        int toggleW = 70, toggleH = 16, gap = 4;
         int centerX = this.width / 2;
         int topY = 6;
         int radius = theme.radius;
-
         int clickGuiX = centerX - toggleW - gap / 2;
         int settingsX = centerX + gap / 2;
 
@@ -168,17 +152,14 @@ public final class ClickGuiScreen extends Screen {
 
     private void drawSearchBar(UiContext ui, int mouseX, int mouseY, float delta) {
         if (topMode != TopMode.CLICKGUI) return;
-        int barWidth = 180;
-        int barHeight = 16;
+        int barWidth = 180, barHeight = 16;
         int centerX = this.width / 2;
         int topY = 6 + 16 + 6;
-        moduleSearchBar.setBounds(new Rect(centerX - barWidth/2, topY, barWidth, barHeight));
+        moduleSearchBar.setBounds(new Rect(centerX - barWidth / 2, topY, barWidth, barHeight));
         moduleSearchBar.render(ui, mouseX, mouseY, delta);
     }
 
-    @Override
-    public boolean isPauseScreen() { return false; }
-
+    @Override public boolean isPauseScreen() { return false; }
     private void saveUi() { UiConfigManager.saveGui(windowManager); }
 
     @Override
@@ -189,7 +170,6 @@ public final class ClickGuiScreen extends Screen {
         windowManager.closeOverlay();
         saveUi();
         super.removed();
-
     }
 
     @Override
@@ -201,11 +181,9 @@ public final class ClickGuiScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
-
         int mouseX = (int) click.x();
         int mouseY = (int) click.y();
 
-        // 1. Dropdown
         if (currentDropdown != null && lastUi != null) {
             if (currentDropdown.getBounds().contains(mouseX, mouseY)) {
                 if (currentDropdown.mouseClicked(lastUi, mouseX, mouseY, click.button())) return true;
@@ -214,39 +192,35 @@ public final class ClickGuiScreen extends Screen {
             }
         }
 
-        // 2. Top bar (vain vasen klikki)
+        // 26.3: vasen klikki == 1
         if (click.button() == 1) {
+            if (lastUi == null) return super.mouseClicked(click, doubled);
+
             int toggleW = 70, toggleH = 16, gap = 4;
             int centerX = this.width / 2;
             int topY = 6;
             int clickGuiX = centerX - toggleW - gap / 2;
             int settingsX = centerX + gap / 2;
 
-            if (mouseX >= clickGuiX && mouseX <= clickGuiX + toggleW
-                    && mouseY >= topY && mouseY <= topY + toggleH) {
+            if (mouseX >= clickGuiX && mouseX <= clickGuiX + toggleW && mouseY >= topY && mouseY <= topY + toggleH) {
                 topMode = TopMode.CLICKGUI;
                 return true;
             }
-            if (mouseX >= settingsX && mouseX <= settingsX + toggleW
-                    && mouseY >= topY && mouseY <= topY + toggleH) {
+            if (mouseX >= settingsX && mouseX <= settingsX + toggleW && mouseY >= topY && mouseY <= topY + toggleH) {
                 this.minecraft.setScreenAndShow(new AxiomSettingsScreen(() -> {
                     this.minecraft.setScreenAndShow(new ClickGuiScreen());
                 }));
                 return true;
             }
+
             if (topMode == TopMode.CLICKGUI) {
                 if (moduleSearchBar.mouseClicked(lastUi, mouseX, mouseY, click.button())) return true;
             }
         }
 
-        // 3. WindowManager ENNEN superia
         if (lastUi != null && (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen())) {
-            if (windowManager.mouseClicked(lastUi, mouseX, mouseY, click.button())) {
-                return true;
-            }
+            if (windowManager.mouseClicked(lastUi, mouseX, mouseY, click.button())) return true;
         }
-
-        // 4. Vasta viimeisenä vanilla-käsittely
         return super.mouseClicked(click, doubled);
     }
 
@@ -285,37 +259,25 @@ public final class ClickGuiScreen extends Screen {
     }
 
     public void resetWindows() {
-
         WINDOW_MANAGER.clear();
         windowManager.clear();
         windowManager.closeOverlay();
-
-
         createCategoryWindows(this.width, this.height);
-
         UiConfigManager.saveGui(windowManager);
-
         this.init();
     }
 
     private void createCategoryWindows(int screenW, int screenH) {
-        String[] categories = new String[] { "Movement", "Combat", "Render", "World", "Player", "Misc", "Utility" };
+        String[] categories = { "Movement", "Combat", "Render", "World", "Player", "Misc", "Utility" };
         int[] xCoords = { 5, 119, 236, 610, 725, 837, 837 };
-
-        int winW = 110;
-        int winH = 250;
-        int startY = 50;
+        int winW = 110, winH = 250, startY = 50;
 
         for (int i = 0; i < categories.length; i++) {
             String cat = categories[i];
             String id = "category:" + cat.toLowerCase();
             int x = xCoords[i];
             int y = startY - 40;
-
-
-            if (cat.equals("Utility")) {
-                y = startY + winH - 25;
-            }
+            if (cat.equals("Utility")) y = startY + winH - 25;
 
             Window win = new Window(id, cat, x, y, winW, winH);
             win.setClosable(false);
@@ -351,37 +313,151 @@ public final class ClickGuiScreen extends Screen {
         return false;
     }
 
+    // ═════════════════════════════════════════════════════════════
+    //  NÄPPÄIMISTÖ — 26.3 / SDL
+    // ═════════════════════════════════════════════════════════════
+
     @Override
     public boolean keyPressed(KeyEvent input) {
-        if (input.input() == 256) {
+        // 1) ESC: ensin unfokusoi hakupalkki, sitten sulje overlay, sitten GUI
+        if (input.key() == InputConstants.KEY_ESCAPE) {
+            if (moduleSearchBar != null && moduleSearchBar.isFocused()) {
+                moduleSearchBar.setFocused(false);
+                return true;
+            }
             currentDropdown = null;
             if (windowManager.isOverlayOpen()) {
                 windowManager.closeOverlay();
+                lastOverlayCloseTime = System.currentTimeMillis();
                 return true;
-            } else {
-                this.onClose();
+            }
+            if (System.currentTimeMillis() - lastOverlayCloseTime < OVERLAY_ESC_COOLDOWN_MS) {
+                return true;
+            }
+            this.onClose();
+            return true;
+        }
+
+        // 2) Hakupalkki fokusoituna → hoida KAIKKI syöttö tässä
+        if (topMode == TopMode.CLICKGUI && moduleSearchBar != null
+                && moduleSearchBar.isFocused() && lastUi != null) {
+
+            // 2a) Erikoisnäppäimet (BACKSPACE, ENTER)
+            if (moduleSearchBar.keyPressed(lastUi, input.key(), input.keycode(), input.modifiers())) {
+                return true;
+            }
+
+            // 2b) Merkkinäppäimet → suora syöttö
+            if (tryHandleTyping(input)) {
                 return true;
             }
         }
-        if (topMode == TopMode.CLICKGUI && moduleSearchBar.keyPressed(lastUi, input.input(), input.keycode(), input.modifiers())) {
-            return true;
-        }
+
+        // 3) WindowManager
         if (lastUi != null && (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen())) {
-            if (windowManager.keyPressed(lastUi, input.input(), input.keycode(), input.modifiers())) return true;
+            if (windowManager.keyPressed(lastUi, input.key(), input.keycode(), input.modifiers())) return true;
         }
         return super.keyPressed(input);
     }
 
-    @Override
-    public boolean charTyped(CharacterEvent input) {
-        if (topMode == TopMode.CLICKGUI && moduleSearchBar.charTyped(lastUi, input.codepointAsString().charAt(0), 0)) {
+    /**
+     * 26.3 / SDL: input.key() = SCANCODE, input.keycode() = SDL_Keycode.
+     * SDL_GetKeyName palauttaa layout-tietoisen merkin (ä, ö, 1, !, jne.).
+     */
+    private boolean tryHandleTyping(KeyEvent input) {
+        int scancode = input.key();
+        int keycode = input.keycode();
+        int modifiers = input.modifiers();
+        boolean shift = (modifiers & InputConstants.MOD_SHIFT) != 0;
+
+        // Välilyönti hoidetaan erikseen (SDL_GetKeyName palauttaa "Space")
+        if (scancode == InputConstants.KEY_SPACE) {
+            moduleSearchBar.appendChar(' ');
+            lastKeyHandledCharNs = System.nanoTime();
             return true;
         }
-        if (lastUi != null && input.isAllowedChatCharacter() && (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen())) {
-            String s = input.codepointAsString();
-            for (int i = 0; i < s.length(); i++) {
-                windowManager.charTyped(lastUi, s.charAt(i), 0);
+
+        // Ensisijainen: SDL layout-tietoinen nimi keycodesta
+        if (keycode != 0) {
+            try {
+                String name = SDLKeyboard.SDL_GetKeyName(keycode);
+                if (name != null && name.codePointCount(0, name.length()) == 1) {
+                    int cp = name.codePointAt(0);
+                    // SDL palauttaa perusmerkin — shift pitää soveltaa itse
+                    if (!shift && cp >= 'A' && cp <= 'Z') {
+                        cp = Character.toLowerCase(cp);
+                    } else if (shift && cp >= 'a' && cp <= 'z') {
+                        cp = Character.toUpperCase(cp);
+                    } else if (shift) {
+                        // Yleisimmät shift-variantit (US-QWERTY)
+                        switch (cp) {
+                            case '1': cp = '!'; break;
+                            case '2': cp = '@'; break;
+                            case '3': cp = '#'; break;
+                            case '4': cp = '$'; break;
+                            case '5': cp = '%'; break;
+                            case '6': cp = '^'; break;
+                            case '7': cp = '&'; break;
+                            case '8': cp = '*'; break;
+                            case '9': cp = '('; break;
+                            case '0': cp = ')'; break;
+                            case '-': cp = '_'; break;
+                            case '=': cp = '+'; break;
+                            case '[': cp = '{'; break;
+                            case ']': cp = '}'; break;
+                            case '\\': cp = '|'; break;
+                            case ';': cp = ':'; break;
+                            case '\'': cp = '"'; break;
+                            case ',': cp = '<'; break;
+                            case '.': cp = '>'; break;
+                            case '/': cp = '?'; break;
+                            case '`': cp = '~'; break;
+                        }
+                    }
+                    moduleSearchBar.appendChar((char) cp);
+                    lastKeyHandledCharNs = System.nanoTime();
+                    return true;
+                }
+            } catch (Throwable ignored) {
+                // SDL ei tunne keycodea → fallback
             }
+        }
+
+        // Fallback: KeyNames (scancode-pohjainen, US-QWERTY)
+        String fallback = KeyNames.get(scancode);
+        if (fallback == null || fallback.length() != 1) return false;
+        char c = fallback.charAt(0);
+        if (!shift && c >= 'A' && c <= 'Z') c = Character.toLowerCase(c);
+        moduleSearchBar.appendChar(c);
+        lastKeyHandledCharNs = System.nanoTime();
+        return true;
+    }
+
+    @Override
+    public boolean keyReleased(KeyEvent input) {
+        if (input.key() == InputConstants.KEY_ESCAPE) return true;
+        return super.keyReleased(input);
+    }
+
+    @Override
+    public boolean charTyped(CharacterEvent input) {
+        // Estä tuplasyöttö: jos keyPressed jo käsitteli merkin, ohita
+        if (System.nanoTime() - lastKeyHandledCharNs < CHAR_DEDUP_WINDOW_NS) {
+            return true;
+        }
+        if (lastUi == null) return super.charTyped(input);
+
+        int cp = input.codepoint();
+        if (cp <= 0) return false;
+
+        if (topMode == TopMode.CLICKGUI && moduleSearchBar != null
+                && moduleSearchBar.isFocused()) {
+            moduleSearchBar.appendChar((char) cp);
+            return true;
+        }
+
+        if (input.isAllowedChatCharacter() && (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen())) {
+            windowManager.charTyped(lastUi, (char) cp, 0);
             return true;
         }
         return false;

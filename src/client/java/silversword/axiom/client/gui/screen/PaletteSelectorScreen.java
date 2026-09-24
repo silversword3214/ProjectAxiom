@@ -151,8 +151,11 @@ public class PaletteSelectorScreen extends Screen {
 
     @Override
     public void onClose() {
-        if (onClose != null) onClose.run();
-        super.onClose();
+        if (onClose != null) {
+            onClose.run();
+        } else {
+            super.onClose();
+        }
     }
 
     @Override

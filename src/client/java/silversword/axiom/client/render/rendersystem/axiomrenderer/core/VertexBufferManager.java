@@ -104,7 +104,7 @@ public class VertexBufferManager implements AutoCloseable {
 
     /**
      * Non‑blocking: finds a free buffer and ensures it's big enough.
-     * Only blocks if every buffer is still busy (extremely rare).
+     * Only blocks if every buffer is still busy.
      */
     public void ensureCapacity(int requiredSize) {
         // Try all buffers for a free one
@@ -131,19 +131,16 @@ public class VertexBufferManager implements AutoCloseable {
 
         // All buffers are busy – fallback (should almost never happen)
         LOGGER.warn("All vertex buffers busy, waiting for index {}", currentIndex);
-        // Korvaa odottava osa tällä:
         if (fences[currentIndex] != null) {
             fences[currentIndex].awaitCompletion(16_000_000L); // non-blocking
             if (fences[currentIndex].awaitCompletion(0)) {
                 fences[currentIndex].close();
                 fences[currentIndex] = null;
             } else {
-                // Kaikki puskurit varattuja – kasvata tilapäisesti puskurien määrää?
-                // Tai yksinkertaisesti lisää BUFFER_COUNT arvoa.
                 LOGGER.warn("All vertex buffers busy, consider increasing BUFFER_COUNT");
             }
         }
-        // Resize if needed (same logic)
+        // Resize if needed
         if (bufferSizes[currentIndex] < requiredSize) {
             int newSize = Math.max(requiredSize, (int)(bufferSizes[currentIndex] * 1.5));
             if (newSize < 1024) newSize = 1024;

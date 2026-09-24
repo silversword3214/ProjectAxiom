@@ -20,7 +20,6 @@ public class FabricHudHook {
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("projectaxiom", "axiom_hud"),
                 (GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) -> {
                     try {
-
                         RenderAPI api = RenderAPI.getInstance();
                         if (api == null || api.getCore() == null) {
                             if (frameCounter++ % 300 == 0) {
@@ -48,10 +47,12 @@ public class FabricHudHook {
                                 graphics.guiHeight()
                         );
 
-                        AxiomInitialize.EVENT_BUS.post(event);
+                        // Postaa event vain jos AxiomHudBootstrap EI ole jo tehnyt sitä tällä framella
+                        if (HudEventGuard.shouldPostEvent(graphics)) {
+                            AxiomInitialize.EVENT_BUS.post(event);
+                        }
 
                         api.getCore().flush();
-
 
                     } catch (Exception e) {
                         if (frameCounter++ % 300 == 0) {

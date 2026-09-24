@@ -13,6 +13,7 @@ import silversword.axiom.client.gui.screen.ClickGuiScreen;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.HudEventGuard;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
 import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
 import silversword.axiom.client.utils.render.DrawTexture;
@@ -81,7 +82,11 @@ public final class HudManager {
         Theme theme = ThemeManager.getCurrentTheme();
 
         Render2DEvent event = new Render2DEvent(renderer, delta, draw, draw.guiWidth(), draw.guiHeight());
-        AxiomInitialize.EVENT_BUS.post(event);
+
+        // Sama guard — vain toinen layereista postaa eventin
+        if (HudEventGuard.shouldPostEvent(draw)) {
+            AxiomInitialize.EVENT_BUS.post(event);
+        }
 
         HudContext ctx = new HudContext(mc, draw, theme, delta, renderer);
 

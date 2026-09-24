@@ -52,6 +52,10 @@ public final class Window {
     private boolean ignoreScale = false;
     private static final Identifier KEYBIND_TEXTURE = Identifier.fromNamespaceAndPath("projectaxiom", "textures/icons/keybind.png");
 
+    public boolean isFinishedClosing() {
+        return animState == AnimState.NONE && animTarget == 0.0f;
+    }
+
     public void setIgnoreScale(boolean ignore) { this.ignoreScale = ignore; }
 
     public Window(String id, String title, int x, int y, int width, int height) {
@@ -287,12 +291,17 @@ public final class Window {
         if (dragging) { x = (int) mouseX - dragOffX; y = (int) mouseY - dragOffY; return true; }
         if (resizing && !minimized) {
             int newW = (int) mouseX - x, newH = (int) mouseY - y;
-            // --- KÃ„YTETÃ„Ã„N KESKITETTYÃ„ MINIMIMITTAA ---
             width = Math.max(MIN_WIDTH, newW);
             height = Math.max(MIN_HEIGHT, newH);
             return true;
         }
         if (minimized) return false;
+
+        if (draggingChild != null) {
+            draggingChild.mouseDragged(ui, mouseX, mouseY, button, dx, dy);
+            return true;
+        }
+
         if (autoLayoutVertical) layoutChildren(ui, y);
         for (int i = children.size() - 1; i >= 0; i--) {
             UiComponent c = children.get(i);
