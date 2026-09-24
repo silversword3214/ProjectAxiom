@@ -156,6 +156,7 @@ public class VertexBufferManager implements AutoCloseable {
         if (currentBuffer == null) throw new IllegalStateException("Buffer not allocated");
         GpuBufferSlice slice = currentBuffer.slice(0, size);
         if (encoder != null) {
+            data.rewind();
             encoder.writeToBuffer(slice, data);
         } else {
             try (GpuBufferSlice.MappedView mapped = slice.map(false, true)) {

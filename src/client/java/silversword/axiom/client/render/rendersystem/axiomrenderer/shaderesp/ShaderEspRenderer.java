@@ -38,9 +38,21 @@ public final class ShaderEspRenderer {
     private static int registeredW = -1;
     private static int registeredH = -1;
 
+    private static boolean renderChams = false;
+    private static boolean renderOutline = true;
+    private static int chamsTint = 0xFFFFFFFF;
+
+    public static void setRenderChams(boolean v)  { renderChams = v; }
+    public static void setRenderOutline(boolean v){ renderOutline = v; }
+    public static void setChamsTint(int c)        { chamsTint = c; }
+
     public static final net.minecraft.resources.Identifier MASK_TEXTURE_ID =
             net.minecraft.resources.Identifier.fromNamespaceAndPath(
                     "projectaxiom", "shaderesp_mask");
+
+    public static final net.minecraft.resources.Identifier OUTLINE_TEXTURE_ID =
+            net.minecraft.resources.Identifier.fromNamespaceAndPath(
+                    "projectaxiom", "shaderesp_outline");
 
     private static MaskTexture maskTexture;
     private static boolean maskRegistered = false;
@@ -70,8 +82,9 @@ public final class ShaderEspRenderer {
         if (w == registeredW && h == registeredH && maskTexture != null) return;
 
         maskTexture = new MaskTexture(mask);
-        Minecraft.getInstance().getTextureManager()
-                .register(MASK_TEXTURE_ID, maskTexture);
+        var tm = Minecraft.getInstance().getTextureManager();
+        tm.register(MASK_TEXTURE_ID, maskTexture);       // Chams käyttää tätä
+        tm.register(OUTLINE_TEXTURE_ID, maskTexture);    // Outline käyttää tätä
         registeredW = w;
         registeredH = h;
         LOG.info("[ShaderESP] mask texture registered {}x{}", w, h);
@@ -206,12 +219,23 @@ public final class ShaderEspRenderer {
         int w = window.getGuiScaledWidth();
         int h = window.getGuiScaledHeight();
 
-        // DEBUG: käännä V-koordinaatit (0→1, 1→0)
-        hud.drawTexturePart(
-                MASK_TEXTURE_ID,
-                0, 0, w, h,
-                0f, 1f, 1f, 0f,    // u1, v1, u2, v2 — V vaihdettu
-                0xFFFFFFFF);
+        // ─── Chams ───
+        if (renderChams) {
+            hud.drawTexturePart(
+                    MASK_TEXTURE_ID,
+                    0, 0, w, h,
+                    0f, 1f, 1f, 0f,
+                    chamsTint);   // esim. 0xFFFFFFFF = alkuperäinen, 0x80FF0000 = punainen 50%
+        }
+
+        // ─── Outline ───
+        if (renderOutline) {
+            hud.drawEntityEdge(
+                    mask.getColorTextureView(),
+                    mask.sampler(),
+                    0, 0, w, h,
+                    outlineColor);   // esim. 0xFFFFFFFF = valkoinen
+        }
     }
 
     public static void shutdown() {

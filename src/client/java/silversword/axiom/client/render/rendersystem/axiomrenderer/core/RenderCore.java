@@ -71,6 +71,8 @@ public class RenderCore {
     private final Map<GpuTextureView, Batch> gpuViewBatches = new HashMap<>();
     private final Map<GpuTextureView, GpuSampler> gpuViewSamplers = new HashMap<>();
 
+    private final Map<Identifier, CompiledRenderPipeline> texturePipelines = new HashMap<>();
+
 
     public RenderCore() {}
 
@@ -180,13 +182,16 @@ public class RenderCore {
 
 
             // 2. Tekstuurikohtaiset batchit
+            // 2. Tekstuurikohtaiset batchit
             CompiledRenderPipeline textured = uiTextured();
             for (Map.Entry<Identifier, Batch> entry : textureBatches.entrySet()) {
-                drawBatch(textured, entry.getValue());
+                Identifier id = entry.getKey();
+                CompiledRenderPipeline pipe = texturePipelines.getOrDefault(id, textured);
+                drawBatch(pipe, entry.getValue());
                 entry.getValue().clear();
             }
-
             textureBatches.clear();
+            texturePipelines.clear();
 
             for (Map.Entry<GpuTextureView, Batch> entry : gpuViewBatches.entrySet()) {
                 GpuTextureView view = entry.getKey();
@@ -298,11 +303,11 @@ public class RenderCore {
                     rt.getDepthTextureView(),
                     OptionalDouble.empty())) {
 
+                renderPass.setPipeline(pipeline);
+
                 if (textureView != null) {
                     renderPass.setUniform("u_Texture", textureView, sampler);
                 }
-
-                renderPass.setPipeline(pipeline);
                 if (applyScissor(renderPass)) {
                     RenderSystem.bindDefaultUniforms(renderPass);
                     renderPass.setUniform("DynamicTransforms", dynamicTransforms);
@@ -427,11 +432,11 @@ public class RenderCore {
                     rt.getDepthTextureView(),
                     OptionalDouble.empty())) {
 
+                renderPass.setPipeline(pipeline);
+
                 if (textureView != null) {
                     renderPass.setUniform("u_Texture", textureView, sampler);
                 }
-
-                renderPass.setPipeline(pipeline);
                 if (applyScissor(renderPass)) {
                     RenderSystem.bindDefaultUniforms(renderPass);
                     renderPass.setUniform("DynamicTransforms", dynamicTransforms);
@@ -504,8 +509,9 @@ public class RenderCore {
                     rt.getDepthTextureView(),
                     OptionalDouble.empty())) {
 
-                renderPass.setUniform("u_Texture", view, batch.getSampler());
                 renderPass.setPipeline(pipeline);
+
+                renderPass.setUniform("u_Texture", view, batch.getSampler());
                 if (applyScissor(renderPass)) {
                     RenderSystem.bindDefaultUniforms(renderPass);
                     renderPass.setUniform("DynamicTransforms", dynamicTransforms);
@@ -1098,6 +1104,14 @@ public class RenderCore {
                                   int color) {
         addGpuTextureQuadWithPipeline(uiTextured(), view, sampler,
                 x, y, w, h, u0, v0, u1, v1, color);
+    }
+
+    public void addTextureWithPipeline(Identifier texture, CompiledRenderPipeline pipeline,
+                                       float x, float y, float w, float h,
+                                       float u1, float v1, float u2, float v2,
+                                       int color) {
+        addTexturePart(texture, x, y, w, h, u1, v1, u2, v2, color);
+        texturePipelines.put(texture, pipeline);
     }
 
 

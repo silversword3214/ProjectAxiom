@@ -15,28 +15,71 @@ import java.util.Set;
 
 public final class ShaderEsp extends AxiomMod {
 
-    private final SettingSlider  renderDistance;
-    private final SettingSlider  downscale;
-    private final SettingSlider  outlineColor;
-    private final SettingBoolean drawPlayers, drawHostile, drawPassive,
-            drawNeutral, drawWater, drawBoss;
+    private static final Minecraft mc = Minecraft.getInstance();
 
     private static final Set<TargetGroup> HANDLED = EnumSet.of(
             TargetGroup.PLAYER, TargetGroup.HOSTILE, TargetGroup.PASSIVE,
             TargetGroup.NEUTRAL, TargetGroup.WATER, TargetGroup.BOSS);
 
+    // ─── Chams ─────────────────────────────────────────────────────────────
+    private final SettingBoolean enableChams;
+    private final SettingSlider  chamsTint;
+
+    // ─── Outline ───────────────────────────────────────────────────────────
+    private final SettingBoolean enableOutline;
+    private final SettingSlider  outlineColor;
+
+    // ─── Yhteiset ──────────────────────────────────────────────────────────
+    private final SettingSlider  downscale;
+    private final SettingSlider  renderDistance;
+
+    // ─── Entiteettityypit ──────────────────────────────────────────────────
+    private final SettingBoolean drawPlayers;
+    private final SettingBoolean drawHostile;
+    private final SettingBoolean drawPassive;
+    private final SettingBoolean drawNeutral;
+    private final SettingBoolean drawWater;
+    private final SettingBoolean drawBoss;
+
     public ShaderEsp() {
-        super("ShaderEsp", "Outline entities with edge-detection shader",
+        super("ShaderEsp",
+                "Chams (see-through entities) and Outline (edge-detection)",
                 ModuleCategory.RENDER);
 
-        renderDistance = new SettingSlider("Render Distance",
-                new double[]{16, 32, 64, 96, 128, 256, 512}, 128);
+        // ─── Chams ─────────────────────────────────────────────────────────
+        enableChams = new SettingBoolean("Chams", true);
+        chamsTint = new SettingSlider("Chams Tint",
+                new double[]{
+                        0xFFFFFFFFL,  // valkoinen (alkuperäinen)
+                        0xCCFF0000L,  // punainen 80 %
+                        0xCC00FF00L,  // vihreä 80 %
+                        0xCC0000FFL,  // sininen 80 %
+                        0xCCFF00FFL,  // magenta 80 %
+                        0xCC00FFFFL,  // cyan 80 %
+                        0xCCFFFF00L,  // keltainen 80 %
+                        0x80000000L   // musta 50 %
+                }, 0);
+
+        // ─── Outline ───────────────────────────────────────────────────────
+        enableOutline = new SettingBoolean("Outline", true);
+        outlineColor = new SettingSlider("Outline Color",
+                new double[]{
+                        0xFFFFFFFFL,  // valkoinen
+                        0xFF00FFFFL,  // cyan
+                        0xFFFF00FFL,  // magenta
+                        0xFFFF0000L,  // punainen
+                        0xFF00FF00L,  // vihreä
+                        0xFF0000FFL,  // sininen
+                        0xFFFFFF00L   // keltainen
+                }, 0);
+
+        // ─── Yhteiset ──────────────────────────────────────────────────────
         downscale = new SettingSlider("Mask Resolution",
                 new double[]{1, 2, 3, 4}, 2);
-        outlineColor = new SettingSlider("Outline Color",
-                new double[]{0xFFFFFFFFL, 0xFF00FFFFL, 0xFFFF00FFL,
-                        0xFFFF0000L, 0xFF00FF00L, 0xFFFFFF00L}, 0);
+        renderDistance = new SettingSlider("Render Distance",
+                new double[]{16, 32, 64, 96, 128, 256, 512}, 128);
 
+        // ─── Entiteettityypit ──────────────────────────────────────────────
         drawPlayers = new SettingBoolean("Draw Players", true);
         drawHostile = new SettingBoolean("Draw Hostile", true);
         drawPassive = new SettingBoolean("Draw Passive", false);
@@ -44,9 +87,16 @@ public final class ShaderEsp extends AxiomMod {
         drawWater   = new SettingBoolean("Draw Water",   false);
         drawBoss    = new SettingBoolean("Draw Boss",    true);
 
-        addSetting(renderDistance);
-        addSetting(downscale);
+        // ─── Rekisteröinti (UI-järjestys) ─────────────────────────────────
+        addSetting(enableChams);
+        addSetting(chamsTint);
+
+        addSetting(enableOutline);
         addSetting(outlineColor);
+
+        addSetting(downscale);
+        addSetting(renderDistance);
+
         addSetting(drawPlayers);
         addSetting(drawHostile);
         addSetting(drawPassive);
@@ -55,16 +105,15 @@ public final class ShaderEsp extends AxiomMod {
         addSetting(drawBoss);
     }
 
+    // ─── Elinkaari ─────────────────────────────────────────────────────────
+
     @Override
     protected void onEnable() {
         try {
             ShaderEspRenderer.init();
-        } catch (Throwable t) {
-            // Moduuli voi yrittää initin uudelleen myöhemmin — älä kaada tähän
-            org.slf4j.LoggerFactory.getLogger("Axiom/ShaderESP")
-                    .warn("ShaderEsp init deferred: {}", t.toString());
+        } catch (Throwable ignored) {
         }
-        ShaderEspRenderer.setEnabled(true);   // ← TÄMÄ AJETAAN AINA
+        ShaderEspRenderer.setEnabled(true);
         applySettings();
     }
 
@@ -74,18 +123,31 @@ public final class ShaderEsp extends AxiomMod {
     }
 
     @Override
-    protected void onTick() { applySettings(); }
+    protected void onTick() {
+        applySettings();
+    }
+
+    // ─── Asetusten sovellus ────────────────────────────────────────────────
 
     private void applySettings() {
         ShaderEspRenderer.setDownscale((int) downscale.getValue());
+
+        ShaderEspRenderer.setRenderChams(enableChams.get());
+        ShaderEspRenderer.setChamsTint((int) chamsTint.getValue());
+
+        ShaderEspRenderer.setRenderOutline(enableOutline.get());
         ShaderEspRenderer.setOutlineColor((int) outlineColor.getValue());
 
         final double maxDistSq = renderDistance.getValue() * renderDistance.getValue();
+
         ShaderEspRenderer.setFilter(entity -> {
+            if (entity == null) return false;
+
             TargetGroup g = TargetGroup.getGroup(entity);
             if (!HANDLED.contains(g)) return false;
             if (!shouldDraw(g)) return false;
-            Vec3 cam = Minecraft.getInstance().gameRenderer.mainCamera().position();
+
+            Vec3 cam = mc.gameRenderer.mainCamera().position();
             return entity.position().distanceToSqr(cam) <= maxDistSq;
         });
     }

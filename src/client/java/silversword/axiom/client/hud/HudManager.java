@@ -100,7 +100,7 @@ public final class HudManager {
             ShaderEspRenderer.compositeToScreen(renderer);
         }
 
-        RenderAPI.getInstance().getCore().flush();
+        //RenderAPI.getInstance().getCore().flush();
 
         for (HudContext.ItemEntry entry : ctx.getItems()) {
             Matrix3x2fStack pose = draw.pose();
@@ -115,9 +115,9 @@ public final class HudManager {
 
         ctx.renderTexts();
 
-        RenderAPI.getInstance().getCore().flush();
+        //RenderAPI.getInstance().getCore().flush();
         DrawTexture.renderAll(renderer);
-        RenderAPI.getInstance().getCore().flush();
+        //RenderAPI.getInstance().getCore().flush();
     }
 
     public HudElement hitTest(int mouseX, int mouseY) {

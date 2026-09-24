@@ -148,7 +148,7 @@ public final class RenderPipelines {
         BUILDERS.add(new PipelineBuilder(DYNAMIC_TRANSFORMS, UI_TEXTURE_BINDINGS)
                 .withLocation(id("pipeline/entity_edge"))
                 .withVertexFormat(AxiomVertexFormats.POS2_UV_COLOR, PrimitiveTopology.TRIANGLES)
-                .withVertexShader(id("shaders/ui_textured.vert"))       // sama vert
+                .withVertexShader(id("shaders/ui_textured.vert"))
                 .withFragmentShader(id("shaders/entity_edge.frag"))
                 .withDepthTestFunction(CompareOp.ALWAYS_PASS)
                 .withDepthWrite(false)

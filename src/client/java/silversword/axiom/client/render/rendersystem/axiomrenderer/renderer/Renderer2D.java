@@ -7,23 +7,20 @@ import net.minecraft.resources.Identifier;
 import org.joml.Matrix4f;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderPipelines;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.shaderesp.ShaderEspRenderer;
 
 public class Renderer2D {
     private final GuiGraphicsExtractor g;
     public final RenderCore core;
     private final Matrix4f projection;
 
-    private static GuiGraphicsExtractor lastFrameGraphics = null;
-
     public Renderer2D(GuiGraphicsExtractor graphics, RenderCore core, Matrix4f projection) {
         this.g = graphics;
         this.core = core;
         this.projection = projection;
 
-        if (graphics != lastFrameGraphics) {
-            this.core.beginFrame(this.projection, new Matrix4f().identity());
-            lastFrameGraphics = graphics;
-        }
+        // Aina — jokainen instanssi päivittää projektion
+        this.core.beginFrame(this.projection, new Matrix4f().identity());
     }
 
     /** Kutsuttavissa, jos joku haluaa käyttää RenderCorea suoraan. */
@@ -467,14 +464,19 @@ public class Renderer2D {
         core.addGpuTextureQuad(view, sampler, x, y, w, h, 0f, 0f, 1f, 1f, color);
     }
 
-    public void drawEntityEdge(GpuTextureView maskView, GpuSampler sampler,
+    public void drawEntityEdge(com.mojang.renderpearl.api.textures.GpuTextureView maskView,
+                               com.mojang.renderpearl.api.textures.GpuSampler sampler,
                                float x, float y, float w, float h, int outlineColor) {
-        core.addGpuTextureQuadWithPipeline(
+
+
+        // Käytä samaa polkua kuin Chams (textureBatches), mutta eri pipeline
+        core.addTextureWithPipeline(
+                silversword.axiom.client.render.rendersystem.axiomrenderer.shaderesp.ShaderEspRenderer.OUTLINE_TEXTURE_ID,
                 RenderPipelines.UI_ENTITY_EDGE,
-                maskView, sampler,
                 x, y, w, h,
-                0f, 1f, 1f, 0f,    // ← v0 ja v1 vaihdettu (oli 0f, 0f, 1f, 1f)
+                0f, 1f, 1f, 0f,
                 outlineColor);
+
     }
 
 }
