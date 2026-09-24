@@ -1,6 +1,7 @@
 package silversword.axiom.client.render.rendersystem.axiomrenderer.core;
 
 
+import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.pipeline.*;
 import com.mojang.renderpearl.api.vertex.VertexFormat;
 import net.minecraft.resources.Identifier;
@@ -63,8 +64,14 @@ public final class PipelineBuilder {
     }
 
     public RenderPipeline build() {
-        innerBuilder.withColorTargetState(new ColorTargetState(blend));
-        innerBuilder.withDepthStencilState(new DepthStencilState(depthTest, depthWrite));
+        // 1. Color target formaatti – sama kuin mainRenderTarget().getColorTexture()
+        innerBuilder.withColorTargetState(
+                new ColorTargetState(blend));
+
+        // 2. Depth/stencil formaatti – sama kuin mainRenderTarget().getDepthTexture()
+        innerBuilder.withDepthStencilState(
+                new DepthStencilState(depthTest, depthWrite));
+
         RenderPipeline pipeline = innerBuilder.build();
         ((ILineSmoothing) pipeline).axiom_setLineSmooth(lineSmooth);
         return pipeline;

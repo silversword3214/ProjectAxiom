@@ -139,14 +139,55 @@ public class RenderCore {
     // ================================================================
 
     private void drawBatch(CompiledRenderPipeline pipeline, Batch batch) {
-        if (pipeline == null) return;
+        if (pipeline == null) {
+            LOGGER.error("[drawBatch] pipeline NULL, {} verts", batch.vertexCount());
+            return;
+        }
 
         MeshData mesh = buildMeshFromBatch(batch);
-        if (mesh == null) return;
+        if (mesh == null) {
+            LOGGER.warn("[drawBatch] mesh null");
+            return;
+        }
 
         MeshData.DrawState drawParams = mesh.drawState();
         VertexFormat format = drawParams.format();
         int vertexBufferSize = drawParams.vertexCount() * format.getVertexSize();
+
+        // ============ DEBUG ALKAA ============
+        var rt = Minecraft.getInstance().gameRenderer.mainRenderTarget();
+        LOGGER.info("[DBG] RT size={}x{} colorTex={} depthTex={}",
+                rt.width, rt.height,
+                rt.getColorTextureView() != null ? "OK" : "NULL",
+                rt.getDepthTextureView() != null ? "OK" : "NULL");
+        LOGGER.info("[DBG] batch mode={} verts={} idx={} format={} vSize={} bufSize={}",
+                batch.getMode(), drawParams.vertexCount(), drawParams.indexCount(),
+                format, format.getVertexSize(), vertexBufferSize);
+
+        List<float[]> verts = batch.getVertices();
+        if (!verts.isEmpty()) {
+            float[] v0 = verts.get(0);
+            StringBuilder sb = new StringBuilder("[");
+            for (float f : v0) sb.append(String.format("%.2f ", f));
+            sb.append("]");
+            LOGGER.info("[DBG] first vertex: {}", sb);
+        }
+
+        Matrix4f mvp = new Matrix4f(currentProjectionMatrix).mul(currentModelViewMatrix);
+        LOGGER.info("[DBG] proj={}", currentProjectionMatrix);
+        LOGGER.info("[DBG] view={}", currentModelViewMatrix);
+
+        if (!verts.isEmpty()) {
+            float[] v0 = verts.get(0);
+            org.joml.Vector4f p = new org.joml.Vector4f(v0[0], v0[1], v0[2], 1.0f).mul(mvp);
+            if (p.w != 0) {
+                LOGGER.info("[DBG] v0 in NDC: ({}, {}, {}) w={}",
+                        p.x / p.w, p.y / p.w, p.z / p.w, p.w);
+            } else {
+                LOGGER.warn("[DBG] v0 w=0! Muhaha, mvp rikki");
+            }
+        }
+        // ============ DEBUG LOPPUU ============
 
         VertexBufferManager vbm = getBufferManager(pipeline);
         vbm.ensureCapacity(vertexBufferSize);
@@ -155,13 +196,12 @@ public class RenderCore {
         vbm.upload(mesh.vertexBuffer(), vertexBufferSize, encoder);
         GpuBufferSlice vertices = vbm.getCurrentBuffer().slice(0, vertexBufferSize);
 
-        // Käytä batchin omaa topologiaa – CompiledRenderPipeline ei tarjoa getPrimitiveTopology()
         RenderSystem.AutoStorageIndexBuffer indexBuffer =
                 RenderSystem.getSequentialBuffer(batch.getMode());
         GpuBuffer indices = indexBuffer.getBuffer(drawParams.indexCount());
         IndexType indexType = indexBuffer.type();
+        LOGGER.info("[DBG] indexType={} indices={}", indexType, indices);
 
-        Matrix4f mvp = new Matrix4f(currentProjectionMatrix).mul(currentModelViewMatrix);
         GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(
                 mvp,
                 new Vector4f(1.0f, 1.0f, 1.0f, 1.0f),
@@ -176,17 +216,15 @@ public class RenderCore {
             if (abstractTexture != null) {
                 textureView = abstractTexture.getTextureView();
                 sampler = abstractTexture.getSampler();
-            } else {
-                LOGGER.warn("Texture not found: {}", batch.getTexture());
             }
         }
 
         try {
             try (RenderPass renderPass = encoder.createRenderPass(
                     () -> "axiomrenderapi_draw",
-                    Minecraft.getInstance().gameRenderer.mainRenderTarget().getColorTextureView(),
+                    rt.getColorTextureView(),
                     Optional.empty(),
-                    Minecraft.getInstance().gameRenderer.mainRenderTarget().getDepthTextureView(),
+                    rt.getDepthTextureView(),
                     OptionalDouble.empty())) {
 
                 if (textureView != null) {
@@ -194,15 +232,18 @@ public class RenderCore {
                 }
 
                 renderPass.setPipeline(pipeline);
-                if (applyScissor(renderPass)) {
+                boolean scissorOK = applyScissor(renderPass);
+                LOGGER.info("[DBG] scissorOK={}", scissorOK);
+                if (scissorOK) {
                     RenderSystem.bindDefaultUniforms(renderPass);
                     renderPass.setUniform("DynamicTransforms", dynamicTransforms);
                     renderPass.setVertexBuffer(0, vertices);
                     renderPass.setIndexBuffer(indices, indexType);
                     renderPass.drawIndexed(drawParams.indexCount(), 1, 0, 0, 0);
+                    LOGGER.info("[DBG] drawIndexed KUTSUTTU idx={}", drawParams.indexCount());
                 }
             } catch (Exception e) {
-                LOGGER.error("Error during render pass", e);
+                LOGGER.error("[DBG] RENDER PASS VIRHE", e);
             }
 
             GpuFence fence = encoder.createFence();
