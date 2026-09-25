@@ -27,6 +27,7 @@ import silversword.axiom.client.event.render.Render3DEvent;
 import silversword.axiom.client.main.AxiomInitialize;
 import silversword.axiom.client.mixininterface.ILevelRenderer;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.blockchams.BlockChamsRenderer;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.shaderesp.ShaderEspRenderer;
 import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
@@ -102,7 +103,7 @@ public class LevelRendererMixin implements ILevelRenderer {
         api.end();
     }
 
-    // ─── Shader ESP: submitEntities TAIL ──────────────────────────
+    // Shader ESP: submitEntities TAIL
 
     @Inject(method = "submitEntities", at = @At("TAIL"))
     private void axiom$shaderEspSubmitEntities(
@@ -116,6 +117,14 @@ public class LevelRendererMixin implements ILevelRenderer {
                 poseStack,
                 levelRenderState,
                 this.entityRenderDispatcher);
+
+        // Block chams
+        BlockChamsRenderer.submitAll(
+                (LevelRenderer)(Object) this,
+                poseStack,
+                levelRenderState,
+                Minecraft.getInstance().getBlockEntityRenderDispatcher());
+
     }
 
     // ─── Reset-suojaus (säilytetty) ────────────────────────────────

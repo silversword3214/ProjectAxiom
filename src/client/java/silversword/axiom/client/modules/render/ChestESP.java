@@ -22,7 +22,7 @@ import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.NamedColor;
 import silversword.axiom.client.modules.moduleutils.StorageType;
-
+import silversword.axiom.client.render.rendersystem.axiomrenderer.blockchams.BlockChamsRenderer;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.render.rendersystem.utils.misc.ShapeModeEnum;
@@ -32,6 +32,20 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class ChestESP extends AxiomMod implements ColorConfigurable, KeybindConfigurable {
+
+    // Chams-layerien ID:t per storage-tyyppi
+    private static final String LAYER_CHEST     = "chestesp_chest";
+    private static final String LAYER_TRAPPED   = "chestesp_trapped";
+    private static final String LAYER_BARREL    = "chestesp_barrel";
+    private static final String LAYER_ENDER     = "chestesp_ender";
+    private static final String LAYER_SHULKER   = "chestesp_shulker";
+    private static final String LAYER_FURNACE   = "chestesp_furnace";
+
+    private static final String[] ALL_LAYERS = {
+            LAYER_CHEST, LAYER_TRAPPED, LAYER_BARREL,
+            LAYER_ENDER, LAYER_SHULKER, LAYER_FURNACE
+    };
+
     private final Minecraft mc = Minecraft.getInstance();
 
     // Värit (package-private customizerille)
@@ -53,18 +67,21 @@ public final class ChestESP extends AxiomMod implements ColorConfigurable, Keybi
     public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
 
     private final SettingSlider renderDistance;
-    private final SettingMode boxMode; // Outline, Filled, Both
+    private final SettingMode boxMode; // Outline, Filled, Both, Chams
+
+    // Chams-asetukset
+    private final SettingNumber chamsOpacity;
 
     public ChestESP() {
         super("ChestESP", "Highlights storage blocks", ModuleCategory.RENDER);
 
         // Oletusvärit
-        chestColor         = new SettingColor("Chest Color",         new Color(255, 255, 0, 180));   // keltainen
-        trappedChestColor  = new SettingColor("Trapped Chest Color", new Color(255, 80, 80, 180));   // punertava
-        barrelColor        = new SettingColor("Barrel Color",        new Color(150, 100, 50, 180));  // ruskea
-        enderChestColor    = new SettingColor("Ender Chest Color",   new Color(120, 0, 150, 180));   // tumma violetti
-        shulkerColor       = new SettingColor("Shulker Color",       new Color(255, 105, 180, 180)); // pinkki
-        furnaceColor       = new SettingColor("Furnace Color",       new Color(120, 120, 120, 180)); // harmaa
+        chestColor         = new SettingColor("Chest Color",         new Color(255, 255, 0, 180));
+        trappedChestColor  = new SettingColor("Trapped Chest Color", new Color(255, 80, 80, 180));
+        barrelColor        = new SettingColor("Barrel Color",        new Color(150, 100, 50, 180));
+        enderChestColor    = new SettingColor("Ender Chest Color",   new Color(120, 0, 150, 180));
+        shulkerColor       = new SettingColor("Shulker Color",       new Color(255, 105, 180, 180));
+        furnaceColor       = new SettingColor("Furnace Color",       new Color(120, 120, 120, 180));
 
         // Suodatukset
         drawChests   = new SettingBoolean("Draw Chests", true);
@@ -74,8 +91,12 @@ public final class ChestESP extends AxiomMod implements ColorConfigurable, Keybi
         drawShulker  = new SettingBoolean("Draw Shulkers", true);
         drawFurnace  = new SettingBoolean("Draw Furnaces", true);
 
-        renderDistance = new SettingSlider("Render Distance", new double[]{16, 32, 64, 96, 128, 256}, 64);
-        boxMode = new SettingMode("Box Mode", new String[]{"Outline", "Filled", "Both"}, "Outline");
+        renderDistance = new SettingSlider("Render Distance",
+                new double[]{16, 32, 64, 96, 128, 256}, 64);
+        boxMode = new SettingMode("Box Mode",
+                new String[]{"Outline", "Filled", "Both", "Chams"}, "Outline");
+
+        chamsOpacity = new SettingNumber("Chams Opacity %", 0, 100, 5, 80);
 
         // Piilotetut väriasetukset
         addHiddenSetting(chestColor.getSetting());
@@ -84,12 +105,12 @@ public final class ChestESP extends AxiomMod implements ColorConfigurable, Keybi
         addHiddenSetting(enderChestColor.getSetting());
         addHiddenSetting(shulkerColor.getSetting());
         addHiddenSetting(furnaceColor.getSetting());
-
         addHiddenSetting(toggleKey);
 
         // Näkyvät asetukset
         addSetting(renderDistance);
         addSetting(boxMode);
+        addSetting(chamsOpacity);
         addSetting(drawChests);
         addSetting(drawTrapped);
         addSetting(drawBarrel);
@@ -111,12 +132,25 @@ public final class ChestESP extends AxiomMod implements ColorConfigurable, Keybi
         if (!isEnabled()) return;
         if (mc.player == null || mc.level == null) return;
 
+        boolean chamsMode = boxMode.getMode().equals("Chams");
+
+        if (chamsMode) {
+            updateChamsLayers();
+            return;    // pipeline hoitaa piirron
+        }
+
+        // Sammuta kaikki chams-layerit kun ei olla chams-tilassa
+        disableAllChamsLayers();
+
+        // ── Vanha drawBox-looppi ─────────────────────────────────
         double maxDistSq = renderDistance.getValue() * renderDistance.getValue();
         Vec3 cameraPos = mc.gameRenderer.mainCamera().position();
 
         int chunkRadius = (int) Math.ceil(renderDistance.getValue() / 16.0) + 1;
         int playerChunkX = mc.player.chunkPosition().x();
         int playerChunkZ = mc.player.chunkPosition().z();
+
+        String modeStr = boxMode.getMode();
 
         for (int cx = playerChunkX - chunkRadius; cx <= playerChunkX + chunkRadius; cx++) {
             for (int cz = playerChunkZ - chunkRadius; cz <= playerChunkZ + chunkRadius; cz++) {
@@ -137,7 +171,7 @@ public final class ChestESP extends AxiomMod implements ColorConfigurable, Keybi
                     int sideColor = new Color(baseColor.r, baseColor.g, baseColor.b, 30).getARGB();
                     int lineColor = baseColor.getARGB();
 
-                    ShapeModeEnum mode = switch (boxMode.getMode()) {
+                    ShapeModeEnum mode = switch (modeStr) {
                         case "Filled" -> ShapeModeEnum.SIDES;
                         case "Both"   -> ShapeModeEnum.BOTH;
                         default       -> ShapeModeEnum.LINES;
@@ -154,10 +188,84 @@ public final class ChestESP extends AxiomMod implements ColorConfigurable, Keybi
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    //  Chams-layerien konfigurointi
+    // ═══════════════════════════════════════════════════════════════
+
+    private void updateChamsLayers() {
+        double maxDistSq = renderDistance.getValue() * renderDistance.getValue();
+        int chunkRadius = (int) Math.ceil(renderDistance.getValue() / 16.0) + 1;
+
+        int chamsAlpha = (int) Math.round(chamsOpacity.getValue() * 2.55);
+
+        configureLayer(LAYER_CHEST,   StorageType.CHEST,         chestColor,        chamsAlpha, maxDistSq, chunkRadius);
+        configureLayer(LAYER_TRAPPED, StorageType.TRAPPED_CHEST, trappedChestColor, chamsAlpha, maxDistSq, chunkRadius);
+        configureLayer(LAYER_BARREL,  StorageType.BARREL,        barrelColor,       chamsAlpha, maxDistSq, chunkRadius);
+        configureLayer(LAYER_ENDER,   StorageType.ENDER_CHEST,   enderChestColor,   chamsAlpha, maxDistSq, chunkRadius);
+        configureLayer(LAYER_SHULKER, StorageType.SHULKER,       shulkerColor,      chamsAlpha, maxDistSq, chunkRadius);
+        configureLayer(LAYER_FURNACE, StorageType.FURNACE,       furnaceColor,      chamsAlpha, maxDistSq, chunkRadius);
+    }
+
+    private void configureLayer(String layerId,
+                                StorageType type,
+                                SettingColor color,
+                                int alpha,
+                                double maxDistSq,
+                                int chunkRadius) {
+        BlockChamsRenderer.Layer layer = BlockChamsRenderer.layer(layerId);
+
+        boolean active = isTypeEnabled(type);
+        layer.enabled = active;
+        if (!active) return;
+
+        layer.scanRadiusChunks = chunkRadius;
+        layer.downscale = 2;
+        layer.outlineThickness = 2f;
+
+        final Vec3 camPos = mc.gameRenderer.mainCamera().position();
+        layer.filter = be -> {
+            if (getStorageType(be) != type) return false;
+            Vec3 c = Vec3.atCenterOf(be.getBlockPos());
+            return c.distanceToSqr(camPos) <= maxDistSq;
+        };
+
+        Color cc = color.getCurrentColor();
+        layer.chamsTint = new Color(cc.r, cc.g, cc.b, alpha).getARGB();
+
+        layer.renderChams = true;
+        layer.renderFill = false;
+        layer.renderOutline = false;
+    }
+
+    private void disableAllChamsLayers() {
+        for (String id : ALL_LAYERS) {
+            BlockChamsRenderer.layer(id).enabled = false;
+        }
+    }
+
+    private boolean isTypeEnabled(StorageType type) {
+        return switch (type) {
+            case CHEST         -> drawChests.get();
+            case TRAPPED_CHEST -> drawTrapped.get();
+            case BARREL        -> drawBarrel.get();
+            case ENDER_CHEST   -> drawEnder.get();
+            case SHULKER       -> drawShulker.get();
+            case FURNACE       -> drawFurnace.get();
+            default -> false;
+        };
+    }
+
+    @Override
+    protected void onDisable() {
+        disableAllChamsLayers();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  Apumetodit
+    // ═══════════════════════════════════════════════════════════════
+
     private StorageType getStorageType(BlockEntity be) {
         if (be instanceof ChestBlockEntity) {
-            // Tarkista onko trapped chest? ChestBlockEntity ei erota, pitää katsoa lohkon tyyppiä
-            // Yksinkertaisuuden vuoksi käytetään nimeä tai lohkoa
             if (be.getBlockState().getBlock().getDescriptionId().contains("trapped")) {
                 return StorageType.TRAPPED_CHEST;
             }
@@ -182,7 +290,6 @@ public final class ChestESP extends AxiomMod implements ColorConfigurable, Keybi
         };
     }
 
-    // Muutetaan paluutyyppi SettingColor:ksi
     private SettingColor getColorForType(StorageType type) {
         return switch (type) {
             case CHEST         -> chestColor;
@@ -191,7 +298,7 @@ public final class ChestESP extends AxiomMod implements ColorConfigurable, Keybi
             case ENDER_CHEST   -> enderChestColor;
             case SHULKER       -> shulkerColor;
             case FURNACE       -> furnaceColor;
-            default -> chestColor; // fallback
+            default -> chestColor;
         };
     }
 
@@ -207,7 +314,6 @@ public final class ChestESP extends AxiomMod implements ColorConfigurable, Keybi
         );
     }
 
-    // Värinmuokkausikkunan avaus
     public void openColorEditor() {
         WindowFactory factory = AxiomMod.getWindowFactory();
         if (factory == null) return;

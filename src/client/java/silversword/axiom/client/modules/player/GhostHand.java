@@ -22,6 +22,7 @@ import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.render.font.TextRenderer;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.blockchams.BlockChamsRenderer;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
 import silversword.axiom.client.render.rendersystem.utils.color.Color;
 import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
@@ -34,10 +35,13 @@ import silversword.axiom.client.setting.SettingNumber;
 import silversword.axiom.client.utils.render.TextUtils;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public final class GhostHand extends AxiomMod implements KeybindConfigurable {
     public static GhostHand INSTANCE;
+    private static final String CHAMS_LAYER_ID = "ghosthand";
 
     private final Minecraft mc = Minecraft.getInstance();
 
@@ -47,6 +51,10 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
     private final SettingBoolean onlyThroughWalls;
     private final SettingMode renderMode;
     private final SettingNumber maxBlocks;
+
+    // Chams-asetukset
+    private final SettingNumber chamsOpacity;
+    private final SettingColor  chamsColor;
 
     // Nametag-asetukset
     private final SettingBoolean nametagEnabled;
@@ -67,13 +75,20 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
         range = new SettingNumber("Range", 3, 20, 1, 6);
         renderBlocks = new SettingBoolean("Render Blocks", true);
         onlyThroughWalls = new SettingBoolean("Only Through Walls", true);
-        renderMode = new SettingMode("Render Mode", new String[]{"Outline", "Filled", "Both"}, "Outline");
+        renderMode = new SettingMode("Render Mode",
+                new String[]{"Outline", "Filled", "Both", "Chams"}, "Outline");
         maxBlocks = new SettingNumber("Max Blocks", 10, 200, 10, 50);
 
+        // Chams
+        chamsOpacity = new SettingNumber("Chams Opacity %", 0, 100, 5, 80);
+        chamsColor   = new SettingColor("Chams Color", new Color(0, 200, 255, 255));
+
+        // Nametag
         nametagEnabled = new SettingBoolean("Show Block Name", true);
         nametagScale = new SettingNumber("Nametag Scale", 0.5, 3.0, 0.1, 1.5);
         nametagOffset = new SettingNumber("Nametag Offset", -0.50, 2.0, 0.1, -0.20);
-        bgMode = new SettingMode("Background", new String[]{"None", "Filled", "Outline", "Rounded"}, "Filled");
+        bgMode = new SettingMode("Background",
+                new String[]{"None", "Filled", "Outline", "Rounded"}, "Filled");
         textColor = new SettingColor("Text Color", new Color(255, 255, 255, 255));
         backgroundColor = new SettingColor("Background", new Color(0, 0, 0, 75));
         outlineColor = new SettingColor("Outline", new Color(255, 255, 255, 255));
@@ -82,11 +97,13 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
         addHiddenSetting(textColor.getSetting());
         addHiddenSetting(backgroundColor.getSetting());
         addHiddenSetting(outlineColor.getSetting());
+        addHiddenSetting(chamsColor.getSetting());
 
         addSetting(range);
         addSetting(renderBlocks);
         addSetting(onlyThroughWalls);
         addSetting(renderMode);
+        addSetting(chamsOpacity);
         addSetting(maxBlocks);
         addSetting(nametagEnabled);
         addSetting(nametagScale);
@@ -230,14 +247,45 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
 
     @Subscribe
     private void onRender(Render3DEvent event) {
-        if (!isEnabled() || !renderBlocks.get() || mc.player == null || mc.level == null) return;
+        if (!isEnabled() || mc.player == null || mc.level == null) return;
 
+        // Skannaa aina (tarvitaan myös nametagiin ja currentTargetiin)
         scanInteractiveBlocks();
-
         BlockHitResult hit = raycastForInteractiveBlockHit(range.getValue());
         currentTarget = hit != null ? hit.getBlockPos() : null;
 
+        boolean chamsMode = renderMode.getMode().equals("Chams");
+
+        if (chamsMode) {
+            // ── Chams: shader-pohjainen silhouette ──────────────────
+            BlockChamsRenderer.Layer layer = BlockChamsRenderer.layer(CHAMS_LAYER_ID);
+            layer.enabled = true;
+            layer.scanRadiusChunks = Math.max(1, (int) Math.ceil(range.getValue() / 16.0) + 1);
+            layer.downscale = 2;
+            layer.outlineThickness = 2f;
+
+            // Filtteri: hyväksy vain skannatut interaktiiviset positiot
+            final Set<BlockPos> targets = new HashSet<>(interactiveBlocks);
+            layer.filter = be -> targets.contains(be.getBlockPos());
+
+            int chamsAlpha = (int) Math.round(chamsOpacity.getValue() * 2.55);
+            Color cc = chamsColor.getCurrentColor();
+            layer.chamsTint = new Color(cc.r, cc.g, cc.b, chamsAlpha).getARGB();
+
+            layer.renderChams = true;
+            layer.renderFill = false;
+            layer.renderOutline = false;
+            return;
+        }
+
+        // Muut tilat: sammuta chams-layer
+        BlockChamsRenderer.layer(CHAMS_LAYER_ID).enabled = false;
+
+        if (!renderBlocks.get()) return;
+
+        // ── Vanha drawBox-looppi (Outline / Filled / Both) ──────────
         Renderer3D renderer = event.getRenderer();
+        String modeStr = renderMode.getMode();
 
         for (BlockPos pos : interactiveBlocks) {
             BlockState state = mc.level.getBlockState(pos);
@@ -261,7 +309,7 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
             }
 
             ShapeModeEnum mode;
-            switch (renderMode.getMode()) {
+            switch (modeStr) {
                 case "Filled" -> mode = ShapeModeEnum.SIDES;
                 case "Both"   -> mode = ShapeModeEnum.BOTH;
                 default       -> mode = ShapeModeEnum.LINES;
@@ -272,7 +320,7 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  2D nametag — käyttää event.getRenderer() ja event.getGuiGraphics()
+    //  2D nametag
     // ═══════════════════════════════════════════════════════════════
 
     @Subscribe
@@ -321,7 +369,6 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
         double renderX = screenPos.x - (bgWidth / 2.0);
         double renderY = screenPos.y - (bgHeight / 2.0);
 
-        // Piirretään tausta Renderer2D:llä → menee oikeaan HUD-targettiin
         drawBackground(event, renderX, renderY, bgWidth, bgHeight, finalScale);
 
         TextRenderer tr = TextRenderer.get();
@@ -363,4 +410,10 @@ public final class GhostHand extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onTick() {}
+
+    @Override
+    protected void onDisable() {
+        // Sammuta chams-layer
+        BlockChamsRenderer.layer(CHAMS_LAYER_ID).enabled = false;
+    }
 }

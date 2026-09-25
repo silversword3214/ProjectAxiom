@@ -126,6 +126,8 @@ public final class ModuleManager {
         add(new AntiCactus());
 
         // Render
+        add(new Esp2D());
+        add(new DamageNumbers());
         add(new Minimap());
         add(new RearCamera());
         add(new ShaderEsp());
@@ -149,6 +151,7 @@ public final class ModuleManager {
         add(new NightVision());
         add(new Zoom());
         add(new Freecam());
+        add(new PlayerAura());
         add(new ChunkBorders());
         add(new Breadcrumbs());
         add(new NoHurtCam());
@@ -160,6 +163,7 @@ public final class ModuleManager {
         add(new NoViewBobbingTilt());
 
         // Misc
+        add(new HealthIndicator());
         add(new InvWalk());
         add(new TargetHUD());
         add(new PlayerINFO());

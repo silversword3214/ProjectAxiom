@@ -163,6 +163,14 @@ public class Renderer2D {
         core.addTexturePart(textureId, x, y, w, h, 0f, 1f, 1f, 0f, tint);
     }
 
+    public void drawEntityChamsWithPipeline(Identifier textureId, float x, float y,
+                                float w, float h, int tint) {
+        // Chams = flat solid silhouette, sama pipeline kuin fill
+        // Ero filliin on vain värin alpha (chams ~220-255, fill ~60)
+        core.addTextureWithPipeline(textureId, RenderPipelines.UI_ENTITY_FILL,
+                x, y, w, h, 0f, 1f, 1f, 0f, tint);
+    }
+
     public void drawEntityFill(Identifier textureId, float x, float y,
                                float w, float h, int fillColor) {
         core.addTextureWithPipeline(textureId, RenderPipelines.UI_ENTITY_FILL,

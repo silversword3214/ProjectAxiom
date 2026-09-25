@@ -12,7 +12,10 @@ import silversword.axiom.client.gui.core.ThemeManager;
 import silversword.axiom.client.gui.screen.ClickGuiScreen;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.main.AxiomInitialize;
+import silversword.axiom.client.modules.render.ChestESP;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.blockchams.BlockChamsRenderer;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.HudEventGuard;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.shaderesp.ShaderEspRenderer;
@@ -78,13 +81,15 @@ public final class HudManager {
 
         float delta = tickCounter.getGameTimeDeltaPartialTick(true);
         Matrix4f proj = RenderUtils.getScaledProjection(draw);
-        Renderer2D renderer = new Renderer2D(draw, RenderAPI.getInstance().getCore(), proj);
+
+        // Käytä HUD-core:a, ei GUI:n core2D:tä
+        RenderCore hudCore = RenderAPI.getInstance().getCore();
+        Renderer2D renderer = new Renderer2D(draw, hudCore, proj);
 
         Theme theme = ThemeManager.getCurrentTheme();
+        Render2DEvent event = new Render2DEvent(renderer, delta, draw,
+                draw.guiWidth(), draw.guiHeight());
 
-        Render2DEvent event = new Render2DEvent(renderer, delta, draw, draw.guiWidth(), draw.guiHeight());
-
-        // Sama guard — vain toinen layereista postaa eventin
         if (HudEventGuard.shouldPostEvent(draw)) {
             AxiomInitialize.EVENT_BUS.post(event);
         }
@@ -99,8 +104,9 @@ public final class HudManager {
         if (ShaderEspRenderer.isEnabled()) {
             ShaderEspRenderer.compositeToScreen(renderer);
         }
-
-        //RenderAPI.getInstance().getCore().flush();
+        if (BlockChamsRenderer.anyEnabled()) {
+            BlockChamsRenderer.compositeToScreen(renderer);
+        }
 
         for (HudContext.ItemEntry entry : ctx.getItems()) {
             Matrix3x2fStack pose = draw.pose();
@@ -114,10 +120,8 @@ public final class HudManager {
         }
 
         ctx.renderTexts();
-
-        //RenderAPI.getInstance().getCore().flush();
         DrawTexture.renderAll(renderer);
-        //RenderAPI.getInstance().getCore().flush();
+
     }
 
     public HudElement hitTest(int mouseX, int mouseY) {

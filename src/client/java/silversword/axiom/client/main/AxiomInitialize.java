@@ -18,6 +18,7 @@ import silversword.axiom.client.managers.ModuleKeybindManager;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.waypoints.WaypointCommands;
 import silversword.axiom.client.render.font.Fonts;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.blockchams.BlockChamsRenderer;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderPipelines;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.FabricHudHook;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.rearcamera.RearCameraRenderer;

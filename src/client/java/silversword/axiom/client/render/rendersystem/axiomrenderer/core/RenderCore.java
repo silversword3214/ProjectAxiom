@@ -201,6 +201,7 @@ public class RenderCore {
      * HUD-layer vaihtaa projektion orthoksi.
      */
     public void beginFrame(Matrix4f projection, Matrix4f modelView) {
+        commitCurrentGroup();
         this.currentProjectionMatrix = projection;
         this.currentModelViewMatrix = modelView;
     }

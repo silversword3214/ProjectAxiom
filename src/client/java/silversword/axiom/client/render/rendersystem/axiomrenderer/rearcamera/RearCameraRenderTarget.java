@@ -12,7 +12,7 @@ import org.joml.Vector4f;
 
 public final class RearCameraRenderTarget extends RenderTarget {
 
-    private static final Vector4f CLEAR_COLOR = new Vector4f(1f, 0f, 1f, 1f); // magenta
+    private static final Vector4f CLEAR_COLOR = new Vector4f(0f, 0f, 0f, 0f); // magenta 0 1 0 1
     private static final double CLEAR_DEPTH = 1.0;
 
     private GpuSampler sampler;

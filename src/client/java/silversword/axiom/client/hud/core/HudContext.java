@@ -44,6 +44,11 @@ public final class HudContext {
     public void fillRounded(int x, int y, int w, int h, int radius, int argb) {
         renderer.drawRoundedRect(x, y, w, h, radius, argb);
     }
+    /** Double-tarkkuuksinen rounded rect — käytetään sub-pixel renderöintiin. */
+    public void fillRounded(double x, double y, double w, double h, double radius, int argb) {
+        renderer.drawRoundedRect(x, y, w, h, radius, argb);
+    }
+
 
     public void fillRoundedCustom(int x, int y, int w, int h, int radius, int argb,
                                   boolean topLeft, boolean topRight, boolean bottomRight, boolean bottomLeft) {
