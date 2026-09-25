@@ -9,7 +9,9 @@ import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Rende
 public class RenderAPI {
     private static final RenderAPI INSTANCE = new RenderAPI();
 
+    /** HUD + GUI + world-to-screen overlays. Flushataan LevelRendererin TAIL:issa. */
     public final RenderCore core2D;
+    /** 3D-maailma (ESP, chams). Flushataan LevelRendererin TAIL:issa. */
     public final RenderCore core3D;
 
     private Renderer2D renderer2D;
@@ -20,19 +22,10 @@ public class RenderAPI {
         core3D = new RenderCore();
     }
 
-    public static RenderAPI getInstance() {
-        return INSTANCE;
-    }
+    public static RenderAPI getInstance() { return INSTANCE; }
 
-    /** 2D/HUD-kayttoon. */
-    public RenderCore getCore() {
-        return core2D;
-    }
-
-    /** 3D/maailma-kayttoon. */
-    public RenderCore getCore3D() {
-        return core3D;
-    }
+    public RenderCore getCore()   { return core2D; }
+    public RenderCore getCore3D() { return core3D; }
 
     public void beginHUDUnscaled(GuiGraphicsExtractor graphics, float tickDelta) {
         var window = net.minecraft.client.Minecraft.getInstance().getWindow();
@@ -40,11 +33,6 @@ public class RenderAPI {
         int height = window.getGuiScaledHeight();
         Matrix4f proj = new Matrix4f().setOrtho(0, width, height, 0, -1000, 1000);
         renderer2D = new Renderer2D(graphics, core2D, proj);
-    }
-
-    public void end() {
-        core2D.flush();
-        core3D.flush();
     }
 
     public Renderer2D hud() {

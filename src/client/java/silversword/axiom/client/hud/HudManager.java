@@ -16,6 +16,7 @@ import silversword.axiom.client.modules.render.ChestESP;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.blockchams.BlockChamsRenderer;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
+import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.AxiomHudBlocker;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.HudEventGuard;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
 import silversword.axiom.client.render.rendersystem.axiomrenderer.shaderesp.ShaderEspRenderer;
@@ -78,21 +79,19 @@ public final class HudManager {
     public void renderAll(GuiGraphicsExtractor draw, DeltaTracker tickCounter) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
+        if (AxiomHudBlocker.isScreenOpen()) return;   // piilota kun screen auki
 
         float delta = tickCounter.getGameTimeDeltaPartialTick(true);
         Matrix4f proj = RenderUtils.getScaledProjection(draw);
 
-        // Käytä HUD-core:a, ei GUI:n core2D:tä
-        RenderCore hudCore = RenderAPI.getInstance().getCore();
-        Renderer2D renderer = new Renderer2D(draw, hudCore, proj);
+        Renderer2D renderer = new Renderer2D(draw, RenderAPI.getInstance().getCore(), proj);
 
         Theme theme = ThemeManager.getCurrentTheme();
         Render2DEvent event = new Render2DEvent(renderer, delta, draw,
                 draw.guiWidth(), draw.guiHeight());
 
-        if (HudEventGuard.shouldPostEvent(draw)) {
-            AxiomInitialize.EVENT_BUS.post(event);
-        }
+        // AINOA event-lähde. Ei guardia.
+        AxiomInitialize.EVENT_BUS.post(event);
 
         HudContext ctx = new HudContext(mc, draw, theme, delta, renderer);
 
@@ -101,12 +100,8 @@ public final class HudManager {
             e.render(ctx, tickCounter);
         }
 
-        if (ShaderEspRenderer.isEnabled()) {
-            ShaderEspRenderer.compositeToScreen(renderer);
-        }
-        if (BlockChamsRenderer.anyEnabled()) {
-            BlockChamsRenderer.compositeToScreen(renderer);
-        }
+        if (ShaderEspRenderer.isEnabled()) ShaderEspRenderer.compositeToScreen(renderer);
+        if (BlockChamsRenderer.anyEnabled()) BlockChamsRenderer.compositeToScreen(renderer);
 
         for (HudContext.ItemEntry entry : ctx.getItems()) {
             Matrix3x2fStack pose = draw.pose();
@@ -121,7 +116,6 @@ public final class HudManager {
 
         ctx.renderTexts();
         DrawTexture.renderAll(renderer);
-
     }
 
     public HudElement hitTest(int mouseX, int mouseY) {

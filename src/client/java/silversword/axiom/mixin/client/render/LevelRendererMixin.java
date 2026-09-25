@@ -100,7 +100,8 @@ public class LevelRendererMixin implements ILevelRenderer {
                 renderer, tickDelta, camera.position(), projection, view);
 
         AxiomInitialize.EVENT_BUS.post(event);
-        api.end();
+        api.getCore3D().flush();
+        api.getCore().flush();
     }
 
     // Shader ESP: submitEntities TAIL

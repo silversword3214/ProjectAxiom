@@ -98,7 +98,7 @@ public final class FpsHud extends BaseHudElement {
 
         // Teksti
         int textX = bgX + padding;
-        int textY = bgY + padding;
+        int textY = bgY + padding + 3;
         ctx.drawScaledText(textLabel, textX, textY, txtCol.getARGB(), true, scale);
         ctx.drawScaledText(valueStr, textX + (int) labelWidth + (int) (2 * scale), textY, valCol.getARGB(), true, scale);
     }

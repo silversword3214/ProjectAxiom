@@ -24,10 +24,7 @@ public abstract class GameRendererMixin {
         RenderAPI.getInstance().close();
     }
 
-    @Inject(method = "render", at = @At("TAIL"))
-    private void axiom$flushAfterGui(CallbackInfo ci) {
-        RenderAPI.getInstance().getCore().flush();
-    }
+
 
 
     @Inject(
