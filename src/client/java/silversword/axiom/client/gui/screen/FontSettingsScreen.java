@@ -129,7 +129,6 @@ public final class FontSettingsScreen extends Screen {
             lastUi.renderTexts();
         }
 
-        RenderAPI.getInstance().getCore().flush();
     }
 
 

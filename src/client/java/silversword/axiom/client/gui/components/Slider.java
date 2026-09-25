@@ -43,6 +43,7 @@ public final class Slider implements UiComponent {
     @Override public int getPreferredHeight() { return 26; }
 
     private double clamp(double v) { return v < min ? min : v > max ? max : v; }
+
     private double applyStep(double v) {
         if (step <= 0) return v;
         double snapped = Math.round((v - min) / step) * step + min;
@@ -51,12 +52,12 @@ public final class Slider implements UiComponent {
 
     private Rect calculateSliderArea(UiContext ui, double valueForWidth) {
         int labelWidth = ui.textWidth(label);
-        String valStr = formatValue(valueForWidth);
-        int valWidth = ui.textWidth(valStr);
+        String valStr  = formatValue(valueForWidth);
+        int valWidth   = ui.textWidth(valStr);
 
-        int labelEnd = bounds.x + ui.theme.innerPadding + labelWidth;
+        int labelEnd   = bounds.x + ui.theme.innerPadding + labelWidth;
         int valueStart = bounds.right() - ui.theme.innerPadding - valWidth;
-        int sliderX = labelEnd + PADDING;
+        int sliderX    = labelEnd + PADDING;
         int sliderWidth = valueStart - sliderX - EXTRA_PADDING;
 
         if (sliderWidth < 10) {
@@ -89,11 +90,6 @@ public final class Slider implements UiComponent {
 
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
-        // POISTETTU: "if (dragging && !isLeftPressed/isRightPressed)" tarkistus.
-        // Se perui dragin joka framella, koska MouseHandler-tila ei ole
-        // synkronissa event-tilan kanssa. Nyt luotetaan pelkästään
-        // mouseClicked/mouseReleased-eventteihin (kuten ScrollContainer tekee).
-
         boolean hover = bounds.contains(mouseX, mouseY);
 
         // Label
@@ -102,7 +98,7 @@ public final class Slider implements UiComponent {
         ui.text(label, bounds.x + ui.theme.innerPadding, textY, labelColor);
 
         // Value text
-        double raw = clamp(getter.getAsDouble());
+        double raw   = clamp(getter.getAsDouble());
         double value = applyStep(raw);
         String valStr = formatValue(value);
 
@@ -113,21 +109,30 @@ public final class Slider implements UiComponent {
         Rect sliderArea = (dragging && dragSliderArea != null) ? dragSliderArea : getSliderArea(ui);
 
         int trackY = sliderArea.y;
-        ui.fill(sliderArea.x, trackY, sliderArea.w, 6, ui.theme.sliderTrack);
+        int trackH = sliderArea.h;
+        double trackRadius = trackH / 2.0;
+
+        // Pyöristetty track
+        ui.fillRounded(sliderArea.x, trackY, sliderArea.w, trackH,
+                ui.theme.sliderTrack, trackRadius);
+
         double range = max - min;
-        double pct = range <= 0 ? 0 : (value - min) / range;
+        double pct   = range <= 0 ? 0 : (value - min) / range;
         int fillW = (int) Math.round(sliderArea.w * pct);
-        if (fillW > 0) ui.fill(sliderArea.x, trackY, fillW, 6, ui.theme.sliderFill);
+        if (fillW > 0) {
+            ui.fillRounded(sliderArea.x, trackY, fillW, trackH,
+                    ui.theme.sliderFill, trackRadius);
+        }
 
-        // Knob
-        int knobSize = 12;
+        // Knob (pyöreä, skaalautuu trackin mukaan)
+        int knobSize = Math.max(10, trackH + 6);
         int knobX = sliderArea.x + fillW - knobSize / 2;
-        int knobY = trackY - (knobSize - sliderArea.h) / 2;
-        int knobCenterX = knobX + knobSize / 2;
-        int knobCenterY = knobY + knobSize / 2;
+        int knobY = trackY - (knobSize - trackH) / 2;
+        int knobCx = knobX + knobSize / 2;
+        int knobCy = knobY + knobSize / 2;
 
-        ui.fillCircle(knobCenterX, knobCenterY, knobSize / 2, ui.theme.scrollbarHover);
-        ui.fillCircle(knobCenterX, knobCenterY, knobSize / 2 - 2, ui.theme.panel);
+        ui.fillCircle(knobCx, knobCy, knobSize / 2.0,     ui.theme.scrollbarHover);
+        ui.fillCircle(knobCx, knobCy, knobSize / 2.0 - 2, ui.theme.panel);
 
         if (dragging && dragSliderArea != null) {
             double nv = applyStep(clamp(valueFromMouse(mouseX, dragSliderArea)));

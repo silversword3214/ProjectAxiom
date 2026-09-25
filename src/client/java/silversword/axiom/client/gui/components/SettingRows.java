@@ -22,7 +22,7 @@ abstract class SettingRowBase implements UiComponent {
     protected int rowH() { return 26; }
     @Override public int getPreferredHeight() { return rowH(); }
 
-    /** UUSI: piirretÃ¤Ã¤n rivin tausta, jotta komponentti nÃ¤kyy paneelin pÃ¤Ã¤llÃ¤. */
+    /** UUSI: piirretään rivin tausta, jotta komponentti näkyy paneelin päällä. */
     protected void drawRowBackground(UiContext ui, int mouseX, int mouseY) {
         boolean hover = bounds.contains(mouseX, mouseY);
         int bg = hover ? ui.theme.buttonHover : ui.theme.panel;
@@ -88,7 +88,7 @@ final class SettingTimeRow extends SettingRowBase {
         int textY = getTextY(ui);
         ui.text(s.getName(), bounds.x + 8, textY, ui.theme.text);
 
-        // LiukusÃ¤Ã¤din
+        // Liukusäädin
         int sliderX = bounds.x + 100;
         int sliderY = bounds.y + 4;
         int sliderW = bounds.w - 108;
@@ -178,11 +178,9 @@ final class SettingTimeFieldRow extends SettingRowBase {
         int textY = getTextY(ui);
         ui.text(setting.getName(), bounds.x + 8, textY, ui.theme.text);
 
-        // Jos muokataan, nÃ¤ytÃ¤ tekstikenttÃ¤
         if (editing) {
             textField.render(ui, mouseX, mouseY, delta);
         } else {
-            // NÃ¤ytÃ¤ arvo tekstinÃ¤
             String valueStr = setting.getDisplayValue() + " s";
             int valueWidth = ui.textWidth(valueStr);
             ui.text(valueStr, bounds.right() - valueWidth - 8, textY, ui.theme.textDim);
@@ -200,7 +198,6 @@ final class SettingTimeFieldRow extends SettingRowBase {
                 }
                 return textField.mouseClicked(ui, mouseX, mouseY, button);
             } else if (editing) {
-                // Klikkaus rivin ulkopuolelle -> tallenna
                 applyEdit();
                 editing = false;
             }
@@ -237,7 +234,7 @@ final class SettingTimeFieldRow extends SettingRowBase {
         if (setting.setValueFromString(newText)) {
             // ok
         } else {
-            // virheellinen syÃ¶te, palauta vanha
+            // virheellinen syöte, palauta vanha
         }
         draft = setting.getDisplayValue();
     }
@@ -271,41 +268,43 @@ final class SettingToggleRow extends SettingRowBase {
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
         return toggle.mouseClicked(ui, mouseX, mouseY, button);
     }
-
-    // Muut tapahtumat voi delegoida tarvittaessa, mutta Toggle ei niitÃ¤ kÃ¤ytÃ¤,
-    // joten ne voidaan jÃ¤ttÃ¤Ã¤ oletukseksi (SettingRowBase hoitaa ne)
 }
 
 final class SettingModeRow extends SettingRowBase {
     private final SettingMode s;
-    // private ModeDropdown activeDropdown = null; // Poistetaan, kÃ¤ytetÃ¤Ã¤n staattista muuttujaa
 
     SettingModeRow(SettingMode s) { this.s = s; }
 
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
         boolean hover = bounds.contains(mouseX, mouseY);
-        // No background for the row
 
         int textY = getTextY(ui);
         int labelColor = hover ? ui.theme.accent : ui.theme.text;
         ui.text(s.getName(), bounds.x + 8, textY, labelColor);
 
-        String mode = s.getMode();
-        int modeWidth = ui.textWidth(mode) + 16;
-        int pillerX = bounds.right() - modeWidth - 8;
-        int pillerY = bounds.y + (bounds.h - 18) / 2;
-        Rect pillerRect = new Rect(pillerX, pillerY, modeWidth, 18);
+        String mode  = s.getMode();
+        String arrow = ">";
+
+        int fontH    = ui.fontHeight();
+        int padding  = Math.max(4, fontH / 2);
+        int arrowGap = Math.max(4, fontH / 2);
+
+        int modeW  = ui.textWidth(mode);
+        int arrowW = ui.textWidth(arrow);
+        int pillH  = Math.max(18, fontH + 8);
+        int pillW  = padding + modeW + arrowGap + arrowW + padding;
+
+        int pillerX = bounds.right() - pillW - 8;
+        int pillerY = bounds.y + (bounds.h - pillH) / 2;
+        Rect pillerRect = new Rect(pillerX, pillerY, pillW, pillH);
 
         boolean pillerHover = pillerRect.contains(mouseX, mouseY);
         ui.fill(pillerRect, pillerHover ? ui.theme.buttonHover : ui.theme.button);
 
-        int modeTextY = bounds.y + bounds.h / 2 - ui.fontHeight() / 2 + 4;
-        ui.text(mode, pillerRect.x + 6, modeTextY, ui.theme.text);
-
-        String arrow = ">";
-        int arrowX = pillerRect.right() - ui.textWidth(arrow) - 6;
-        ui.text(arrow, arrowX, modeTextY, ui.theme.textDim);
+        int modeTextY = bounds.y + bounds.h / 2 - fontH / 2 + 4;
+        ui.text(mode,  pillerRect.x + padding, modeTextY, ui.theme.text);
+        ui.text(arrow, pillerRect.right() - padding - arrowW, modeTextY, ui.theme.textDim);
 
         if (ClickGuiScreen.currentDropdown != null) {
             ClickGuiScreen.currentDropdown.render(ui, mouseX, mouseY, delta);
@@ -314,23 +313,19 @@ final class SettingModeRow extends SettingRowBase {
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-        // Jos dropdown on auki, kÃ¤sitellÃ¤Ã¤n se ensin
+        // Jos dropdown on auki, käsitellään se ensin
         if (ClickGuiScreen.currentDropdown != null) {
-            // Jos klikkaus on dropdownin sisÃ¤llÃ¤, vÃ¤litÃ¤ sille
             if (ClickGuiScreen.currentDropdown.getBounds().contains(mouseX, mouseY)) {
                 return ClickGuiScreen.currentDropdown.mouseClicked(ui, mouseX, mouseY, button);
             } else {
-                // Klikkaus dropdownin ulkopuolella -> sulje se
                 ClickGuiScreen.currentDropdown = null;
                 return true;
             }
         }
 
-        // Jos dropdown ei ole auki, tarkista klikataanko tÃ¤tÃ¤ riviÃ¤
         if (!bounds.contains(mouseX, mouseY)) return false;
 
         if (button == 1) {
-            // Laske dropdownin koko
             int maxModeWidth = 0;
             for (String m : s.getModes()) {
                 int w = ui.textWidth(m);
@@ -347,7 +342,7 @@ final class SettingModeRow extends SettingRowBase {
             int dropdownX = bounds.right() + 13;
             int dropdownY = bounds.y;
 
-            int screenWidth = ui.mc.getWindow().getGuiScaledWidth();
+            int screenWidth  = ui.mc.getWindow().getGuiScaledWidth();
             int screenHeight = ui.mc.getWindow().getGuiScaledHeight();
 
             if (dropdownX + dropdownW > screenWidth) {
@@ -381,10 +376,6 @@ final class SettingModeRow extends SettingRowBase {
         return false;
     }
 
-    // Muut tapahtumienkÃ¤sittelijÃ¤t (mouseReleased, mouseDragged, jne.) pitÃ¤Ã¤ myÃ¶s delegoida dropdownille
-    // mutta koska kÃ¤ytetÃ¤Ã¤n staattista muuttujaa, niiden tÃ¤ytyy tarkistaa se.
-    // TÃ¤ssÃ¤ ne toteutetaan samalla tavalla kuin ennen, mutta kÃ¤yttÃ¤en staattista muuttujaa.
-
     @Override
     public void mouseReleased(UiContext ui, double mouseX, double mouseY, int button) {
         if (ClickGuiScreen.currentDropdown != null) {
@@ -402,7 +393,8 @@ final class SettingModeRow extends SettingRowBase {
 
     @Override
     public boolean mouseScrolled(UiContext ui, double mouseX, double mouseY, double amount) {
-        if (ClickGuiScreen.currentDropdown != null && ClickGuiScreen.currentDropdown.getBounds().contains(mouseX, mouseY)) {
+        if (ClickGuiScreen.currentDropdown != null
+                && ClickGuiScreen.currentDropdown.getBounds().contains(mouseX, mouseY)) {
             return ClickGuiScreen.currentDropdown.mouseScrolled(ui, mouseX, mouseY, amount);
         }
         return false;
@@ -433,7 +425,7 @@ final class SettingNumberSliderRow extends SettingRowBase {
                 s.getName(),
                 s.getMin(),
                 s.getMax(),
-                0.0, // jatkuva liukusÃ¤Ã¤din
+                0.0,
                 s::getValue,
                 s::setValue
         );
@@ -464,7 +456,6 @@ final class SettingNumberSliderRow extends SettingRowBase {
     public boolean mouseDragged(UiContext ui, double mouseX, double mouseY, int button, double dx, double dy) {
         return slider.mouseDragged(ui, mouseX, mouseY, button, dx, dy);
     }
-
 }
 
 final class SettingPresetSliderRow extends SettingRowBase {
@@ -482,19 +473,16 @@ final class SettingPresetSliderRow extends SettingRowBase {
                 0,
                 n - 1,
                 1.0,
-                // Getteri palauttaa nykyistÃ¤ preset-arvoa vastaavan indeksin
                 () -> {
                     double val = s.getValue();
                     return findClosestIndex(presets, val);
                 },
-                // Setteri asettaa preset-arvon indeksin perusteella
                 (idxDouble) -> {
                     int idx = (int) Math.round(idxDouble);
                     if (idx >= 0 && idx < n) {
                         s.setValue(presets[idx]);
                     }
                 },
-                // Muotoilija: nÃ¤ytetÃ¤Ã¤n preset-arvo eikÃ¤ indeksi
                 idx -> s.getDisplayValue()
         );
     }
@@ -539,8 +527,6 @@ final class SettingPresetSliderRow extends SettingRowBase {
     }
 }
 
-// SettingRows.java tiedostoon:
-
 final class SettingRangeRow extends SettingRowBase {
     private final SettingRangeSlider setting;
     private boolean draggingMin = false;
@@ -552,30 +538,24 @@ final class SettingRangeRow extends SettingRowBase {
 
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
-        // PiirretÃ¤Ã¤n nimi vasemmalle
         ui.text(setting.getName(), bounds.x + 4, bounds.y + 4, ui.theme.text);
 
-        // Arvoteksti (esim. "400-1200ms") oikealle ylÃ¶s
-        String valStr = (int)setting.getMin() + "-" + (int)setting.getMax() + "ms";
+        String valStr = (int) setting.getMin() + "-" + (int) setting.getMax() + "ms";
         ui.text(valStr, bounds.right() - ui.textWidth(valStr) - 4, bounds.y + 4, ui.theme.textDim);
 
-        // Sliderin taustapalkki
         int barX = bounds.x + 6;
         int barY = bounds.y + 18;
         int barW = bounds.w - 12;
         int barH = 3;
 
-        // Tausta (tumma)
         ui.fill(barX, barY, barW, barH, 0xFF151515);
 
-        // Lasketaan prosentit (50ms - 5000ms vÃ¤lillÃ¤)
         double minP = (setting.getMin() - 50) / (5000 - 50);
         double maxP = (setting.getMax() - 50) / (5000 - 50);
 
-        int minX = barX + (int)(minP * barW);
-        int maxX = barX + (int)(maxP * barW);
+        int minX = barX + (int) (minP * barW);
+        int maxX = barX + (int) (maxP * barW);
 
-        // Aktiivinen alue pallojen vÃ¤lissÃ¤ (teeman korostusvÃ¤ri)
         ui.fill(minX, barY, maxX - minX, barH, ui.theme.accent);
 
         int knobRadius = 4;
@@ -585,12 +565,10 @@ final class SettingRangeRow extends SettingRowBase {
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-        // Tarkistetaan onko klikkaus sliderin korkeudella
         if (button == 1 && mouseY >= bounds.y + 12 && mouseY <= bounds.y + 26) {
             double relX = clamp01((mouseX - (bounds.x + 6)) / (bounds.w - 12));
             double val = 50 + relX * (5000 - 50);
 
-            // Valitaan kumpaa pÃ¤Ã¤tÃ¤ liikutetaan sen perusteella, kumpaa ollaan lÃ¤hempÃ¤nÃ¤
             if (Math.abs(val - setting.getMin()) < Math.abs(val - setting.getMax())) {
                 draggingMin = true;
             } else {
@@ -618,14 +596,11 @@ final class SettingRangeRow extends SettingRowBase {
 
     private void updateValue(double mouseX) {
         double relX = clamp01((mouseX - (bounds.x + 6)) / (bounds.w - 12));
-        // PyÃ¶ristetÃ¤Ã¤n 50ms vÃ¤lein
         double val = Math.round((50 + relX * (5000 - 50)) / 50.0) * 50.0;
 
         if (draggingMin) {
-            // EstetÃ¤Ã¤n vasenta nuppia menemÃ¤stÃ¤ oikean yli
             setting.setMin(Math.min(val, setting.getMax() - 50));
         } else {
-            // EstetÃ¤Ã¤n oikeaa nuppia menemÃ¤stÃ¤ vasemman yli
             setting.setMax(Math.max(val, setting.getMin() + 50));
         }
     }
@@ -647,7 +622,6 @@ final class SettingStringRow implements UiComponent {
     @Override
     public void setBounds(Rect bounds) {
         this.bounds = bounds;
-        // textField vie koko rivin leveyden, korkeus 16
         textField.setBounds(new Rect(bounds.x, bounds.y, bounds.w, 16));
     }
 
@@ -659,11 +633,6 @@ final class SettingStringRow implements UiComponent {
 
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
-        // PiirretÃ¤Ã¤n label ensin? YleensÃ¤ asetuksen nimi ja sitten kenttÃ¤.
-        // Toteutetaan niin, ettÃ¤ vasemmalla nimi, oikealla textField.
-        // Yksinkertainen: koko rivi on textField, mutta nÃ¤ytetÃ¤Ã¤n myÃ¶s nimi?
-        // Parempi: tehdÃ¤Ã¤n kuten SettingNumberSliderRow: nimi + komponentti.
-        // KÃ¤ytetÃ¤Ã¤n nyt yksinkertaista: nimi vasemmalla, textField oikealla.
         int labelWidth = 80;
         ui.text(setting.getName(), bounds.x, bounds.y + 4, ui.theme.text);
         Rect fieldRect = new Rect(bounds.x + labelWidth, bounds.y, bounds.w - labelWidth, 16);
@@ -701,4 +670,3 @@ final class SettingStringRow implements UiComponent {
         return textField.charTyped(ui, chr, modifiers);
     }
 }
-

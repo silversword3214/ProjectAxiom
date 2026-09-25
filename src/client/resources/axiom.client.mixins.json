@@ -2,7 +2,7 @@
   "required": true,
   "minVersion": "0.8",
   "package": "silversword.axiom.mixin.client",
-  "compatibilityLevel": "JAVA_21",
+  "compatibilityLevel": "JAVA_25",
   "client": [
     "CameraInvoker",
     "CameraMixin",
@@ -62,20 +62,22 @@
     "render.ScreenEffectRendererMixin",
     "render.WindowMixin",
     "render.xray.XRayAmbientOcclusionMixin",
-    "render.xray.XRayModelBlockRendererMixin",
     "render.xray.XRayOcclusionMixin",
     "render.xray.XRayShouldDrawSideMixin",
     "render.xray.XRaySideCullingMixin",
     "world.ClientWorldPropertiesMixin",
-    "render.xray.XRayModelBlockRendererMixin",
-    "render.xray.XRayProbeMixin"
+    "gui.GuiScreenMixin",
+    "gui.HudRenderMixin",
+    "render.xray.XRayIndigoTerrainMixin",
+    "render.xray.XRayLightmapMixin"
   ],
   "injectors": {
-    "defaultRequire": 1
+    "defaultRequire": 0
   },
   "overwrites": {
     "requireAnnotations": true
   },
   "mixins": [
+
   ]
 }

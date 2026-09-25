@@ -73,6 +73,41 @@ public class RenderCore {
 
     private final Map<Identifier, CompiledRenderPipeline> texturePipelines = new HashMap<>();
 
+    // Scissor
+    private final List<CommittedGroup> committedGroups = new ArrayList<>();
+
+    private static final class CommittedGroup {
+        final Map<CompiledRenderPipeline, Batch> batches;
+        final Map<Identifier, Batch> textureBatches;
+        final Map<Texture, Batch> textBatches;
+        final Map<GpuTextureView, Batch> gpuViewBatches;
+        final Map<GpuTextureView, GpuSampler> gpuViewSamplers;
+        final Map<GpuTextureView, CompiledRenderPipeline> gpuViewPipelines;
+        final Map<Identifier, CompiledRenderPipeline> texturePipelines;
+
+        final boolean scissorEnabled;
+        final int sx, sy, sw, sh;
+
+        CommittedGroup(Map<CompiledRenderPipeline, Batch> b,
+                       Map<Identifier, Batch> tb,
+                       Map<Texture, Batch> txb,
+                       Map<GpuTextureView, Batch> gvb,
+                       Map<GpuTextureView, GpuSampler> gvs,
+                       Map<GpuTextureView, CompiledRenderPipeline> gvp,
+                       Map<Identifier, CompiledRenderPipeline> tp,
+                       boolean se, int sx, int sy, int sw, int sh) {
+            this.batches = b;
+            this.textureBatches = tb;
+            this.textBatches = txb;
+            this.gpuViewBatches = gvb;
+            this.gpuViewSamplers = gvs;
+            this.gpuViewPipelines = gvp;
+            this.texturePipelines = tp;
+            this.scissorEnabled = se;
+            this.sx = sx; this.sy = sy; this.sw = sw; this.sh = sh;
+        }
+    }
+
 
     public RenderCore() {}
 
@@ -171,57 +206,64 @@ public class RenderCore {
     }
 
     public void flush() {
+        commitCurrentGroup();
+
         try {
-            // 1. Väribatchit (rect, lines, rounded, circle, 3D)
-            for (Map.Entry<CompiledRenderPipeline, Batch> entry : batches.entrySet()) {
-                drawBatch(entry.getKey(), entry.getValue());
-                entry.getValue().clear();
+            for (CommittedGroup g : committedGroups) {
+                drawCommittedGroup(g);
             }
-            batches.clear();
+        } catch (Exception e) {
+            throw new RuntimeException("Flush failed", e);
+        } finally {
+            committedGroups.clear();
+            allocator.clear();
+        }
+    }
 
+    private void drawCommittedGroup(CommittedGroup g) {
+        boolean savedSE = scissorEnabled;
+        int savedSx = scissorX, savedSy = scissorY;
+        int savedSw = scissorW, savedSh = scissorH;
 
+        scissorEnabled = g.scissorEnabled;
+        scissorX = g.sx; scissorY = g.sy;
+        scissorW = g.sw; scissorH = g.sh;
 
-            // 2. Tekstuurikohtaiset batchit
+        try {
+            // 1. Väribatchit
+            for (Map.Entry<CompiledRenderPipeline, Batch> e : g.batches.entrySet()) {
+                drawBatch(e.getKey(), e.getValue());
+                e.getValue().clear();
+            }
+
             // 2. Tekstuurikohtaiset batchit
             CompiledRenderPipeline textured = uiTextured();
-            for (Map.Entry<Identifier, Batch> entry : textureBatches.entrySet()) {
-                Identifier id = entry.getKey();
-                CompiledRenderPipeline pipe = texturePipelines.getOrDefault(id, textured);
-                drawBatch(pipe, entry.getValue());
-                entry.getValue().clear();
+            for (Map.Entry<Identifier, Batch> e : g.textureBatches.entrySet()) {
+                CompiledRenderPipeline pipe = g.texturePipelines.getOrDefault(e.getKey(), textured);
+                drawBatch(pipe, e.getValue());
+                e.getValue().clear();
             }
-            textureBatches.clear();
-            texturePipelines.clear();
 
-            for (Map.Entry<GpuTextureView, Batch> entry : gpuViewBatches.entrySet()) {
-                GpuTextureView view = entry.getKey();
-                Batch batch = entry.getValue();
-                GpuSampler sampler = gpuViewSamplers.get(view);
-                CompiledRenderPipeline pipeline = gpuViewPipelines.getOrDefault(view, textured);
-
-                // Aseta sampler batchille (drawBatchWithView lukee sen täältä)
+            // 3. GPU-tekstuurit
+            for (Map.Entry<GpuTextureView, Batch> e : g.gpuViewBatches.entrySet()) {
+                GpuTextureView view = e.getKey();
+                Batch batch = e.getValue();
+                GpuSampler sampler = g.gpuViewSamplers.get(view);
+                CompiledRenderPipeline pipeline = g.gpuViewPipelines.getOrDefault(view, textured);
                 batch.setSampler(sampler);
-
                 drawBatchWithView(pipeline, view, batch);
                 batch.clear();
             }
-            gpuViewBatches.clear();
-            gpuViewSamplers.clear();
-            gpuViewPipelines.clear();
 
-
-            // 3. Font atlas -batchit
-            for (Map.Entry<Texture, Batch> entry : textBatches.entrySet()) {
-                drawTextBatch(entry.getKey(), entry.getValue());
-                entry.getValue().clear();
+            // 4. Font atlas
+            for (Map.Entry<Texture, Batch> e : g.textBatches.entrySet()) {
+                drawTextBatch(e.getKey(), e.getValue());
+                e.getValue().clear();
             }
-            textBatches.clear();
-
-            // Vasta flushissa: kaikki meshit on suljettu, joten allocator
-            // voidaan vapauttaa turvallisesti.
-            allocator.clear();
-        } catch (Exception e) {
-            throw new RuntimeException("Flush failed", e);
+        } finally {
+            scissorEnabled = savedSE;
+            scissorX = savedSx; scissorY = savedSy;
+            scissorW = savedSw; scissorH = savedSh;
         }
     }
 
@@ -230,6 +272,10 @@ public class RenderCore {
     }
 
     public void enableScissor(int x, int y, int w, int h) {
+        if (!scissorEnabled || scissorX != x || scissorY != y
+                || scissorW != w || scissorH != h) {
+            commitCurrentGroup();
+        }
         this.scissorEnabled = true;
         this.scissorX = x;
         this.scissorY = y;
@@ -238,7 +284,36 @@ public class RenderCore {
     }
 
     public void disableScissor() {
+        if (scissorEnabled) {
+            commitCurrentGroup();
+        }
         this.scissorEnabled = false;
+    }
+
+    private void commitCurrentGroup() {
+        if (batches.isEmpty() && textureBatches.isEmpty()
+                && textBatches.isEmpty() && gpuViewBatches.isEmpty()) {
+            return;
+        }
+
+        committedGroups.add(new CommittedGroup(
+                new HashMap<>(batches),
+                new HashMap<>(textureBatches),
+                new HashMap<>(textBatches),
+                new HashMap<>(gpuViewBatches),
+                new HashMap<>(gpuViewSamplers),
+                new HashMap<>(gpuViewPipelines),
+                new HashMap<>(texturePipelines),
+                scissorEnabled, scissorX, scissorY, scissorW, scissorH
+        ));
+
+        batches.clear();
+        textureBatches.clear();
+        textBatches.clear();
+        gpuViewBatches.clear();
+        gpuViewSamplers.clear();
+        gpuViewPipelines.clear();
+        texturePipelines.clear();
     }
 
     private static RenderTarget getRenderTarget() {

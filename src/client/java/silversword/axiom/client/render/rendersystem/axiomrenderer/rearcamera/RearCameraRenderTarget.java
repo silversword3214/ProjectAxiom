@@ -48,7 +48,7 @@ public final class RearCameraRenderTarget extends RenderTarget {
         if (colorTexture == null || depthTexture == null) return;
         CommandEncoder enc = RenderSystem.getDevice().createCommandEncoder();
         enc.clearColorAndDepthTextures(colorTexture, CLEAR_COLOR, depthTexture, CLEAR_DEPTH);
-        enc.submit();  // PAKOLLINEN
+        enc.submit();
     }
 
     public GpuSampler sampler() { return sampler; }

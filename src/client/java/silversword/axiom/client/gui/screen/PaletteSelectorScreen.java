@@ -81,7 +81,6 @@ public class PaletteSelectorScreen extends Screen {
         scrollContainer.render(lastUi, mouseX, mouseY, delta);
 
         lastUi.renderTexts();
-        RenderAPI.getInstance().getCore().flush();
     }
 
 
@@ -128,12 +127,12 @@ public class PaletteSelectorScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent input) {
-        if (input.input() == 256) {
+        if (input.isEscape()) {
             onClose();
             return true;
         }
         if (lastUi != null && scrollContainer != null) {
-            return scrollContainer.keyPressed(lastUi, input.input(), input.keycode(), input.modifiers());
+            return scrollContainer.keyPressed(lastUi, input.key(), input.keycode(), input.modifiers());
         }
         return super.keyPressed(input);
     }

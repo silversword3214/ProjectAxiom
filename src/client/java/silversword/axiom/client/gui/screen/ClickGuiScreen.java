@@ -121,41 +121,82 @@ public final class ClickGuiScreen extends Screen {
 
         TooltipStack.renderAll(lastUi);
         lastUi.renderTexts();
-        core.flush();
     }
 
-    private void drawRoundedButton(UiContext ui, int x, int y, int w, int h, int bgColor, int borderColor, int radius) {
-        int alphaBg = (bgColor & 0x00FFFFFF) | 0x80000000;
+    private void drawRoundedButton(UiContext ui, int x, int y, int w, int h,
+                                   int bgColor, int borderColor, int radius) {
+        int alphaBg     = (bgColor     & 0x00FFFFFF) | 0x80000000;
         int alphaBorder = (borderColor & 0x00FFFFFF) | 0xC0000000;
         ui.fillRounded(x, y, w, h, alphaBorder, radius);
         ui.fillRounded(x + 1, y + 1, w - 2, h - 2, alphaBg, Math.max(0, radius - 1));
     }
 
-    private void drawTopBar(UiContext ui, int mouseX, int mouseY) {
-        int toggleW = 70, toggleH = 16, gap = 4;
+    // ─────────────────────────────────────────────────────────────
+    //  TOP-BAR LAYOUT (skaalautuu fontin mittojen mukaan)
+    // ─────────────────────────────────────────────────────────────
+
+    private static final class TopBarLayout {
+        int clickGuiX, clickGuiW;
+        int settingsX, settingsW;
+        int y, h;
+        int searchY, searchH;
+    }
+
+    private TopBarLayout computeTopBarLayout(UiContext ui) {
+        TopBarLayout l = new TopBarLayout();
+        int fontH   = ui.fontHeight();
+        int padding = Math.max(6, fontH / 2 + 2);
+        int gap     = 4;
+
+        l.h = Math.max(16, fontH + 8);
+        l.y = 6;
+
+        l.clickGuiW = ui.textWidth("ClickGUI") + padding * 2;
+        l.settingsW = ui.textWidth("Settings") + padding * 2;
+
         int centerX = this.width / 2;
-        int topY = 6;
+        l.clickGuiX = centerX - l.clickGuiW - gap / 2;
+        l.settingsX = centerX + gap / 2;
+
+        l.searchH = Math.max(16, fontH + 8);
+        l.searchY = l.y + l.h + 6;
+        return l;
+    }
+
+    private void drawTopBar(UiContext ui, int mouseX, int mouseY) {
+        TopBarLayout l = computeTopBarLayout(ui);
         int radius = theme.radius;
-        int clickGuiX = centerX - toggleW - gap / 2;
-        int settingsX = centerX + gap / 2;
+        int textY  = l.y + l.h / 2 - ui.fontHeight() / 2 + 4;
 
-        boolean hoverClickGui = mouseX >= clickGuiX && mouseX <= clickGuiX + toggleW && mouseY >= topY && mouseY <= topY + toggleH;
-        int clickGuiBg = (topMode == TopMode.CLICKGUI) ? theme.accent : (hoverClickGui ? theme.buttonHover : theme.button);
-        drawRoundedButton(ui, clickGuiX, topY, toggleW, toggleH, clickGuiBg, theme.border, radius);
-        ui.text("ClickGUI", clickGuiX + 8, topY + 4, ui.theme.text);
+        int clickGuiTextW = ui.textWidth("ClickGUI");
+        boolean hoverClickGui = mouseX >= l.clickGuiX && mouseX <= l.clickGuiX + l.clickGuiW
+                && mouseY >= l.y       && mouseY <= l.y + l.h;
+        int clickGuiBg = (topMode == TopMode.CLICKGUI)
+                ? theme.accent
+                : (hoverClickGui ? theme.buttonHover : theme.button);
+        drawRoundedButton(ui, l.clickGuiX, l.y, l.clickGuiW, l.h,
+                clickGuiBg, theme.border, radius);
+        ui.text("ClickGUI",
+                l.clickGuiX + (l.clickGuiW - clickGuiTextW) / 2,
+                textY, ui.theme.text);
 
-        boolean hoverSettings = mouseX >= settingsX && mouseX <= settingsX + toggleW && mouseY >= topY && mouseY <= topY + toggleH;
+        int settingsTextW = ui.textWidth("Settings");
+        boolean hoverSettings = mouseX >= l.settingsX && mouseX <= l.settingsX + l.settingsW
+                && mouseY >= l.y       && mouseY <= l.y + l.h;
         int settingsBg = hoverSettings ? theme.buttonHover : theme.button;
-        drawRoundedButton(ui, settingsX, topY, toggleW, toggleH, settingsBg, theme.border, radius);
-        ui.text("Settings", settingsX + 10, topY + 4, ui.theme.text);
+        drawRoundedButton(ui, l.settingsX, l.y, l.settingsW, l.h,
+                settingsBg, theme.border, radius);
+        ui.text("Settings",
+                l.settingsX + (l.settingsW - settingsTextW) / 2,
+                textY, ui.theme.text);
     }
 
     private void drawSearchBar(UiContext ui, int mouseX, int mouseY, float delta) {
         if (topMode != TopMode.CLICKGUI) return;
-        int barWidth = 180, barHeight = 16;
-        int centerX = this.width / 2;
-        int topY = 6 + 16 + 6;
-        moduleSearchBar.setBounds(new Rect(centerX - barWidth / 2, topY, barWidth, barHeight));
+        TopBarLayout l = computeTopBarLayout(ui);
+        int barWidth = 180;
+        int centerX  = this.width / 2;
+        moduleSearchBar.setBounds(new Rect(centerX - barWidth / 2, l.searchY, barWidth, l.searchH));
         moduleSearchBar.render(ui, mouseX, mouseY, delta);
     }
 
@@ -196,17 +237,15 @@ public final class ClickGuiScreen extends Screen {
         if (click.button() == 1) {
             if (lastUi == null) return super.mouseClicked(click, doubled);
 
-            int toggleW = 70, toggleH = 16, gap = 4;
-            int centerX = this.width / 2;
-            int topY = 6;
-            int clickGuiX = centerX - toggleW - gap / 2;
-            int settingsX = centerX + gap / 2;
+            TopBarLayout l = computeTopBarLayout(lastUi);
 
-            if (mouseX >= clickGuiX && mouseX <= clickGuiX + toggleW && mouseY >= topY && mouseY <= topY + toggleH) {
+            if (mouseX >= l.clickGuiX && mouseX <= l.clickGuiX + l.clickGuiW
+                    && mouseY >= l.y && mouseY <= l.y + l.h) {
                 topMode = TopMode.CLICKGUI;
                 return true;
             }
-            if (mouseX >= settingsX && mouseX <= settingsX + toggleW && mouseY >= topY && mouseY <= topY + toggleH) {
+            if (mouseX >= l.settingsX && mouseX <= l.settingsX + l.settingsW
+                    && mouseY >= l.y && mouseY <= l.y + l.h) {
                 this.minecraft.setScreenAndShow(new AxiomSettingsScreen(() -> {
                     this.minecraft.setScreenAndShow(new ClickGuiScreen());
                 }));
@@ -305,7 +344,8 @@ public final class ClickGuiScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+    public boolean mouseScrolled(double mouseX, double mouseY,
+                                 double horizontalAmount, double verticalAmount) {
         if (lastUi != null && (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen())) {
             windowManager.mouseScrolled(lastUi, mouseX, mouseY, verticalAmount);
             return true;
@@ -365,8 +405,8 @@ public final class ClickGuiScreen extends Screen {
      * SDL_GetKeyName palauttaa layout-tietoisen merkin (ä, ö, 1, !, jne.).
      */
     private boolean tryHandleTyping(KeyEvent input) {
-        int scancode = input.key();
-        int keycode = input.keycode();
+        int scancode  = input.key();
+        int keycode   = input.keycode();
         int modifiers = input.modifiers();
         boolean shift = (modifiers & InputConstants.MOD_SHIFT) != 0;
 
@@ -383,13 +423,11 @@ public final class ClickGuiScreen extends Screen {
                 String name = SDLKeyboard.SDL_GetKeyName(keycode);
                 if (name != null && name.codePointCount(0, name.length()) == 1) {
                     int cp = name.codePointAt(0);
-                    // SDL palauttaa perusmerkin — shift pitää soveltaa itse
                     if (!shift && cp >= 'A' && cp <= 'Z') {
                         cp = Character.toLowerCase(cp);
                     } else if (shift && cp >= 'a' && cp <= 'z') {
                         cp = Character.toUpperCase(cp);
                     } else if (shift) {
-                        // Yleisimmät shift-variantit (US-QWERTY)
                         switch (cp) {
                             case '1': cp = '!'; break;
                             case '2': cp = '@'; break;

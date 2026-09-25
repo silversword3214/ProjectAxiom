@@ -109,8 +109,8 @@ public class HsvColorPicker implements UiComponent {
 
         int padding = 8;
         int hueWidth = 16;
-        int topAreaHeight = 180;
-        int rightColumnWidth = 80;
+        int topAreaHeight = 210;
+        int rightColumnWidth = 110;
 
         pickerRect = new Rect(
                 bounds.x + padding,

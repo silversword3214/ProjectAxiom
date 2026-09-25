@@ -71,7 +71,7 @@ public final class RearCameraRenderer {
         try {
             rearTarget.syncToWindow();
             rearTarget.clear();
-            ensureHudTextureRegistered();   // ← UUSI
+            ensureHudTextureRegistered();
 
             float newXRot = invertPitch ? -savedXRot : savedXRot;
             float newYRot = (savedYRot + 180.0f) % 360.0f;

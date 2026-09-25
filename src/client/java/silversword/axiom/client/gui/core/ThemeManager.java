@@ -3,6 +3,7 @@ package silversword.axiom.client.gui.core;
 import silversword.axiom.client.config.ClickGuiConfigManager;
 
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 
 public class ThemeManager {
@@ -221,7 +222,48 @@ public class ThemeManager {
                 THEMES.put("Default", fallback);
             }
         }
+
+
+        // Editor/IDE -teemat
+        register("Dracula",              0xCC282A36, 0xDD343746, 0xFF6272A4, 0xFFBD93F9, 0xFFF8F8F2, 0xFF6272A4);
+        register("Nord",                 0xCC2E3440, 0xDD3B4252, 0xFF4C566A, 0xFF88C0D0, 0xFFECEFF4, 0xFF8FBCBB);
+        register("Gruvbox Dark",         0xCC282828, 0xDD3C3836, 0xFF504945, 0xFFFABD2F, 0xFFEBDBB2, 0xFFA89984);
+        register("Solarized Dark",       0xCC002B36, 0xDD073642, 0xFF586E75, 0xFF268BD2, 0xFFEEE8D5, 0xFF93A1A1);
+        register("One Dark",             0xCC282C34, 0xDD2C313A, 0xFF3E4451, 0xFF61AFEF, 0xFFABB2BF, 0xFF5C6370);
+        register("Tokyo Night",          0xCC1A1B26, 0xDD1F2335, 0xFF3B4261, 0xFF7AA2F7, 0xFFC0CAF5, 0xFF565F89);
+        register("Monokai",              0xCC272822, 0xDD2D2E27, 0xFF3E3D32, 0xFFF92672, 0xFFF8F8F2, 0xFF75715E);
+        register("Material Dark",        0xCC212121, 0xDD263238, 0xFF37474F, 0xFF82B1FF, 0xFFECEFF1, 0xFF78909C);
+        register("Night Owl",            0xCC011627, 0xDD0B2942, 0xFF1D3B53, 0xFF82AAFF, 0xFFD6DEEB, 0xFF5F7E97);
+        register("Palenight",            0xCC292D3E, 0xDD1B1E2B, 0xFF676E95, 0xFFC792EA, 0xFFA6ACCD, 0xFF676E95);
+        register("Oceanic Next",         0xCC1B2B34, 0xDD343D46, 0xFF4F5B66, 0xFF6699CC, 0xFFC0C5CE, 0xFF65737E);
+        register("Ayu Dark",             0xCC0A0E14, 0xDD0F1419, 0xFF1F2430, 0xFFFFCC66, 0xFFB3B1AD, 0xFF626A73);
+
+        // Catppuccin-perhe
+        register("Catppuccin Mocha",     0xCC1E1E2E, 0xDD181825, 0xFF313244, 0xFFCBA6F7, 0xFFCDD6F4, 0xFF6C7086);
+        register("Catppuccin Macchiato", 0xCC24273A, 0xDD1E2030, 0xFF363A4F, 0xFFC6A0F6, 0xFFCAD3F5, 0xFF6E738D);
+        register("Catppuccin Frappe",    0xCC303446, 0xDD292C3C, 0xFF414559, 0xFFCA9EE6, 0xFFC6D0F5, 0xFF737994);
+
+        // Modernit / tyylikkäät
+        register("Rosé Pine",            0xCC191724, 0xDD1F1D2E, 0xFF26233A, 0xFFEBBCBA, 0xFFE0DEF4, 0xFF6E6A86);
+        register("Kanagawa",             0xCC1F1F28, 0xDD16161D, 0xFF2A2A37, 0xFF7E9CD8, 0xFFDCD7BA, 0xFF727169);
+        register("Everforest",           0xCC2B3339, 0xDD323C41, 0xFF3A454A, 0xFFA7C080, 0xFFD3C6AA, 0xFF859289);
+        register("Lavender",             0xCC1A1420, 0xDD241A2A, 0xFF3A2A45, 0xFFB19CD9, 0xFFE8DFF5, 0xFF8A7A9A);
+
+        // Retrowave / neon
+        register("Synthwave 84",         0xCC241B2F, 0xDD2A2139, 0xFF34294F, 0xFFFF7EDB, 0xFFF0EFF1, 0xFF848BBD);
+        register("Matrix",               0xCC0D0208, 0xDD001107, 0xFF003B00, 0xFF00FF41, 0xFF00FF41, 0xFF008F11);
+        register("Amber",                0xCC1C1400, 0xDD2A1F00, 0xFF3D2E00, 0xFFFFBF00, 0xFFFFD58A, 0xFF8A6F00);
+        register("Cherry",               0xCC2A0A1A, 0xDD3D1025, 0xFF5A1A35, 0xFFFF4D6D, 0xFFFFE0E8, 0xFFA06070);
+
+        // Luonto & pehmeät
+        register("Ice Blue",             0xCC0B1A2A, 0xDD0F2540, 0xFF1E3A5F, 0xFF4DD0E1, 0xFFE0F7FA, 0xFF8BA6B9);
+        register("Forest",               0xCC0E1E10, 0xDD152A17, 0xFF264D2A, 0xFF66BB6A, 0xFFD4E8D4, 0xFF6B8E6B);
+        register("Sunset",               0xCC2A1A2A, 0xDD3A2530, 0xFF5A3A4A, 0xFFFF6B9D, 0xFFFFE8F0, 0xFFC090A0);
+        register("Mint",                 0xCC0A1F1A, 0xDD0F2F28, 0xFF1A4A40, 0xFF4DFFB8, 0xFFE0FFF5, 0xFF6A9990);
+        register("Coral",                0xCC2A1515, 0xDD3D1F1F, 0xFF5A2F2F, 0xFFFF7F50, 0xFFFFEDDF, 0xFFA06868);
     }
+
+    private static boolean customsLoaded = false;
 
     private static int applyAlphaMultiplier(int color, int multiplierPercent) {
         int alpha = (color >> 24) & 0xFF;
@@ -229,33 +271,86 @@ public class ThemeManager {
         return (newAlpha << 24) | (color & 0x00FFFFFF);
     }
 
+    private static void ensureCustoms() {
+        if (customsLoaded) return;
+        customsLoaded = true;
+        try { CustomThemeStore.ensureLoaded(); } catch (Throwable ignored) {}
+    }
+
+    public static boolean isBuiltIn(String name) {
+        return THEMES.containsKey(name);   // koska custom-teemat eivät ole THEMES:ssa
+    }
+
+    // KORVAA getTheme-metodi:
     public static Theme getTheme(String name) {
-        Theme theme = THEMES.get(name);
-        if (theme == null) {
-            theme = THEMES.get("Default");
+        ensureCustoms();
+
+        Theme base = null;
+        if (THEMES.containsKey(name)) {
+            base = THEMES.get(name);
+        } else {
+            CustomTheme custom = CustomThemeStore.get(name);
+            if (custom != null) base = custom.toTheme();
         }
-        if (theme == null) {
-            theme = new Theme();
-        }
-        Theme copy = theme.copy();
+        if (base == null) base = THEMES.get("Default");
+        if (base == null) base = new Theme();
+
+        Theme copy = base.copy();
         int multiplier = ClickGuiConfigManager.getGlobalAlpha();
-        // Apply multiplier to all color fields
-        copy.panel = applyAlphaMultiplier(copy.panel, multiplier);
-        copy.header = applyAlphaMultiplier(copy.header, multiplier);
-        copy.border = applyAlphaMultiplier(copy.border, multiplier);
-        copy.knob = applyAlphaMultiplier(copy.knob, multiplier);
-        copy.text = applyAlphaMultiplier(copy.text, multiplier); // text alpha might be 0xFF, so multiplier doesn't change
-        copy.textDim = applyAlphaMultiplier(copy.textDim, multiplier);
-        copy.accent = applyAlphaMultiplier(copy.accent, multiplier);
-        copy.button = applyAlphaMultiplier(copy.button, multiplier);
-        copy.buttonHover = applyAlphaMultiplier(copy.buttonHover, multiplier);
-        copy.toggleOff = applyAlphaMultiplier(copy.toggleOff, multiplier);
-        copy.toggleOn = applyAlphaMultiplier(copy.toggleOn, multiplier);
-        copy.sliderTrack = applyAlphaMultiplier(copy.sliderTrack, multiplier);
-        copy.sliderFill = applyAlphaMultiplier(copy.sliderFill, multiplier);
-        copy.scrollbar = applyAlphaMultiplier(copy.scrollbar, multiplier);
-        copy.scrollbarHover = applyAlphaMultiplier(copy.scrollbarHover, multiplier);
+        copy.panel         = applyAlphaMultiplier(copy.panel,         multiplier);
+        copy.header        = applyAlphaMultiplier(copy.header,        multiplier);
+        copy.border        = applyAlphaMultiplier(copy.border,        multiplier);
+        copy.knob          = applyAlphaMultiplier(copy.knob,          multiplier);
+        copy.text          = applyAlphaMultiplier(copy.text,          multiplier);
+        copy.textDim       = applyAlphaMultiplier(copy.textDim,       multiplier);
+        copy.accent        = applyAlphaMultiplier(copy.accent,        multiplier);
+        copy.button        = applyAlphaMultiplier(copy.button,        multiplier);
+        copy.buttonHover   = applyAlphaMultiplier(copy.buttonHover,   multiplier);
+        copy.toggleOff     = applyAlphaMultiplier(copy.toggleOff,     multiplier);
+        copy.toggleOn      = applyAlphaMultiplier(copy.toggleOn,      multiplier);
+        copy.sliderTrack   = applyAlphaMultiplier(copy.sliderTrack,   multiplier);
+        copy.sliderFill    = applyAlphaMultiplier(copy.sliderFill,    multiplier);
+        copy.scrollbar     = applyAlphaMultiplier(copy.scrollbar,     multiplier);
+        copy.scrollbarHover= applyAlphaMultiplier(copy.scrollbarHover,multiplier);
         return copy;
+    }
+
+    /** Lyhyt rekisteröintimetodi teemoille jotka käyttävät vakiovärejä napeille. */
+    private static void register(String name, int panel, int header, int border,
+                                 int accent, int text, int textDim) {
+        Theme t = new Theme();
+        t.panel  = panel;
+        t.header = header;
+        t.border = border;
+        t.accent = accent;
+        t.text   = text;
+        t.textDim = textDim;
+
+        t.knob         = 0xFF141414;
+        t.button       = 0x88222222;
+        t.buttonHover  = 0xAA333333;
+        t.toggleOff    = 0xFF444444;
+        t.toggleOn     = accent;
+        t.sliderTrack  = 0xFF333333;
+        t.sliderFill   = accent;
+        t.scrollbar    = 0xAA2B2B2B;
+        t.scrollbarHover = accent;
+
+        t.radius = 6;
+        t.padding = 6;
+        t.innerPadding = 4;
+        t.headerHeight = 18;
+        t.rowHeight = 16;
+
+        THEMES.put(name, t);
+    }
+
+    // KORVAA getThemeNames-metodi:
+    public static String[] getThemeNames() {
+        ensureCustoms();
+        LinkedHashSet<String> all = new LinkedHashSet<>(THEMES.keySet());
+        for (CustomTheme c : CustomThemeStore.all()) all.add(c.name);
+        return all.toArray(new String[0]);
     }
 
     public static Theme getCurrentTheme() {
@@ -266,7 +361,4 @@ public class ThemeManager {
         return getTheme(name);
     }
 
-    public static String[] getThemeNames() {
-        return THEMES.keySet().toArray(new String[0]);
-    }
 }

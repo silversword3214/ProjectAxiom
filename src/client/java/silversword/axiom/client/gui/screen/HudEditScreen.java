@@ -95,7 +95,6 @@ public final class HudEditScreen extends Screen {
         hudCtx.renderTexts();
         TextRenderer.get().end();
 
-        RenderAPI.getInstance().getCore().flush();
     }
 
     private void drawGrid(UiContext ctx) {

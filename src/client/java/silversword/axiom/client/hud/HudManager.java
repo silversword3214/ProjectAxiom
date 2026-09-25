@@ -138,6 +138,19 @@ public final class HudManager {
         return null;
     }
 
+    public static boolean shouldRenderHud() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null) return false;
+
+        // Screen auki → piilota HUD
+        if (mc.gui != null && mc.gui.screen() != null) return false;
+
+        // Overlay (esim. latausruutu, chat-overlay) → piilota
+        if (mc.gui != null && mc.gui.overlay() != null) return false;
+
+        return true;
+    }
+
     private static final class HudState {
         final int x, y;
         final boolean enabled;

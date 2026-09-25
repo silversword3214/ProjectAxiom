@@ -53,16 +53,26 @@ public class UiContext {
             newRect = intersect(parent, newRect);
         }
         scissorStack.push(newRect);
-        draw.enableScissor(newRect.x, newRect.y, newRect.x + newRect.w, newRect.y + newRect.h);
+
+        // Vanilla GUI -scissor (teksteille)
+        draw.enableScissor(newRect.x, newRect.y,
+                newRect.x + newRect.w, newRect.y + newRect.h);
+
+        // RenderCore-scissor (recteille, ympyröille, tekstuureille)
+        renderCore.enableScissor(newRect.x, newRect.y, newRect.w, newRect.h);
     }
 
     public void disableScissor() {
         scissorStack.pop();
+
         if (scissorStack.isEmpty()) {
             draw.disableScissor();
+            renderCore.disableScissor();
         } else {
             Rect top = scissorStack.peek();
-            draw.enableScissor(top.x, top.y, top.x + top.w, top.y + top.h);
+            draw.enableScissor(top.x, top.y,
+                    top.x + top.w, top.y + top.h);
+            renderCore.enableScissor(top.x, top.y, top.w, top.h);
         }
     }
 

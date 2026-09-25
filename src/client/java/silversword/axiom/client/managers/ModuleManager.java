@@ -126,6 +126,7 @@ public final class ModuleManager {
         add(new AntiCactus());
 
         // Render
+        add(new Minimap());
         add(new RearCamera());
         add(new ShaderEsp());
         add(new WaypointModule());
