@@ -4,9 +4,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 
 
-import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.world.Dir;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.Renderer3D;
+import silversword.axiom.client.rendersystem.world.Dir;
 
 public class Block {
     public final BlockPos pos;

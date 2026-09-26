@@ -20,9 +20,9 @@ import silversword.axiom.client.gui.window.WindowManager;
 import silversword.axiom.client.hud.HudManager;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.managers.ModuleManager;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.RenderAPI;
+import silversword.axiom.client.rendersystem.axiomrenderer.engine.RenderCore;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.Renderer2D;
 import silversword.axiom.client.utils.KeyNames;
 import silversword.axiom.client.utils.render.DrawTexture;
 
@@ -115,12 +115,12 @@ public final class ClickGuiScreen extends Screen {
         int sh = core.getScissorH();
 
         if (wasScissor) core.enableScissor(sx, sy, sw, sh);
+
         DrawTexture.renderAll(renderer);
         if (wasScissor) core.enableScissor(sx, sy, sw, sh);
         else core.disableScissor();
 
         TooltipStack.renderAll(lastUi);
-        lastUi.renderTexts();
     }
 
     private void drawRoundedButton(UiContext ui, int x, int y, int w, int h,
@@ -132,7 +132,7 @@ public final class ClickGuiScreen extends Screen {
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  TOP-BAR LAYOUT (skaalautuu fontin mittojen mukaan)
+    //  TOP-BAR LAYOUT
     // ─────────────────────────────────────────────────────────────
 
     private static final class TopBarLayout {
@@ -233,8 +233,8 @@ public final class ClickGuiScreen extends Screen {
             }
         }
 
-        // 26.3: vasen klikki == 1
-        if (click.button() == 1) {
+        // 26.3 / SDL: vasen klikki == 1
+        if (click.button() == InputConstants.MOUSE_BUTTON_LEFT) {
             if (lastUi == null) return super.mouseClicked(click, doubled);
 
             TopBarLayout l = computeTopBarLayout(lastUi);
@@ -359,10 +359,15 @@ public final class ClickGuiScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent input) {
-        // 1) ESC: ensin unfokusoi hakupalkki, sitten sulje overlay, sitten GUI
+        // 1) ESC: unfokusoi tekstinsyöttö, sitten sulje overlay, sitten GUI
         if (input.key() == InputConstants.KEY_ESCAPE) {
             if (moduleSearchBar != null && moduleSearchBar.isFocused()) {
                 moduleSearchBar.setFocused(false);
+                return true;
+            }
+            TextField focusedTf = TextField.getFocusedField();
+            if (focusedTf != null) {
+                focusedTf.setFocused(false);
                 return true;
             }
             currentDropdown = null;
@@ -378,22 +383,28 @@ public final class ClickGuiScreen extends Screen {
             return true;
         }
 
-        // 2) Hakupalkki fokusoituna → hoida KAIKKI syöttö tässä
-        if (topMode == TopMode.CLICKGUI && moduleSearchBar != null
-                && moduleSearchBar.isFocused() && lastUi != null) {
+        // 2) Fokusoitu syöttö — joko search bar TAI TextField
+        boolean searchFocused = topMode == TopMode.CLICKGUI
+                && moduleSearchBar != null && moduleSearchBar.isFocused();
+        TextField focusedTf = TextField.getFocusedField();
 
-            // 2a) Erikoisnäppäimet (BACKSPACE, ENTER)
+        if (lastUi != null && searchFocused) {
+            // 2a) Search bar: erikoisnäppäimet
             if (moduleSearchBar.keyPressed(lastUi, input.key(), input.keycode(), input.modifiers())) {
                 return true;
             }
-
-            // 2b) Merkkinäppäimet → suora syöttö
-            if (tryHandleTyping(input)) {
+            // 2b) SDL-typing → search bar
+            if (tryHandleTyping(input)) return true;
+        } else if (lastUi != null && focusedTf != null) {
+            // 2a) TextField: erikoisnäppäimet (Backspace, nuolet, Home, End, Delete)
+            if (focusedTf.keyPressed(lastUi, input.key(), input.keycode(), input.modifiers())) {
                 return true;
             }
+            // 2b) SDL-typing → TextField
+            if (tryHandleTyping(input)) return true;
         }
 
-        // 3) WindowManager
+        // 3) WindowManager (myös Enter SettingTimeFieldRow:lle)
         if (lastUi != null && (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen())) {
             if (windowManager.keyPressed(lastUi, input.key(), input.keycode(), input.modifiers())) return true;
         }
@@ -403,6 +414,7 @@ public final class ClickGuiScreen extends Screen {
     /**
      * 26.3 / SDL: input.key() = SCANCODE, input.keycode() = SDL_Keycode.
      * SDL_GetKeyName palauttaa layout-tietoisen merkin (ä, ö, 1, !, jne.).
+     * Reitittää merkin joko search barille TAI fokusoituun TextFieldiin.
      */
     private boolean tryHandleTyping(KeyEvent input) {
         int scancode  = input.key();
@@ -412,8 +424,7 @@ public final class ClickGuiScreen extends Screen {
 
         // Välilyönti hoidetaan erikseen (SDL_GetKeyName palauttaa "Space")
         if (scancode == InputConstants.KEY_SPACE) {
-            moduleSearchBar.appendChar(' ');
-            lastKeyHandledCharNs = System.nanoTime();
+            routeChar(' ');
             return true;
         }
 
@@ -452,8 +463,7 @@ public final class ClickGuiScreen extends Screen {
                             case '`': cp = '~'; break;
                         }
                     }
-                    moduleSearchBar.appendChar((char) cp);
-                    lastKeyHandledCharNs = System.nanoTime();
+                    routeChar((char) cp);
                     return true;
                 }
             } catch (Throwable ignored) {
@@ -466,9 +476,31 @@ public final class ClickGuiScreen extends Screen {
         if (fallback == null || fallback.length() != 1) return false;
         char c = fallback.charAt(0);
         if (!shift && c >= 'A' && c <= 'Z') c = Character.toLowerCase(c);
-        moduleSearchBar.appendChar(c);
-        lastKeyHandledCharNs = System.nanoTime();
+        routeChar(c);
         return true;
+    }
+
+    /**
+     * Reitittää merkin oikealle vastaanottajalle:
+     *  1. Search bar jos fokusoituna
+     *  2. TextField jos fokusoituna
+     * Muuten ei tee mitään.
+     */
+    private void routeChar(char c) {
+        boolean searchFocused = topMode == TopMode.CLICKGUI
+                && moduleSearchBar != null && moduleSearchBar.isFocused();
+
+        if (searchFocused) {
+            moduleSearchBar.appendChar(c);
+            lastKeyHandledCharNs = System.nanoTime();
+            return;
+        }
+
+        TextField focusedTf = TextField.getFocusedField();
+        if (focusedTf != null) {
+            focusedTf.appendChar(c);
+            lastKeyHandledCharNs = System.nanoTime();
+        }
     }
 
     @Override
@@ -488,12 +520,21 @@ public final class ClickGuiScreen extends Screen {
         int cp = input.codepoint();
         if (cp <= 0) return false;
 
+        // Search bar fokusoituna
         if (topMode == TopMode.CLICKGUI && moduleSearchBar != null
                 && moduleSearchBar.isFocused()) {
             moduleSearchBar.appendChar((char) cp);
             return true;
         }
 
+        // TextField fokusoituna
+        TextField focusedTf = TextField.getFocusedField();
+        if (focusedTf != null) {
+            focusedTf.appendChar((char) cp);
+            return true;
+        }
+
+        // Muut (dropdown, keybind-editori yms.)
         if (input.isAllowedChatCharacter() && (topMode == TopMode.CLICKGUI || windowManager.isOverlayOpen())) {
             windowManager.charTyped(lastUi, (char) cp, 0);
             return true;

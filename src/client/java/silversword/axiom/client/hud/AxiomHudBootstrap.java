@@ -5,7 +5,7 @@ import net.minecraft.resources.Identifier;
 import silversword.axiom.client.hud.components.*;
 import silversword.axiom.client.hud.components.client.EnabledModulesHud;
 import silversword.axiom.client.hud.components.render.MinimapHud;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.AxiomHudBlocker;
+import silversword.axiom.client.rendersystem.utils.misc.AxiomHudBlocker;
 
 public final class AxiomHudBootstrap {
     private static boolean initialized = false;

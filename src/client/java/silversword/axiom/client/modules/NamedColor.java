@@ -1,6 +1,6 @@
 package silversword.axiom.client.modules;
 
-import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.rendersystem.utils.color.SettingColor;
 
 // Apuluokka värin nimeämiseen
 public class NamedColor {

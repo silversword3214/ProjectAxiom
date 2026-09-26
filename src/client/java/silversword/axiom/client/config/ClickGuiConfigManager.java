@@ -3,8 +3,8 @@ package silversword.axiom.client.config;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
-import silversword.axiom.client.render.rendersystem.utils.color.rainbow.RainbowPalette;
-import silversword.axiom.client.render.rendersystem.utils.color.rainbow.RainbowPalettes;
+import silversword.axiom.client.rendersystem.utils.color.rainbow.RainbowPalette;
+import silversword.axiom.client.rendersystem.utils.color.rainbow.RainbowPalettes;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

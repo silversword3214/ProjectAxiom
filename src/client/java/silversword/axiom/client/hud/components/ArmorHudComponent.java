@@ -10,8 +10,8 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.utils.color.SettingColor;
 
 import java.util.ArrayList;
 import java.util.List;

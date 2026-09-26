@@ -15,14 +15,14 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.event.Render3DEvent;
 import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
-import silversword.axiom.client.render.rendersystem.utils.misc.ShapeModeEnum;
+import silversword.axiom.client.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.rendersystem.utils.misc.ShapeModeEnum;
 import silversword.axiom.client.setting.*;
 
 import java.util.ArrayList;

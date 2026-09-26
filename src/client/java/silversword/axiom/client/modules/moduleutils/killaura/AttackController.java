@@ -2,7 +2,6 @@ package silversword.axiom.client.modules.moduleutils.killaura;
 
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import static silversword.axiom.client.main.AxiomInitialize.mc;
 
 public class AttackController {
     private long lastAttackTime = 0;
@@ -22,7 +21,6 @@ public class AttackController {
 
     public void recordAttack() {
         this.lastAttackTime = System.currentTimeMillis();
-        // Lisätään inhimillistä vaihtelua seuraavaan lyöntiin (60-150ms)
         this.forcedDelay = 60 + (long)(Math.random() * 90);
     }
 
@@ -30,20 +28,9 @@ public class AttackController {
         this.queuedTarget = target;
     }
 
+    /** Ei enää käytössä — hyökkäys tapahtuu KillAura:n kautta KeyMapping.click()illä. */
     public void onPreMotion() {
-        // Jos jono on tyhjä, ei tehdä mitään
-        if (queuedTarget == null) return;
-
-        if (mc.player != null && mc.gameMode != null) {
-            // Suoritetaan hyökkäys
-            // gameMode.attack hoitaa swing-animaation sisäisesti
-            mc.gameMode.attack(mc.player, queuedTarget);
-
-            // Päivitetään viiveet
-            recordAttack();
-        }
-
-        queuedTarget = null;
+        this.queuedTarget = null;
     }
 
     public void reset() {

@@ -1,24 +1,28 @@
 package silversword.axiom.client.gui.screen;
 
+import com.mojang.blaze3d.Blaze3D;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix4f;
+import org.lwjgl.sdl.SDLKeyboard;
 import silversword.axiom.client.config.FontConfigManager;
 import silversword.axiom.client.gui.components.ScrollContainer;
 import silversword.axiom.client.gui.components.SearchBar;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.core.*;
-import silversword.axiom.client.render.font.Fonts;
-import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.texture.Texture;
-import silversword.axiom.client.render.rendersystem.utils.texture.TextureManager;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.Fonts;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.RenderAPI;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.Renderer2D;
+import silversword.axiom.client.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.utils.texture.Texture;
+import silversword.axiom.client.rendersystem.utils.texture.TextureManager;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,11 +37,26 @@ public final class FontSettingsScreen extends Screen {
     private List<String> allFonts = new ArrayList<>();
     private String filterText = "";
 
-    private static final Identifier CHECKBOX_OFF = Identifier.fromNamespaceAndPath("projectaxiom", "textures/icons/checkbox_off.png");
     private static final Identifier CHECKBOX_ON = Identifier.fromNamespaceAndPath("projectaxiom", "textures/icons/checkbox_on.png");
-    private static Texture texOff, texOn;
+    private static Texture texOn;
 
     private UiContext lastUi = null;
+
+    private long lastKeyHandledCharNs = 0L;
+    private static final long CHAR_DEDUP_WINDOW_NS = 100_000_000L;
+
+    private static final File FONTS_DIR = new File(
+            Minecraft.getInstance().gameDirectory, "config/axiom/fonts");
+
+    // Layout
+    private Rect openFolderRect = new Rect(0, 0, 0, 0);
+    private int labelTextX = 0;
+    private int labelTextY = 0;
+
+    // Automaattinen refresh
+    private long lastFolderState = Long.MIN_VALUE;
+    private static final long FOLDER_CHECK_INTERVAL_MS = 500;
+    private long lastFolderCheck = 0;
 
     public FontSettingsScreen(Runnable onCloseCallback) {
         super(Component.literal("Font Settings"));
@@ -53,15 +72,21 @@ public final class FontSettingsScreen extends Screen {
         super.init();
         allFonts = Fonts.getAvailableFonts();
 
-        if (texOff == null) texOff = TextureManager.getTexture(CHECKBOX_OFF);
         if (texOn == null) texOn = TextureManager.getTexture(CHECKBOX_ON);
+
+        if (!FONTS_DIR.exists()) {
+            FONTS_DIR.mkdirs();
+        }
 
         int containerWidth = Math.max(160, Math.min(560, this.width - 48));
         int containerX = (this.width - containerWidth) / 2;
+
         int searchBarY = 55;
         int searchBarHeight = 22;
-        int containerY = searchBarY + searchBarHeight + 10;
-        int containerHeight = Math.max(40, this.height - containerY - 30);
+        int bottomRowHeight = 20;
+        int bottomRowY = this.height - 30 - bottomRowHeight;
+        int containerY = searchBarY + searchBarHeight + 8;
+        int containerHeight = Math.max(40, bottomRowY - containerY - 10);
 
         searchBar = new SearchBar(
                 () -> filterText,
@@ -72,6 +97,16 @@ public final class FontSettingsScreen extends Screen {
         );
         searchBar.setBounds(new Rect(containerX, searchBarY, containerWidth, searchBarHeight));
 
+        // Open Folder -nappi oikeaan alakulmaan
+        int openFolderWidth = 100;
+        int rightEdge = containerX + containerWidth;
+
+        openFolderRect = new Rect(
+                rightEdge - openFolderWidth,
+                bottomRowY,
+                openFolderWidth,
+                bottomRowHeight);
+
         scrollContainer = new ScrollContainer();
         scrollContainer.setBounds(new Rect(containerX, containerY, containerWidth, containerHeight));
         scrollContainer.setDrawBackground(true);
@@ -79,6 +114,45 @@ public final class FontSettingsScreen extends Screen {
         scrollContainer.setInnerPadding(8);
 
         refreshFontList();
+        lastFolderState = computeFolderState();
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        long now = System.currentTimeMillis();
+        if (now - lastFolderCheck < FOLDER_CHECK_INTERVAL_MS) return;
+        lastFolderCheck = now;
+
+        long state = computeFolderState();
+        if (state != lastFolderState) {
+            lastFolderState = state;
+            reloadFontsFromDisk();
+        }
+    }
+
+    private long computeFolderState() {
+        if (!FONTS_DIR.isDirectory()) return 0L;
+        File[] files = FONTS_DIR.listFiles();
+        if (files == null) return 0L;
+        long sum = files.length;
+        for (File f : files) {
+            sum = sum * 31 + f.getName().hashCode();
+            sum = sum * 31 + f.length();
+            sum = sum * 31 + f.lastModified();
+        }
+        return sum;
+    }
+
+    private void reloadFontsFromDisk() {
+        try {
+            Fonts.refresh();
+            allFonts = Fonts.getAvailableFonts();
+            refreshFontList();
+        } catch (Throwable t) {
+            System.err.println("[Axiom] Failed to reload fonts: " + t);
+            t.printStackTrace();
+        }
     }
 
     private void refreshFontList() {
@@ -113,34 +187,59 @@ public final class FontSettingsScreen extends Screen {
         Renderer2D renderer = new Renderer2D(ctx, RenderAPI.getInstance().getCore(), proj);
         lastUi = new UiContext(this.minecraft, ctx, theme, delta, renderer);
 
-        boolean textOk = false;
-        try {
-            textOk = true;
-        } catch (Exception e) {}
+        lastUi.fill(0, 0, width, height, 0xDD000000);
 
-        if (textOk) {
-            lastUi.fill(0, 0, width, height, 0xDD000000);
+        String title = "Font Settings";
+        lastUi.text(title, (width - lastUi.textWidth(title)) / 2, 22, theme.text);
 
-            String title = "Font Settings";
-            lastUi.text(title, (width - lastUi.textWidth(title)) / 2, 22, theme.text);
+        searchBar.render(lastUi, mouseX, mouseY, delta);
+        scrollContainer.render(lastUi, mouseX, mouseY, delta);
 
-            searchBar.render(lastUi, mouseX, mouseY, delta);
-            scrollContainer.render(lastUi, mouseX, mouseY, delta);
-            lastUi.renderTexts();
-        }
+        renderBottomRow(lastUi, mouseX, mouseY);
 
+        lastUi.renderTexts();
     }
 
+    private void renderBottomRow(UiContext ui, int mouseX, int mouseY) {
+        // "Custom .ttf fonts" — napin vasemmalla, ei taustaa
+        String label = "Custom .ttf fonts";
+        int labelWidth = ui.textWidth(label);
+        int labelX = openFolderRect.x - 12 - labelWidth;
+        int labelY = openFolderRect.y + openFolderRect.h / 2 - ui.fontHeight() / 2 + 3;
+        ui.text(label, labelX, labelY, ui.theme.textDim);
+
+        // Open Folder -nappi
+        boolean hover = openFolderRect.contains(mouseX, mouseY);
+        int bg = hover ? ui.theme.buttonHover : ui.theme.button;
+        int border = hover ? ui.theme.accent : ui.theme.border;
+
+        ui.fillRounded(openFolderRect, bg, 4);
+        ui.drawRoundedOutline(openFolderRect, border, 4, 1.0);
+
+        String btnText = "Open Folder";
+        int btnTextX = openFolderRect.x + (openFolderRect.w - ui.textWidth(btnText)) / 2;
+        int btnTextY = openFolderRect.y + openFolderRect.h / 2 - ui.fontHeight() / 2 + 3;
+        ui.text(btnText, btnTextX, btnTextY, hover ? ui.theme.accent : ui.theme.text);
+    }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
         int mx = (int) click.x(), my = (int) click.y();
+
+        // Close-nappi
         int btnW = 70, btnH = 24, btnX = width - btnW - 16, btnY = 12;
         Rect btnRect = new Rect(btnX, btnY, btnW, btnH);
-        if (click.button() == 1 && btnRect.contains(mx, my)) {  // ← 0 → 1
+        if (click.button() == InputConstants.MOUSE_BUTTON_LEFT && btnRect.contains(mx, my)) {
             onClose();
             return true;
         }
+
+        // Open Folder
+        if (click.button() == InputConstants.MOUSE_BUTTON_LEFT && openFolderRect.contains(mx, my)) {
+            openFontsFolder();
+            return true;
+        }
+
         if (lastUi != null) {
             if (searchBar.mouseClicked(lastUi, mx, my, click.button())) return true;
             if (scrollContainer != null && scrollContainer.mouseClicked(lastUi, mx, my, click.button())) return true;
@@ -148,47 +247,112 @@ public final class FontSettingsScreen extends Screen {
         return super.mouseClicked(click, doubled);
     }
 
+    private void openFontsFolder() {
+        try {
+            if (!FONTS_DIR.exists()) FONTS_DIR.mkdirs();
+            Blaze3D.openPath(FONTS_DIR.toPath());
+        } catch (Throwable t) {
+            System.err.println("[Axiom] Failed to open fonts folder: " + t);
+        }
+    }
+
     @Override
     public boolean keyPressed(KeyEvent input) {
-        if (input.isEscape()) {                                 // ← input.input() == 256
+        if (input.key() == InputConstants.KEY_ESCAPE) {
+            if (searchBar != null && searchBar.isFocused()) {
+                searchBar.setFocused(false);
+                return true;
+            }
             onClose();
             return true;
         }
 
-        // Jos hakupalkki on fokusoitu, älä consumoi merkkinäppäimiä
-        // – muuten charTyped ei laukea ja kirjoittaminen ei toimi.
-        if (searchBar.isFocused() && !isSpecialKey(input.key())) {
+        if (lastUi != null && searchBar != null && searchBar.isFocused()) {
+            if (searchBar.keyPressed(lastUi, input.key(), input.keycode(), input.modifiers())) {
+                return true;
+            }
+            if (tryHandleTyping(input)) return true;
             return false;
         }
 
-        if (lastUi != null) {
-            if (searchBar.keyPressed(lastUi, input.key(), input.keycode(), input.modifiers())) return true;
-            if (scrollContainer != null && scrollContainer.keyPressed(lastUi, input.key(), input.keycode(), input.modifiers())) return true;
+        if (lastUi != null && scrollContainer != null) {
+            if (scrollContainer.keyPressed(lastUi, input.key(), input.keycode(), input.modifiers())) {
+                return true;
+            }
         }
         return super.keyPressed(input);
     }
 
-    /** Palauttaa true vain erikoisnäppäimille (ESC, Enter, Tab, Backspace, Delete, nuolet, F-näppäimet). */
-    private static boolean isSpecialKey(int key) {
-        if (key == 256 || key == 257 || key == 258) return true;   // ESC, Enter, Tab
-        if (key == 259 || key == 261) return true;                 // Backspace, Delete
-        if (key >= 262 && key <= 265) return true;                 // Nuolet
-        if (key >= 266 && key <= 269) return true;                 // Home, End, PageUp, PageDown
-        if (key >= 290 && key <= 314) return true;                 // F1–F25
-        if (key >= 340 && key <= 347) return true;                 // Shift, Ctrl, Alt, Super
+    private boolean tryHandleTyping(KeyEvent input) {
+        int scancode  = input.key();
+        int keycode   = input.keycode();
+        int modifiers = input.modifiers();
+        boolean shift = (modifiers & InputConstants.MOD_SHIFT) != 0;
+
+        if (scancode == InputConstants.KEY_SPACE) {
+            searchBar.appendChar(' ');
+            lastKeyHandledCharNs = System.nanoTime();
+            return true;
+        }
+
+        if (keycode != 0) {
+            try {
+                String name = SDLKeyboard.SDL_GetKeyName(keycode);
+                if (name != null && name.codePointCount(0, name.length()) == 1) {
+                    int cp = name.codePointAt(0);
+                    if (!shift && cp >= 'A' && cp <= 'Z') {
+                        cp = Character.toLowerCase(cp);
+                    } else if (shift && cp >= 'a' && cp <= 'z') {
+                        cp = Character.toUpperCase(cp);
+                    } else if (shift) {
+                        switch (cp) {
+                            case '1': cp = '!'; break;
+                            case '2': cp = '@'; break;
+                            case '3': cp = '#'; break;
+                            case '4': cp = '$'; break;
+                            case '5': cp = '%'; break;
+                            case '6': cp = '^'; break;
+                            case '7': cp = '&'; break;
+                            case '8': cp = '*'; break;
+                            case '9': cp = '('; break;
+                            case '0': cp = ')'; break;
+                            case '-': cp = '_'; break;
+                            case '=': cp = '+'; break;
+                            case '[': cp = '{'; break;
+                            case ']': cp = '}'; break;
+                            case '\\': cp = '|'; break;
+                            case ';': cp = ':'; break;
+                            case '\'': cp = '"'; break;
+                            case ',': cp = '<'; break;
+                            case '.': cp = '>'; break;
+                            case '/': cp = '?'; break;
+                            case '`': cp = '~'; break;
+                        }
+                    }
+                    searchBar.appendChar((char) cp);
+                    lastKeyHandledCharNs = System.nanoTime();
+                    return true;
+                }
+            } catch (Throwable ignored) {}
+        }
         return false;
     }
 
     @Override
     public boolean charTyped(CharacterEvent input) {
-        if (lastUi != null && input.isAllowedChatCharacter()) {
-            String s = input.codepointAsString();
-            for (char c : s.toCharArray()) {
-                if (searchBar.charTyped(lastUi, c, 0)) return true;
-                if (scrollContainer != null && scrollContainer.charTyped(lastUi, c, 0)) return true;
-            }
+        if (System.nanoTime() - lastKeyHandledCharNs < CHAR_DEDUP_WINDOW_NS) {
+            return true;
         }
-        return super.charTyped(input);
+        if (lastUi == null) return super.charTyped(input);
+
+        int cp = input.codepoint();
+        if (cp <= 0) return false;
+
+        if (searchBar != null && searchBar.isFocused()) {
+            searchBar.appendChar((char) cp);
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -228,6 +392,10 @@ public final class FontSettingsScreen extends Screen {
     @Override
     public boolean isPauseScreen() { return false; }
 
+    // ═════════════════════════════════════════════════════════════
+    //  Fonttirivi
+    // ═════════════════════════════════════════════════════════════
+
     private static class FontEntryComponent implements UiComponent {
         private final String fontName;
         private boolean selected;
@@ -243,47 +411,42 @@ public final class FontSettingsScreen extends Screen {
         public String getFontName() { return fontName; }
         public void setSelected(boolean selected) { this.selected = selected; }
 
-        @Override
-        public Rect getBounds() { return bounds; }
-        @Override
-        public void setBounds(Rect bounds) { this.bounds = bounds; }
-        @Override
-        public int getPreferredHeight() { return 52; }
+        @Override public Rect getBounds() { return bounds; }
+        @Override public void setBounds(Rect bounds) { this.bounds = bounds; }
+        @Override public int getPreferredHeight() { return 30; }
 
         @Override
         public void render(UiContext ui, int mouseX, int mouseY, float delta) {
             if (bounds == null) return;
             boolean hover = bounds.contains(mouseX, mouseY);
+
             int bgColor;
-            if (selected) bgColor = ui.theme.accent;
+            if (selected) bgColor = ui.theme.buttonHover;
             else if (hover) bgColor = ui.theme.buttonHover;
             else bgColor = ui.theme.button;
 
-            ui.fillRounded(new Rect(bounds.x + 2, bounds.y + 2, bounds.w, bounds.h), 0x33000000, 6);
             ui.fillRounded(bounds, bgColor, 6);
+
             if (selected) {
-                ui.drawRoundedOutline(bounds, ui.theme.text, 6, 2);
+                ui.drawRoundedOutline(bounds, ui.theme.accent, 6, 2);
             } else if (hover) {
                 ui.drawRoundedOutline(bounds, ui.theme.textDim, 6, 1);
             }
 
-            ui.text(fontName, bounds.x + 12, bounds.y + 8, ui.theme.text);
+            int textY = bounds.y + bounds.h / 2 - ui.fontHeight() / 2 + 3;
+            ui.text(fontName, bounds.x + 12, textY, ui.theme.text);
 
-            int checkSize = 16;
-            int checkX = bounds.x + bounds.w - checkSize - 12;
-            int checkY = bounds.y + 6;
             if (selected && texOn != null) {
+                int checkSize = 14;
+                int checkX = bounds.x + bounds.w - checkSize - 10;
+                int checkY = bounds.y + bounds.h / 2 - checkSize / 2;
                 ui.addTexture(CHECKBOX_ON, checkX, checkY, checkSize, checkSize, new Color(0xFFFFFFFF));
             }
-
-            String previewText = "The quick brown fox jumps over the lazy dog. 1234567890";
-            int previewY = bounds.y + bounds.h - 14;
-            ui.text(previewText, bounds.x + 12, previewY, ui.theme.textDim);
         }
 
         @Override
         public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-            if (button == 1 && bounds != null && bounds.contains(mouseX, mouseY)) {
+            if (button == InputConstants.MOUSE_BUTTON_LEFT && bounds != null && bounds.contains(mouseX, mouseY)) {
                 onClick.run();
                 return true;
             }

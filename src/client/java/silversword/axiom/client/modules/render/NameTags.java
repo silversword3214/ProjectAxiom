@@ -16,7 +16,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.GameType;
-import silversword.axiom.client.event.render.Render2DEvent;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.event.Render2DEvent;
 import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
@@ -27,11 +27,11 @@ import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.NamedColor;
 import silversword.axiom.client.modules.moduleutils.TargetGroup;
-import silversword.axiom.client.render.font.CustomTextRenderer;
-import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
-import silversword.axiom.client.render.rendersystem.utils.render.NametagUtils;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.CustomTextRenderer;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.TextRenderer;
+import silversword.axiom.client.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.rendersystem.utils.render.NametagUtils;
 import silversword.axiom.client.setting.*;
 
 import java.util.*;
@@ -340,7 +340,7 @@ public final class NameTags extends AxiomMod implements ColorConfigurable, Keybi
         try {
             double adjustedY = y + getTextVShift(scaleVal);
             if (tr instanceof CustomTextRenderer ctr) {
-                ctr.render(g, text, x, adjustedY, color, shadow);
+                ctr.render(text, x, adjustedY, color, shadow);
             } else {
                 tr.render(text, x, adjustedY, color, shadow);
             }

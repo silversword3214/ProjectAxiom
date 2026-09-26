@@ -1,11 +1,11 @@
 package silversword.axiom.client.utils.render;
 
 import silversword.axiom.ProjectAxiom;
-import silversword.axiom.client.render.font.FontFace;
-import silversword.axiom.client.render.font.FontInfo;
-import silversword.axiom.client.render.font.FontFamily;
-import silversword.axiom.client.render.font.BuiltinFontFace;
-import silversword.axiom.client.render.font.SystemFontFace;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.FontFace;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.FontInfo;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.FontFamily;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.BuiltinFontFace;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.SystemFontFace;
 
 import java.io.File;
 import java.io.FileInputStream;

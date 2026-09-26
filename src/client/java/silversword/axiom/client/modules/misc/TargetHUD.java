@@ -10,8 +10,8 @@ import silversword.axiom.client.modules.ColorConfigurable;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.NamedColor;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.setting.*;
 
 import java.util.Arrays;

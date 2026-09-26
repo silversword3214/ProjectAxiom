@@ -1,62 +1,76 @@
 package silversword.axiom.mixin.client.render;
 
-import net.minecraft.world.level.material.FogType;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
-import net.minecraft.client.renderer.fog.FogRenderer;
 import net.minecraft.client.multiplayer.ClientLevel;
-import org.joml.Vector4f;
+import net.minecraft.client.renderer.fog.FogData;
+import net.minecraft.client.renderer.fog.FogRenderer;
+import net.minecraft.world.level.material.FogType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.render.NoFog;
 
 @Mixin(FogRenderer.class)
 public class FogRendererMixin {
 
-
-    @Inject(method = "setupFog", at = @At("HEAD"), cancellable = true)
-    private void onSetupFog(Camera camera,
-                            int viewDistance,
-                            DeltaTracker tickCounter,
-                            float tickDelta,
-                            ClientLevel world,
-                            CallbackInfoReturnable<Vector4f> cir) {
+    @ModifyReturnValue(
+            method = "setupFog",
+            at = @At("RETURN")
+    )
+    private FogData axiom$noFog(FogData original,
+                                Camera camera,
+                                int renderDistanceInChunks,
+                                DeltaTracker deltaTracker,
+                                float darkenWorldAmount,
+                                ClientLevel level) {
 
         NoFog noFog = ModuleManager.getInstance().getModule(NoFog.class);
-        if (noFog == null || !noFog.isEnabled()) return;
+        if (noFog == null || !noFog.isEnabled()) return original;
 
         FogType type = camera.getFluidInCamera();
+        boolean wipeEnvironmental = false;
+        boolean wipeRenderDistance = false;
 
-        boolean cancel = false;
-
-
-        // Atmospheric (esim. nether/end tyyppinen)
-        if (noFog.disableAtmosphericFog.get() && type == FogType.ATMOSPHERIC) {
-            cancel = true;
-        }
-
-        // Water
+        // --- Neste- ja jauhosumu: poistetaan environmental ---
         if (noFog.disableWaterFog.get() && type == FogType.WATER) {
-            cancel = true;
+            wipeEnvironmental = true;
         }
-
-        // Lava
         if (noFog.disableLavaFog.get() && type == FogType.LAVA) {
-            cancel = true;
+            wipeEnvironmental = true;
         }
-
-        // Powder Snow
         if (noFog.disablePowderSnowFog.get() && type == FogType.POWDER_SNOW) {
-            cancel = true;
+            wipeEnvironmental = true;
         }
 
-        if (cancel) {
-            // Palautetaan tyhjä fog-arvo -> estää sumun
-            cir.setReturnValue(new Vector4f(0f, 0f, 0f, 0f));
-            cir.cancel();
+        // --- Atmospheric: poistetaan sekä environmental (tiheä haze)
+        //     että render-distance-fade PALKIKOILLE (mutta EI taivaalle).
+        if (noFog.disableAtmosphericFog.get() && type == FogType.NONE) {
+            wipeEnvironmental = true;
+            wipeRenderDistance = true;
         }
+
+        // Nesteissä: poistetaan vain environmental, jätetään
+        // render-distance-fade palikoille, jotta vedenalainen
+        // horisontti ei muutu teräväksi.
+        if (type == FogType.WATER || type == FogType.LAVA) {
+            wipeRenderDistance = false;
+        }
+
+        if (wipeEnvironmental) {
+            original.environmentalStart = Float.MAX_VALUE;
+            original.environmentalEnd   = Float.MAX_VALUE;
+        }
+
+        if (wipeRenderDistance) {
+            // Poistaa chunkkien reunan faden PALKIKOILLE.
+            // HUOM: emme koske skyEnd / cloudEnd / color -kenttiin,
+            // joten taivas fadeaa edelleen horisontissa → ei mustaa aukkoa.
+            original.renderDistanceStart = Float.MAX_VALUE;
+            original.renderDistanceEnd   = Float.MAX_VALUE;
+        }
+
+        return original;
     }
 }

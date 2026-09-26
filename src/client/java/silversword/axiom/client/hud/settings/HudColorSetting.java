@@ -1,7 +1,7 @@
 package silversword.axiom.client.hud.settings;
 
 import silversword.axiom.client.setting.Setting;
-import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.rendersystem.utils.color.SettingColor;
 
 public class HudColorSetting extends Setting {
     private final SettingColor color;

@@ -2,20 +2,18 @@ package silversword.axiom.client.modules.combat;
 
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.phys.AABB;
 import silversword.axiom.client.event.player.PreMotionEvent;
-import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.event.Render3DEvent;
 import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.moduleutils.killaura.AttackController;
 import silversword.axiom.client.modules.moduleutils.killaura.TargetManager;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.Renderer3D;
+import silversword.axiom.client.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.setting.*;
-import silversword.axiom.client.utils.Rotations;
 
 import java.util.List;
 import java.util.stream.Collectors;

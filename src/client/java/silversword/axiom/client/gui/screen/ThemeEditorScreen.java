@@ -1,6 +1,5 @@
 package silversword.axiom.client.gui.screen;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.*;
@@ -9,11 +8,10 @@ import org.joml.Matrix4f;
 import silversword.axiom.client.config.ClickGuiConfigManager;
 import silversword.axiom.client.gui.components.*;
 import silversword.axiom.client.gui.core.*;
-import silversword.axiom.client.main.AxiomMod;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.RenderAPI;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.Renderer2D;
+import silversword.axiom.client.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.utils.color.SettingColor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -494,6 +492,7 @@ public final class ThemeEditorScreen extends Screen {
         private final IntSupplier getter;
         private final IntConsumer setter;
         private Rect bounds;
+        private boolean dragging = false;
 
         LayoutRow(String label, int min, int max, IntSupplier getter, IntConsumer setter) {
             this.label = label;
@@ -506,6 +505,14 @@ public final class ThemeEditorScreen extends Screen {
         @Override public Rect getBounds() { return bounds; }
         @Override public void setBounds(Rect r) { bounds = r; }
         @Override public int getPreferredHeight() { return 26; }
+
+        /** Palauttaa track-alueen X-rajat. */
+        private int trackStartX() { return bounds.x + 110; }
+        private int trackEndX() {
+            String valStr = String.valueOf(getter.getAsInt());
+            int valW = valStr.length() * 8;  // karkea arvio
+            return bounds.right() - valW - 30;
+        }
 
         @Override
         public void render(UiContext ui, int mouseX, int mouseY, float delta) {
@@ -538,20 +545,33 @@ public final class ThemeEditorScreen extends Screen {
         @Override
         public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
             if (button != 1 || bounds == null || !bounds.contains(mouseX, mouseY)) return false;
+
+            // Vain track-alue hyväksyy klikkauksen — otsikko ja arvo eivät
+            int tStart = trackStartX() - 6;
+            int tEnd = trackEndX() + 6;
+            if (mouseX < tStart || mouseX > tEnd) return false;
+
+            dragging = true;
             updateValue(mouseX);
             return true;
         }
 
         @Override
         public boolean mouseDragged(UiContext ui, double mx, double my, int b, double dx, double dy) {
-            if (b != 1) return false;
+            if (b != 1 || !dragging) return false;   // ← vain jos raahaus alkoi tästä
             updateValue(mx);
             return true;
         }
 
+        @Override
+        public void mouseReleased(UiContext ui, double mx, double my, int b) {
+            dragging = false;
+        }
+
         private void updateValue(double mx) {
             int trackX = bounds.x + 110;
-            int valW = 4 * 8;
+            String valStr = String.valueOf(getter.getAsInt());
+            int valW = valStr.length() * 8;
             int trackW = bounds.w - 110 - valW - 30;
             if (trackW <= 10) return;
             double t = (mx - trackX) / trackW;
@@ -559,11 +579,6 @@ public final class ThemeEditorScreen extends Screen {
             int val = (int) Math.round(min + t * (max - min));
             setter.accept(val);
         }
-
-        @Override public void mouseReleased(UiContext ui, double mx, double my, int b) {}
-        @Override public boolean mouseScrolled(UiContext ui, double mx, double my, double a) { return false; }
-        @Override public boolean keyPressed(UiContext ui, int k, int s, int m) { return false; }
-        @Override public boolean charTyped(UiContext ui, char c, int m) { return false; }
     }
 
     // ═══════════════════════════════════════════════════════════════

@@ -21,12 +21,13 @@ public final class ModuleListView implements UiComponent {
     private String lastCategory = "";
     private int lastCount = -1;
 
-    // Julkinen metodi scrollin lapsien hakemiseen
+    /** Gear-ikonin aluevaraus. 16 gear + 1 px oikea padding = 17. */
+    private static final int GEAR_RESERVED_WIDTH = 17;
+
     public List<UiComponent> getScrollChildren() {
         return scroll.getChildren();
     }
 
-    // Konstruktorit ilman searchText-parametria
     public ModuleListView(String ownerWindowId, Supplier<List<AxiomMod>> modulesSupplier,
                           Supplier<String> selectedCategory,
                           Consumer<AxiomMod> onOpenSettings) {
@@ -45,6 +46,7 @@ public final class ModuleListView implements UiComponent {
         scroll.setInnerPadding(2);
         scroll.setGap(0);
         scroll.setShowScrollBar(false);
+        scroll.setRightPadding(GEAR_RESERVED_WIDTH);
     }
 
     @Override public Rect getBounds() { return bounds; }
@@ -61,6 +63,16 @@ public final class ModuleListView implements UiComponent {
             lastCategory = cat;
             lastCount = count;
         }
+
+        // Gear-ikonin oikea reuna on 1 px ikkunan oikeasta reunasta.
+        Rect sb = scroll.getBounds();
+        int effectiveRight = sb.right() - 1;
+        for (UiComponent c : scroll.getChildren()) {
+            if (c instanceof ModuleRow row) {
+                row.setRightEdge(effectiveRight);
+            }
+        }
+
         scroll.render(ui, mouseX, mouseY, delta);
     }
 
@@ -96,7 +108,6 @@ public final class ModuleListView implements UiComponent {
         return rows;
     }
 
-    // --- Metodit moduulin paikannusta varten ---
     public void scrollToIndex(int index) {
         List<UiComponent> kids = scroll.getChildren();
         int y = 0;

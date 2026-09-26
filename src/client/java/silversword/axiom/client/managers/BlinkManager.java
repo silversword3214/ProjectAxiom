@@ -1,6 +1,5 @@
 package silversword.axiom.client.managers;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.player.PlayerModel;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.core.BlockPos;
@@ -8,12 +7,10 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
-import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import silversword.axiom.client.main.AxiomInitialize;
-import silversword.axiom.client.render.rendersystem.utils.render.ModelHelper;
+import silversword.axiom.client.rendersystem.utils.render.ModelHelper;
 import silversword.axiom.client.utils.render.CapturedModelState;
 
 import java.util.Map;

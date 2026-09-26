@@ -13,7 +13,7 @@ import net.minecraft.world.phys.HitResult;
 import silversword.axiom.client.config.ClickGuiConfigManager;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
-import silversword.axiom.client.render.rendersystem.utils.color.rainbow.RainbowPalette;
+import silversword.axiom.client.rendersystem.utils.color.rainbow.RainbowPalette;
 
 /**
  * HealthIndicator — näyttää targetin healthin crosshairin oikealla puolella.

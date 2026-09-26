@@ -1,70 +1,66 @@
 package silversword.axiom.client.modules.render;
 
-import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.Options;
 import silversword.axiom.client.main.AxiomMod;
-import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.setting.SettingBoolean;
-import silversword.axiom.client.setting.SettingKeybind;
 
-import static silversword.axiom.client.main.AxiomInitialize.mc;
-
-public class Fullbright extends AxiomMod implements KeybindConfigurable {
+public class Fullbright extends AxiomMod {
 
     public final SettingBoolean noShadows;
-    public final SettingKeybind toggleKey;
+    private Boolean savedAmbientOcclusion = null;
 
     public Fullbright() {
         super("Fullbright", "Brighter world", ModuleCategory.RENDER);
-
         noShadows = new SettingBoolean("No Shadows", false);
         addSetting(noShadows);
-
-        // 26.3: GLFW_KEY_UNKNOWN → InputConstants.UNKNOWN.getValue() (-1)
-        toggleKey = new SettingKeybind("Toggle Key", InputConstants.UNKNOWN.getValue());
-        addHiddenSetting(toggleKey);
-    }
-
-    @Override
-    public SettingKeybind getKeybind() {
-        return toggleKey;
     }
 
     @Override
     protected void onEnable() {
         FullbrightState.enabled = true;
         FullbrightState.noShadows = noShadows.get();
-        forceLightmapUpdate();
+        applyNoShadows();
     }
 
     @Override
     protected void onDisable() {
         FullbrightState.enabled = false;
-        forceLightmapUpdate();
+        restoreAmbientOcclusion();
     }
 
     @Override
     protected void onTick() {
-        boolean currentNoShadows = noShadows.get();
-        if (currentNoShadows != FullbrightState.noShadows) {
-            FullbrightState.noShadows = currentNoShadows;
+        boolean current = noShadows.get();
+        if (current != FullbrightState.noShadows) {
+            FullbrightState.noShadows = current;
+            applyNoShadows();
             reloadChunks();
         }
     }
 
-    // Nämä kutsuvat resetLevelRenderData()-metodia, mutta LevelRendererMixin
-    // interceptaa sen pelin aikana ja korvaa turvallisella chunk-rebuildilla
-    // (invalidateCompiledGeometry). Ei tarvitse muuttaa moduulia.
-
-    private void reloadChunks() {
-        if (mc != null && mc.levelRenderer != null) {
-            mc.levelRenderer.resetLevelRenderData();
+    private void applyNoShadows() {
+        Options opts = Minecraft.getInstance().options;
+        if (opts == null) return;
+        if (FullbrightState.noShadows) {
+            if (savedAmbientOcclusion == null) {
+                savedAmbientOcclusion = opts.ambientOcclusion().get();
+            }
+            opts.ambientOcclusion().set(false);
+        } else {
+            restoreAmbientOcclusion();
         }
     }
 
-    private void forceLightmapUpdate() {
-        if (mc != null && mc.levelRenderer != null) {
-            mc.levelRenderer.resetLevelRenderData();
-        }
+    private void restoreAmbientOcclusion() {
+        if (savedAmbientOcclusion == null) return;
+        Minecraft.getInstance().options.ambientOcclusion().set(savedAmbientOcclusion);
+        savedAmbientOcclusion = null;
+    }
+
+    private void reloadChunks() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.levelRenderer != null) mc.levelRenderer.resetLevelRenderData();
     }
 }

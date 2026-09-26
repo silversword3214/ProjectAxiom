@@ -1,7 +1,7 @@
 package silversword.axiom.client.modules.render.blockesp;
 
-import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
-import silversword.axiom.client.render.rendersystem.utils.misc.ShapeModeEnum;
+import silversword.axiom.client.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.rendersystem.utils.misc.ShapeModeEnum;
 
 public class BlockData {
     public ShapeModeEnum shapeMode;

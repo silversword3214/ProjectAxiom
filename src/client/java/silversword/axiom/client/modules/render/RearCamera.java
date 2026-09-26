@@ -5,7 +5,7 @@ import silversword.axiom.client.hud.HudManager;
 import silversword.axiom.client.hud.components.RearCameraHud;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.ModuleCategory;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.rearcamera.RearCameraRenderer;
+import silversword.axiom.client.rendersystem.utils.rearcamera.RearCameraRenderer;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingNumber;
 import silversword.axiom.client.setting.SettingSlider;

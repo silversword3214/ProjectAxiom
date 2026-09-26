@@ -1,14 +1,13 @@
 package silversword.axiom.client.modules.render;
 
-import net.minecraft.client.Minecraft;
 import silversword.axiom.client.hud.HudElement;
 import silversword.axiom.client.hud.HudManager;
 import silversword.axiom.client.hud.components.render.MinimapHud;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.ModuleCategory;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.minimap.MinimapRenderer;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.rendersystem.utils.minimap.MinimapRenderer;
+import silversword.axiom.client.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingMode;
 import silversword.axiom.client.setting.SettingNumber;

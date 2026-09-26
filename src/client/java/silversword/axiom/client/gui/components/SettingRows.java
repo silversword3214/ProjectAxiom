@@ -1,5 +1,6 @@
 package silversword.axiom.client.gui.components;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
 import silversword.axiom.client.gui.screen.ClickGuiScreen;
@@ -206,21 +207,48 @@ final class SettingTimeFieldRow extends SettingRowBase {
     }
 
     @Override
-    public boolean keyPressed(UiContext ui, int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(UiContext ui, int scancode, int keycode, int modifiers) {
         if (!editing) return false;
-        if (keyCode == 257 || keyCode == 335) { // Enter
+
+        // Enter hyväksyy
+        if (scancode == InputConstants.KEY_RETURN
+                || scancode == InputConstants.KEY_NUMPADENTER) {
             applyEdit();
             editing = false;
             return true;
         }
-        if (keyCode == 259) { // Backspace
-            String t = textField.getText();
-            if (t.length() > 0) {
-                textField.setText(t.substring(0, t.length() - 1));
-            }
+        // ESC peruu
+        if (scancode == InputConstants.KEY_ESCAPE) {
+            editing = false;
             return true;
         }
-        return false;
+        // Backspace, nuolet, Delete, Home, End → TextField
+        return textField.keyPressed(ui, scancode, keycode, modifiers);
+    }
+
+    private void applyEdit() {
+        String raw = textField.getText();
+        if (raw == null) raw = "";
+        raw = raw.trim();
+
+        // TÄRKEÄ: hyväksy SEKÄ piste ETTÄ pilkku desimaalierottimena.
+        // Suomalainen käyttäjä kirjoittaa "1,24" – normalisoidaan pisteeksi.
+        raw = raw.replace(',', '.');
+
+        if (!raw.isEmpty()) {
+            try {
+                double val = Double.parseDouble(raw);
+                // Käytä setValuea joka clampaa min/max, EI setValueFromString
+                // (se käyttää NumberParseria joka voi mokata locale-asioissa)
+                setting.setValue(val);
+            } catch (NumberFormatException ignored) {
+                // virheellinen syöte → jätä vanha arvo
+            }
+        }
+
+        // Päivitä draft ja textField uudella (mahdollisesti clampatulla) arvolla
+        draft = setting.getDisplayValue();
+        textField.setText(draft);
     }
 
     @Override
@@ -229,15 +257,6 @@ final class SettingTimeFieldRow extends SettingRowBase {
         return textField.charTyped(ui, chr, modifiers);
     }
 
-    private void applyEdit() {
-        String newText = textField.getText();
-        if (setting.setValueFromString(newText)) {
-            // ok
-        } else {
-            // virheellinen syöte, palauta vanha
-        }
-        draft = setting.getDisplayValue();
-    }
 }
 
 final class SettingToggleRow extends SettingRowBase {

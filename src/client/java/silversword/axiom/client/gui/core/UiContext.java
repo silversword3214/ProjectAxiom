@@ -9,10 +9,11 @@ import net.minecraft.util.ARGB;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.ItemStack;
-import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.TextRenderer;
+import silversword.axiom.client.rendersystem.axiomrenderer.engine.RenderCore;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.Renderer2D;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.CustomTextRenderer;
+import silversword.axiom.client.rendersystem.utils.color.Color;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,9 +44,6 @@ public class UiContext {
         this.renderCore = renderer.core;
     }
 
-    // ================================================================
-    //  SCISSOR
-    // ================================================================
 
     private Rect intersect(Rect a, Rect b) {
         int left = Math.max(a.x, b.x);
@@ -76,9 +74,6 @@ public class UiContext {
         }
     }
 
-    // ================================================================
-    //  FILL — kaikki menee core2D-batchiin
-    // ================================================================
 
     public void fill(Rect r, int argb) { renderer.drawRect(r.x, r.y, r.w, r.h, argb); }
     public void fill(int x, int y, int w, int h, int argb) { renderer.drawRect(x, y, w, h, argb); }
@@ -119,9 +114,6 @@ public class UiContext {
         renderer.drawCircle(cx, cy, radius, argb);
     }
 
-    // ================================================================
-    //  TEXT — kaikki menee vanilla-pipelineen
-    // ================================================================
 
     public void text(String s, int x, int y, int argb) { renderText(s, x, y, argb, false, 1.0f); }
     public void text(String s, int x, int y, int argb, boolean shadow) {
@@ -137,32 +129,46 @@ public class UiContext {
 
     private void renderText(String text, double x, double y, int argb, boolean shadow, float scale) {
         if (text == null || text.isEmpty()) return;
-        Rect scissor = scissorStack.isEmpty() ? null : scissorStack.peek();
-        textEntries.add(new TextEntry(text, x, y, argb, shadow, scale, scissor));
+
+        boolean wasBuilding = uiText.isBuilding();
+        if (!wasBuilding) uiText.begin(scale, false, false);
+
+        if (uiText instanceof CustomTextRenderer custom) {
+            custom.render(text, x, y, new Color(argb), shadow);
+        } else if (shadow) {
+            draw.text(mc.font, text, (int) x, (int) y, argb);
+        } else {
+            draw.text(mc.font, text, (int) x, (int) y, argb, false);
+        }
+
+        if (!wasBuilding) uiText.end();
     }
 
-    /** Piirretään kaikki kerätty teksti — vanilla GUI pipeline. */
     public void renderTexts() {
+        if (textEntries.isEmpty()) return;
+
         for (TextEntry e : textEntries) {
             boolean scissorApplied = false;
             if (e.scissor != null && e.scissor.w > 0 && e.scissor.h > 0) {
-                draw.enableScissor(e.scissor.x, e.scissor.y,
-                        e.scissor.x + e.scissor.w, e.scissor.y + e.scissor.h);
+                renderCore.enableScissor(e.scissor.x, e.scissor.y, e.scissor.w, e.scissor.h);
                 scissorApplied = true;
             }
             try {
                 boolean wasBuilding = uiText.isBuilding();
                 if (!wasBuilding) uiText.begin(e.scale, false, false);
-                if (uiText instanceof silversword.axiom.client.render.font.CustomTextRenderer custom) {
-                    custom.render(draw, e.text, e.x, e.y, new Color(e.color), e.shadow);
+
+                if (uiText instanceof CustomTextRenderer custom) {
+                    // RenderCore-polku — ei enää GuiGraphicsExtractoria
+                    custom.render(e.text, e.x, e.y, new Color(e.color), e.shadow);
                 } else if (e.shadow) {
                     draw.text(mc.font, e.text, (int) e.x, (int) e.y, e.color);
                 } else {
                     draw.text(mc.font, e.text, (int) e.x, (int) e.y, e.color, false);
                 }
+
                 if (!wasBuilding) uiText.end();
             } finally {
-                if (scissorApplied) draw.disableScissor();
+                if (scissorApplied) renderCore.disableScissor();
             }
         }
         textEntries.clear();
@@ -183,10 +189,6 @@ public class UiContext {
     public int getVanillaFontHeight() { return mc.font.lineHeight; }
     public GuiGraphicsExtractor getVanillaContext() { return draw; }
 
-    // ================================================================
-    //  EFFECTS
-    // ================================================================
-
     public void drawVanillaEffectIcon(MobEffectInstance effect, int x, int y,
                                       int size, float alpha) {
         if (effect == null) return;
@@ -199,10 +201,6 @@ public class UiContext {
                 ARGB.white(clamp01(alpha)));
     }
 
-    // ================================================================
-    //  ITEMIT
-    // ================================================================
-
     public void item(ItemStack stack, int x, int y) { item(stack, x, y, 16); }
     public void item(ItemStack stack, int x, int y, int size) {
         if (!stack.isEmpty()) items.add(new ItemEntry(stack, x, y, size));
@@ -211,9 +209,6 @@ public class UiContext {
     public void drawItem(ItemStack stack, int x, int y, int size) { item(stack, x, y, size); }
     public List<ItemEntry> getItems() { return items; }
 
-    // ================================================================
-    //  TEKSTUURIT
-    // ================================================================
 
     public void addTexture(Identifier textureId, double x, double y,
                            double width, double height, Color color) {
@@ -225,10 +220,6 @@ public class UiContext {
         renderer.drawRotatedTexture(textureId, (float) x, (float) y,
                 (float) width, (float) height, (float) rotation, color.getARGB());
     }
-
-    // ================================================================
-    //  RAINBOW
-    // ================================================================
 
     public void drawRainbowText(String text, float x, float y, int rowIndex) {
         float speed = silversword.axiom.client.config.ClickGuiConfigManager.getRainbowWaveSpeed();

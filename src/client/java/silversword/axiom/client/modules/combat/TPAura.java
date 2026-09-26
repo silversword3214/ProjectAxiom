@@ -8,7 +8,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.ClipContext;
-import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.event.Render3DEvent;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
@@ -16,9 +16,9 @@ import silversword.axiom.client.modules.moduleutils.killaura.AttackController;
 import silversword.axiom.client.modules.moduleutils.killaura.TargetManager;
 
 
-import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.Renderer3D;
+import silversword.axiom.client.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.setting.*;
 
 import static silversword.axiom.client.main.AxiomInitialize.mc;

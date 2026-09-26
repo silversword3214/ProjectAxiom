@@ -9,10 +9,6 @@ import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.modules.moduleutils.TargetGroup;
 import silversword.axiom.client.modules.render.RadarModule;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.utils.render.DrawTexture;
 
 import static silversword.axiom.client.main.AxiomInitialize.mc;
 
@@ -48,18 +44,18 @@ public final class RadarHud extends BaseHudElement {
     private boolean showCompass = true;
 
     // Värit ryhmille
-    private int playerColor = 0xFF00FFC8;
+    private int playerColor  = 0xFF00FFC8;
     private int hostileColor = 0xFFFF3232;
     private int passiveColor = 0xFF32FF32;
     private int neutralColor = 0xFFFFFF00;
-    private int waterColor = 0xFF3296FF;
-    private int bossColor = 0xFFC800C8;
+    private int waterColor   = 0xFF3296FF;
+    private int bossColor    = 0xFFC800C8;
 
     // Kiinteät arvot
-    private static final int BASE_PADDING = 4;
+    private static final int BASE_PADDING       = 4;
     private static final int BASE_CORNER_RADIUS = 4;
-    private static final int BASE_LINE_COLOR = 0x40FFFFFF;
-    private static final int BASE_BORDER_COLOR = 0xFFAAAAAA;
+    private static final int BASE_LINE_COLOR    = 0x40FFFFFF;
+    private static final int BASE_BORDER_COLOR  = 0xFFAAAAAA;
 
     public RadarHud(RadarModule module) {
         super("Radar", 10, 10);
@@ -98,13 +94,12 @@ public final class RadarHud extends BaseHudElement {
     @Override public int width(Minecraft mc) { return (int) (size * radarScale); }
     @Override public int height(Minecraft mc) { return (int) (size * radarScale); }
 
-    private static final Identifier NAVIGATOR_TEXTURE = Identifier.fromNamespaceAndPath("projectaxiom", "textures/icons/navigation.png");
+    private static final Identifier NAVIGATOR_TEXTURE =
+            Identifier.fromNamespaceAndPath("projectaxiom", "textures/icons/navigation.png");
 
     @Override
     public void render(HudContext ctx, DeltaTracker tickCounter) {
         if (mc.player == null || mc.level == null) return;
-
-        RenderCore core = RenderAPI.getInstance().getCore();
 
         float scaledSize = size * radarScale;
         float centerX = x + scaledSize / 2;
@@ -113,20 +108,21 @@ public final class RadarHud extends BaseHudElement {
         float radius = scaledSize / 2;
 
         // Tausta ja reunus
-        int bgArgb = 0x80000000;
+        int bgArgb     = 0x80000000;
         int borderArgb = BASE_BORDER_COLOR;
 
         if ("CIRCLE".equals(radarShape)) {
-            core.addCircle(centerX, centerY, radius, bgArgb);
-            core.addCircleOutline(centerX, centerY, radius, 1.0f, borderArgb);
+            ctx.renderer.drawCircle(centerX, centerY, radius, bgArgb);
+            ctx.renderer.drawCircleOutline(centerX, centerY, radius, borderArgb, 1.0f);
         } else {
-            core.addRoundedRect(x, y, scaledSize, scaledSize, BASE_CORNER_RADIUS, bgArgb);
-            core.addRoundedRectOutline(x, y, scaledSize, scaledSize, BASE_CORNER_RADIUS, 1.0f, borderArgb);
+            ctx.renderer.drawRoundedRect(x, y, scaledSize, scaledSize, BASE_CORNER_RADIUS, bgArgb);
+            ctx.renderer.drawRoundedRectOutline(x, y, scaledSize, scaledSize,
+                    BASE_CORNER_RADIUS, borderArgb, 1.0f);
         }
 
         // Ristikko
-        core.addLine2D(x, centerY, x + scaledSize, centerY, 1.0f, BASE_LINE_COLOR);
-        core.addLine2D(centerX, y, centerX, y + scaledSize, 1.0f, BASE_LINE_COLOR);
+        ctx.renderer.drawLine(x, centerY, x + scaledSize, centerY, 1.0f, BASE_LINE_COLOR);
+        ctx.renderer.drawLine(centerX, y, centerX, y + scaledSize, 1.0f, BASE_LINE_COLOR);
 
         // Suuntavektorit
         Vec3 playerPos = mc.player.position();
@@ -140,11 +136,11 @@ public final class RadarHud extends BaseHudElement {
         }
 
         // Navigaattori-ikoni keskellä
-        float iconSize = 12 * radarScale; // koko skaalautuu radarin mukana
+        float iconSize = 12 * radarScale;
         float iconX = centerX - iconSize / 2;
         float iconY = centerY - iconSize / 2;
 
-        DrawTexture.add(NAVIGATOR_TEXTURE, iconX, iconY, iconSize, iconSize, new Color(0xFFFFFFFF));
+        ctx.renderer.drawTexture(NAVIGATOR_TEXTURE, iconX, iconY, iconSize, iconSize, 0xFFFFFFFF);
 
         // Entiteetit
         for (Entity entity : mc.level.entitiesForRendering()) {
@@ -159,7 +155,7 @@ public final class RadarHud extends BaseHudElement {
             if (dist > renderDistance) continue;
 
             double relForward = dx * forward.x + dz * forward.z;
-            double relRight = dx * right.x + dz * right.z;
+            double relRight   = dx * right.x   + dz * right.z;
 
             float dotX = centerX + (float) (relRight * scale);
             float dotY = centerY - (float) (relForward * scale);
@@ -177,31 +173,34 @@ public final class RadarHud extends BaseHudElement {
             float alpha = 1.0f;
             if ("OPACITY".equals(heightIndicator) && heightRange > 0) {
                 float factor = (float) Math.min(1.0, Math.abs(dy) / heightRange);
-                alpha = 1.0f - factor * 0.9f; // selvempi ero: alhaalla alpha=0.1
+                alpha = 1.0f - factor * 0.9f;
             }
             int finalColor = applyAlpha(baseColor, alpha);
 
-            // Piirretään aina ympyrä (neliötä ei ole)
+            // Piirretään aina ympyrä
             float circleRad = (float) (entityCircleSize * dotScale);
-            core.addCircle(dotX, dotY, circleRad, finalColor);
+            ctx.renderer.drawCircle(dotX, dotY, circleRad, finalColor);
 
             // Korkeusindikaattori (viiva)
             if ("LINE".equals(heightIndicator) && dy != 0) {
                 int lineLength = (int) Math.min(20, Math.abs(dy) / heightRange * 20);
                 if (dy > 0) {
-                    core.addLine2D(dotX, dotY - circleRad, dotX, dotY - circleRad - lineLength, 1.0f, aboveColor);
+                    ctx.renderer.drawLine(dotX, dotY - circleRad,
+                            dotX, dotY - circleRad - lineLength, 1.0f, aboveColor);
                 } else {
-                    core.addLine2D(dotX, dotY + circleRad, dotX, dotY + circleRad + lineLength, 1.0f, belowColor);
+                    ctx.renderer.drawLine(dotX, dotY + circleRad,
+                            dotX, dotY + circleRad + lineLength, 1.0f, belowColor);
                 }
             }
         }
     }
 
-    private void drawCompass(HudContext ctx, int centerX, int centerY, int radius, float textScale, Vec3 forward, Vec3 right) {
+    private void drawCompass(HudContext ctx, int centerX, int centerY, int radius,
+                             float textScale, Vec3 forward, Vec3 right) {
         Vec3 north = new Vec3(0, 0, -1);
         Vec3 south = new Vec3(0, 0, 1);
-        Vec3 west = new Vec3(-1, 0, 0);
-        Vec3 east = new Vec3(1, 0, 0);
+        Vec3 west  = new Vec3(-1, 0, 0);
+        Vec3 east  = new Vec3(1, 0, 0);
 
         int offset = (int) (10 * textScale);
         int r = radius - offset;
@@ -210,27 +209,39 @@ public final class RadarHud extends BaseHudElement {
         int northY = centerY - (int) (north.dot(forward) * r);
         int southX = centerX + (int) (south.dot(right) * r);
         int southY = centerY - (int) (south.dot(forward) * r);
-        int westX = centerX + (int) (west.dot(right) * r);
-        int westY = centerY - (int) (west.dot(forward) * r);
-        int eastX = centerX + (int) (east.dot(right) * r);
-        int eastY = centerY - (int) (east.dot(forward) * r);
+        int westX  = centerX + (int) (west.dot(right) * r);
+        int westY  = centerY - (int) (west.dot(forward) * r);
+        int eastX  = centerX + (int) (east.dot(right) * r);
+        int eastY  = centerY - (int) (east.dot(forward) * r);
 
         int color = BASE_BORDER_COLOR;
-        ctx.drawScaledText("N", northX - (int) (ctx.textWidth("N") * textScale / 2), northY - (int) (ctx.fontHeight() * textScale / 2), color, true, textScale);
-        ctx.drawScaledText("S", southX - (int) (ctx.textWidth("S") * textScale / 2), southY - (int) (ctx.fontHeight() * textScale / 2), color, true, textScale);
-        ctx.drawScaledText("W", westX - (int) (ctx.textWidth("W") * textScale / 2), westY - (int) (ctx.fontHeight() * textScale / 2), color, true, textScale);
-        ctx.drawScaledText("E", eastX - (int) (ctx.textWidth("E") * textScale / 2), eastY - (int) (ctx.fontHeight() * textScale / 2), color, true, textScale);
+        ctx.drawScaledText("N",
+                northX - (int) (ctx.textWidth("N") * textScale / 2),
+                northY - (int) (ctx.fontHeight() * textScale / 2),
+                color, true, textScale);
+        ctx.drawScaledText("S",
+                southX - (int) (ctx.textWidth("S") * textScale / 2),
+                southY - (int) (ctx.fontHeight() * textScale / 2),
+                color, true, textScale);
+        ctx.drawScaledText("W",
+                westX - (int) (ctx.textWidth("W") * textScale / 2),
+                westY - (int) (ctx.fontHeight() * textScale / 2),
+                color, true, textScale);
+        ctx.drawScaledText("E",
+                eastX - (int) (ctx.textWidth("E") * textScale / 2),
+                eastY - (int) (ctx.fontHeight() * textScale / 2),
+                color, true, textScale);
     }
 
     private int getGroupColor(TargetGroup group) {
         return switch (group) {
-            case PLAYER -> playerColor;
+            case PLAYER  -> playerColor;
             case HOSTILE -> hostileColor;
             case PASSIVE -> passiveColor;
             case NEUTRAL -> neutralColor;
-            case WATER -> waterColor;
-            case BOSS -> bossColor;
-            default -> playerColor;
+            case WATER   -> waterColor;
+            case BOSS    -> bossColor;
+            default      -> playerColor;
         };
     }
 
@@ -244,13 +255,13 @@ public final class RadarHud extends BaseHudElement {
 
     private boolean shouldDrawGroup(TargetGroup group) {
         return switch (group) {
-            case PLAYER -> drawPlayers;
+            case PLAYER  -> drawPlayers;
             case HOSTILE -> drawHostile;
             case PASSIVE -> drawPassive;
             case NEUTRAL -> drawNeutral;
-            case WATER -> drawWater;
-            case BOSS -> drawBoss;
-            default -> true;
+            case WATER   -> drawWater;
+            case BOSS    -> drawBoss;
+            default      -> true;
         };
     }
 

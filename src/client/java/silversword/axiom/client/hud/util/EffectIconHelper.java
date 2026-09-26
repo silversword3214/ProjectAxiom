@@ -7,7 +7,7 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.client.renderer.Sheets;
-import silversword.axiom.client.render.rendersystem.utils.texture.TextureRegion;
+import silversword.axiom.client.rendersystem.utils.texture.TextureRegion;
 
 import java.util.HashMap;
 import java.util.Map;

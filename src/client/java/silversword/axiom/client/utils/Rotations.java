@@ -14,7 +14,6 @@ public class Rotations {
     private static float serverPitch;
     private static int rotationTimer = 0;
 
-    // Smooth silent rotation (Scaffold)
     private static boolean smoothActive = false;
     private static float startServerYaw, startServerPitch;
     private static int smoothSteps;
@@ -22,7 +21,6 @@ public class Rotations {
     private static float stepYaw, stepPitch;
     private static Runnable smoothCallback;
 
-    // FIX: Maksimi muutos per tick (Vulcanille ystävällinen)
     private static final float MAX_YAW_CHANGE_PER_TICK = 10.0f;
     private static final float MAX_PITCH_CHANGE_PER_TICK = 5.0f;
 
@@ -60,27 +58,25 @@ public class Rotations {
     }
 
     public static void onPostSendMovementPackets() {
-        // Tyhjä
+
     }
 
     public static void rotateSmooth(double yaw, double pitch, int steps, Runnable callback) {
         if (mc.player == null) return;
-        smoothActive = false; // keskeytä edellinen
+        smoothActive = false;
 
         startServerYaw = serverYaw;
         startServerPitch = serverPitch;
         float targetYaw = normalizeYaw((float) yaw);
         float targetPitch = clampPitch((float) pitch);
 
-        // Lasketaan lyhin ero yaw:ssa (vältetään ympäripyörähdys)
         float deltaYaw = targetYaw - startServerYaw;
         deltaYaw = (deltaYaw % 360 + 360) % 360;
         if (deltaYaw > 180) deltaYaw -= 360;
 
-        float deltaPitch = targetPitch - startServerYaw; // FIX: oikea deltaPitch
+        float deltaPitch = targetPitch - startServerYaw;
         deltaPitch = targetPitch - startServerPitch;
 
-        // FIX: Pakotetaan maksimimuutos per tick
         int neededStepsYaw = (int) Math.ceil(Math.abs(deltaYaw) / MAX_YAW_CHANGE_PER_TICK);
         int neededStepsPitch = (int) Math.ceil(Math.abs(deltaPitch) / MAX_PITCH_CHANGE_PER_TICK);
         int actualSteps = Math.max(steps, Math.max(neededStepsYaw, neededStepsPitch));

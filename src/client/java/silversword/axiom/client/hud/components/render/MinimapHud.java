@@ -5,7 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.minimap.MinimapRenderer;
+import silversword.axiom.client.rendersystem.utils.minimap.MinimapRenderer;
 
 public class MinimapHud extends BaseHudElement {
 
@@ -54,20 +54,20 @@ public class MinimapHud extends BaseHudElement {
             if (circular) {
                 // Pyöreä kehys — piirretään ympyrän ulkoreunalle
                 float outlineRadius = radius - borderThickness * 0.5f;
-                ctx.renderer.core.addCircleOutline(
+                ctx.renderer.drawCircleOutline(
                         cx, cy,
                         outlineRadius,
-                        borderThickness,
-                        borderColor
+                        borderColor,
+                        borderThickness
                 );
             } else {
                 // Neliönmuotoinen kehys pyöristetyillä kulmilla
-                ctx.renderer.core.addRoundedRectOutline(
+                ctx.renderer.drawRoundedRectOutline(
                         x, y,
                         viewSize, viewSize,
                         4.0f,
-                        borderThickness,
-                        borderColor
+                        borderColor,
+                        borderThickness
                 );
             }
         }
@@ -107,10 +107,10 @@ public class MinimapHud extends BaseHudElement {
                 float cx = x + viewSize / 2f;
                 float cy = y + viewSize / 2f;
                 float radius = viewSize / 2f - borderThickness * 0.5f;
-                ctx.renderer.core.addCircleOutline(cx, cy, radius, borderThickness, borderColor);
+                ctx.renderer.drawCircleOutline(cx, cy, radius, borderColor, borderThickness);
             } else {
-                ctx.renderer.core.addRoundedRectOutline(
-                        x, y, viewSize, viewSize, 4.0f, borderThickness, borderColor);
+                ctx.renderer.drawRoundedRectOutline(
+                        x, y, viewSize, viewSize, 4.0f, borderColor, borderThickness);
             }
         }
         ctx.drawScaledText("Minimap", x + 4, y + 4, 0xFFFFFFFF, true, 1.0f);

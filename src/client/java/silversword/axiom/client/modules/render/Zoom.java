@@ -1,180 +1,121 @@
 package silversword.axiom.client.modules.render;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
-import silversword.axiom.client.event.GetFovEvent;
-import silversword.axiom.client.event.MouseScrollEvent;
-import silversword.axiom.client.event.render.Render3DEvent;
-import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.main.AxiomMod;
-import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
-
 import silversword.axiom.client.setting.SettingBoolean;
-import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingNumber;
 
-import static silversword.axiom.client.main.AxiomInitialize.mc;
+public class Zoom extends AxiomMod {
 
-public class Zoom extends AxiomMod implements KeybindConfigurable {
+    public final SettingNumber  zoomLevel;
+    public final SettingBoolean smooth;
+    public final SettingNumber  smoothSpeed;
+    public final SettingBoolean reduceSensitivity;
+    public final SettingNumber  sensitivityFactor;
+    public final SettingBoolean scrollZoom;
+    public final SettingNumber  scrollStep;
+    public final SettingBoolean resetScrollOnRelease;
+    public final SettingNumber  zoomKey;
 
-    private final SettingNumber zoom = new SettingNumber("Zoom", 1, 50, 1, 6);
-    private final SettingNumber scrollSensitivity = new SettingNumber("Scroll Sensitivity", 0.0, 2.0, 0.1, 1.0);
-    private final SettingBoolean smooth = new SettingBoolean("Smooth", true);
-    private final SettingBoolean cinematic = new SettingBoolean("Cinematic", false);
-    private final SettingBoolean hideHud = new SettingBoolean("Hide HUD", false);
-    private final SettingBoolean renderHands = new SettingBoolean("Show Hands", false);
-
-    public final SettingKeybind toggleKey = new SettingKeybind("Toggle Key", 0);
-
-    // Internal state
-    private double targetZoom;
-    private double currentZoom;
-    private double lastFov;
-    private boolean preCinematic;
-    private double preMouseSensitivity;
-    private boolean preHudHidden;
-    private double value;
-
-    private double time;
+    private boolean zooming = false;
+    private double  savedSensitivity = -1.0;
 
     public Zoom() {
-        super("Zoom", "Zooms your view", ModuleCategory.RENDER);
-        addSetting(scrollSensitivity);
+        super("Zoom", "Hold key to zoom in (default: Z)", ModuleCategory.RENDER);
+
+        zoomLevel = new SettingNumber("Zoom Level", 1.0, 20.0, 0.5, 4.0);
+        smooth = new SettingBoolean("Smooth", true);
+        smoothSpeed = new SettingNumber("Smooth Speed", 1.0, 30.0, 1.0, 15.0);
+        reduceSensitivity = new SettingBoolean("Reduce Sensitivity", true);
+        sensitivityFactor = new SettingNumber("Sensitivity", 0.05, 1.0, 0.05, 0.5);
+        scrollZoom = new SettingBoolean("Scroll to Zoom", true);
+        scrollStep = new SettingNumber("Scroll Step", 0.1, 2.0, 0.1, 0.5);
+        resetScrollOnRelease = new SettingBoolean("Reset Scroll on Release", true);
+        zoomKey = new SettingNumber("Zoom Key", 0, 400, 1, InputConstants.KEY_Z);
+
+        addSetting(zoomLevel);
         addSetting(smooth);
-        addSetting(cinematic);
-        addSetting(hideHud);
+        addSetting(smoothSpeed);
+        addSetting(reduceSensitivity);
+        addSetting(sensitivityFactor);
+        addSetting(scrollZoom);
+        addSetting(scrollStep);
+        addSetting(resetScrollOnRelease);
+        addHiddenSetting(zoomKey);
 
-        addHiddenSetting(toggleKey);
+        ClientTickEvents.END_CLIENT_TICK.register(this::tick);
     }
 
-    @Override
-    public SettingKeybind getKeybind() {
-        return toggleKey;
-    }
-
-    @Override
-    protected void onEnable() {
-        if (mc.player == null) {
-            toggle(); // automatically turn off if player not loaded
+    private void tick(Minecraft mc) {
+        if (mc == null || mc.player == null || mc.getWindow() == null) {
+            if (zooming) stopZooming(mc);
+            return;
+        }
+        if (mc.gui.screen() != null) {
+            if (zooming) stopZooming(mc);
             return;
         }
 
-        preCinematic = mc.options.smoothCamera;
-        preMouseSensitivity = mc.options.sensitivity().get();
-        targetZoom = zoom.getValue();
-        currentZoom = 1.0; // start from 1x zoom
-        lastFov = mc.options.fov().get();
+        int keyCode = (int) zoomKey.getValue();
+        boolean pressed = keyCode > 0 && InputConstants.isKeyDown(keyCode);
 
-        if (hideHud.get()) {
-            preHudHidden = isHudHidden();
-            setHudHidden(true);
-        }
-    }
+        if (pressed && !zooming) startZooming(mc);
+        else if (!pressed && zooming) stopZooming(mc);
 
-    @Override
-    protected void onDisable() {
-        mc.options.smoothCamera = preCinematic;
-        mc.options.sensitivity().set(preMouseSensitivity);
-        if (hideHud.get()) {
-            setHudHidden(preHudHidden);
-        }
-        // Force terrain update to reset FOV
-        if (mc.levelRenderer != null) {
-            mc.levelRenderer.resetLevelRenderData();
-        }
-    }
-
-    @Override
-    public void onTick() {
-        if (mc.player == null) return;
-
-        // Cinematic mode
-        mc.options.smoothCamera = cinematic.get();
-
-        // Adjust mouse sensitivity when not cinematic
-        if (!cinematic.get()) {
-            double scaling = getCurrentScaling();
-            mc.options.sensitivity().set(preMouseSensitivity / Math.max(scaling * 0.5, 1));
-        }
-    }
-
-    @Subscribe
-    private void onRender3D(Render3DEvent event) {
-        if (!smooth.get()) {
-            currentZoom = isEnabled() ? targetZoom : 1.0;
-            return;
-        }
-
-        // Smooth transition – constant step per frame
-        double step = 0.05;
-        if (isEnabled()) {
-            currentZoom = Math.min(currentZoom + step, targetZoom);
+        if (zooming) {
+            ZoomState.targetMultiplier = zoomLevel.getValue() * ZoomState.scrollZoom;
         } else {
-            currentZoom = Math.max(currentZoom - step, 1.0);
+            ZoomState.targetMultiplier = 1.0;
+        }
+
+        ZoomState.smoothCamera      = smooth.get();
+        ZoomState.smoothSpeed       = smoothSpeed.getValue();
+        ZoomState.reduceSensitivity = reduceSensitivity.get();
+        ZoomState.sensitivityFactor = sensitivityFactor.getValue();
+    }
+
+    private void startZooming(Minecraft mc) {
+        zooming = true;
+        ZoomState.zooming = true;
+        ZoomState.scrollZoom = 1.0;
+
+        if (reduceSensitivity.get() && mc.options != null) {
+            savedSensitivity = mc.options.sensitivity().get();
+            double newSens = Mth.clamp(
+                    savedSensitivity * sensitivityFactor.getValue(),
+                    0.0, 1.0);
+            mc.options.sensitivity().set(newSens);
         }
     }
 
-    @Subscribe
-    private void onMouseScroll(MouseScrollEvent event) {
-        if (!isEnabled()) return;
-        if (scrollSensitivity.getValue() <= 0) return;
-        // Älä zoomaa jos ruudulla on jokin näyttö (menu, ClickGUI)
-        if (mc.gui.screen() != null) return;
+    private void stopZooming(Minecraft mc) {
+        zooming = false;
+        ZoomState.zooming = false;
 
-        double delta = event.value * 0.25 * scrollSensitivity.getValue() * targetZoom;
-        targetZoom += delta;
-        targetZoom = Mth.clamp(targetZoom, 1, 50);
-        event.setCancelled(true);
-        System.out.println("Mouse scroll, targetZoom=" + targetZoom);
-    }
-
-    @Subscribe
-    private void onGetFov(GetFovEvent event) {
-        if (!isEnabled()) return;
-        if (mc.player == null || mc.level == null) return;
-        // Älä zoomaa jos ruudulla on jokin näyttö (menu, ClickGUI)
-        if (mc.gui.screen() != null) return;
-
-        double scaling = getCurrentScaling();
-        event.fov /= scaling;
-
-        if (lastFov != event.fov && mc.levelRenderer != null) {
-            mc.levelRenderer.resetLevelRenderData();
-            lastFov = event.fov;
+        if (savedSensitivity >= 0 && mc != null && mc.options != null) {
+            mc.options.sensitivity().set(savedSensitivity);
+            savedSensitivity = -1.0;
+        }
+        if (resetScrollOnRelease.get()) {
+            ZoomState.scrollZoom = 1.0;
         }
     }
 
-    private boolean isHudHidden() {
-        try {
-            java.lang.reflect.Field renderStateField = mc.gui.getClass().getDeclaredField("guiRenderState");
-            renderStateField.setAccessible(true);
-            Object renderState = renderStateField.get(mc.gui);
-            return renderState.getClass().getField("isHudHidden").getBoolean(renderState);
-        } catch (ReflectiveOperationException ignored) {
-            return false;
-        }
+    public void onScroll(double delta) {
+        if (!zooming) return;
+        if (!scrollZoom.get()) return;
+        double step = scrollStep.getValue();
+        double newScroll = ZoomState.scrollZoom + delta * step;
+        ZoomState.scrollZoom = Mth.clamp(newScroll, 0.1, 20.0);
     }
 
-    private void setHudHidden(boolean hidden) {
-        try {
-            java.lang.reflect.Field renderStateField = mc.gui.getClass().getDeclaredField("guiRenderState");
-            renderStateField.setAccessible(true);
-            Object renderState = renderStateField.get(mc.gui);
-            renderState.getClass().getField("isHudHidden").setBoolean(renderState, hidden);
-        } catch (ReflectiveOperationException ignored) {
-        }
-    }
+    @Override protected void onEnable()  {}
+    @Override protected void onDisable() {}
+    @Override protected void onTick()    {}
 
-    public double getScaling() {
-        double delta = time < 0.5 ? 4 * time * time * time : 1 - Math.pow(-2 * time + 2, 3) / 2; // Ease in out cubic
-        return Mth.lerp(delta, 1, value);
-    }
-
-    private double getCurrentScaling() {
-        return currentZoom;
-    }
-
-    public boolean renderHands() {
-        return !isEnabled() || renderHands.get();
-    }
+    public boolean isZooming() { return zooming; }
 }

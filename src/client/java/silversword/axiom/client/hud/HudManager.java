@@ -1,26 +1,22 @@
 package silversword.axiom.client.hud;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.DeltaTracker;
 import org.joml.Matrix3x2fStack;
 import org.joml.Matrix4f;
-import silversword.axiom.client.event.render.Render2DEvent;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.event.Render2DEvent;
 import silversword.axiom.client.gui.core.Theme;
 import silversword.axiom.client.gui.core.ThemeManager;
-import silversword.axiom.client.gui.screen.ClickGuiScreen;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.main.AxiomInitialize;
-import silversword.axiom.client.modules.render.ChestESP;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.blockchams.BlockChamsRenderer;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.AxiomHudBlocker;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.integration.HudEventGuard;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.shaderesp.ShaderEspRenderer;
-import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.RenderAPI;
+import silversword.axiom.client.rendersystem.axiomrenderer.engine.postprocess.blockchams.BlockChamsRenderer;
+import silversword.axiom.client.rendersystem.utils.misc.AxiomHudBlocker;
+
+import silversword.axiom.client.rendersystem.axiomrenderer.api.Renderer2D;
+import silversword.axiom.client.rendersystem.axiomrenderer.engine.postprocess.shaderesp.ShaderEspRenderer;
+import silversword.axiom.client.rendersystem.utils.render.RenderUtils;
 import silversword.axiom.client.utils.render.DrawTexture;
 
 import java.util.*;

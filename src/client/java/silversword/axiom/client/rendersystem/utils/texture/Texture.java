@@ -1,0 +1,100 @@
+package silversword.axiom.client.rendersystem.utils.texture;
+
+import com.mojang.blaze3d.platform.TextureUtil;
+import com.mojang.blaze3d.systems.RenderSystem;
+
+import com.mojang.renderpearl.api.GpuFormat;
+import com.mojang.renderpearl.api.textures.AddressMode;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
+import net.minecraft.client.renderer.texture.AbstractTexture;
+import com.mojang.blaze3d.platform.NativeImage;
+import org.jetbrains.annotations.NotNull;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.stb.STBImage;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+
+public class Texture extends AbstractTexture {
+    public Texture(int width, int height, GpuFormat format, FilterMode min, FilterMode mag) {
+        texture = RenderSystem.getDevice().createTexture("", 15, format, width, height, 1, 1);
+        sampler = RenderSystem.getSamplerCache().getSampler(AddressMode.REPEAT, AddressMode.REPEAT, min, mag, false);
+
+        textureView = RenderSystem.getDevice().createTextureView(texture);
+    }
+
+    public int getWidth() {
+        return getTexture().getWidth(0);
+    }
+
+    public int getHeight() {
+        return getTexture().getHeight(0);
+    }
+
+    public void upload(byte[] bytes) {
+        upload(BufferUtils.createByteBuffer(bytes.length).put(bytes));
+    }
+
+    public void upload(ByteBuffer buffer) {
+        var image = getImage();
+
+        buffer.rewind();
+        MemoryUtil.memCopy(MemoryUtil.memAddress(buffer), image.getPointer(), buffer.remaining());
+
+        var encoder = RenderSystem.getDevice().createCommandEncoder();
+        encoder.writeToTexture(texture, image);
+        encoder.submit();
+
+        image.close();
+    }
+
+    private @NotNull NativeImage getImage() {
+        NativeImage.Format imageFormat = switch (texture.getFormat()) {
+            case RGBA8_UNORM -> NativeImage.Format.RGBA;
+            case R8_UNORM -> NativeImage.Format.LUMINANCE;
+            default -> throw new IllegalArgumentException();
+        };
+
+        return new NativeImage(imageFormat, getWidth(), getHeight(), false);
+    }
+
+    public GpuTextureView textureView() {
+        return textureView;
+    }
+
+    public GpuSampler sampler() {
+        return sampler;
+    }
+
+    public static Texture readResource(String path, boolean flipY, FilterMode filter) {
+        try (var in = Texture.class.getResourceAsStream(path)) {
+            if (in == null) return null;
+
+            var data = TextureUtil.readResource(in).rewind();
+
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                IntBuffer width = stack.mallocInt(1);
+                IntBuffer height = stack.mallocInt(1);
+                IntBuffer comp = stack.mallocInt(1);
+
+                STBImage.stbi_set_flip_vertically_on_load(flipY);
+                ByteBuffer image = STBImage.stbi_load_from_memory(data, width, height, comp, 4);
+
+                var texture = new Texture(width.get(0), height.get(0), GpuFormat.RGBA8_UNORM, filter, filter);
+                texture.upload(image);
+
+                STBImage.stbi_image_free(image);
+                STBImage.stbi_set_flip_vertically_on_load(false);
+
+                return texture;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+}

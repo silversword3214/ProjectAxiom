@@ -1,12 +1,10 @@
 package silversword.axiom.client.hud.components;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.renderpearl.api.textures.FilterMode;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.DeltaTracker;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.rearcamera.RearCameraRenderer;
+import silversword.axiom.client.rendersystem.utils.rearcamera.RearCameraRenderer;
 
 public class RearCameraHud extends BaseHudElement {
 

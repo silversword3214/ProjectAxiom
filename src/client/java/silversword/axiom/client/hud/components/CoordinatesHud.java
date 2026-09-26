@@ -6,8 +6,9 @@ import net.minecraft.core.Direction;
 import silversword.axiom.client.hud.BaseHudElement;
 import silversword.axiom.client.hud.core.HudContext;
 import silversword.axiom.client.modules.NamedColor;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.TextRenderer;
+import silversword.axiom.client.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.utils.color.SettingColor;
 import silversword.axiom.client.setting.SettingBoolean;
 import silversword.axiom.client.setting.SettingNumber;
 
@@ -114,11 +115,11 @@ public final class CoordinatesHud extends BaseHudElement {
 
     // Apumetodit tekstin mittaukselle (käytetään HudContextin metodeja, jotka on helppo tallentaa muuttujiin)
     private int textWidth(String text) {
-        return (int) silversword.axiom.client.render.font.TextRenderer.get().getWidth(text);
+        return (int) TextRenderer.get().getWidth(text);
     }
 
     private int fontHeight() {
-        return (int) silversword.axiom.client.render.font.TextRenderer.get().getHeight();
+        return (int) TextRenderer.get().getHeight();
     }
 
     @Override

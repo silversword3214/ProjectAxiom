@@ -4,7 +4,7 @@ import net.minecraft.resources.Identifier;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.utils.color.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

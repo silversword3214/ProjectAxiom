@@ -2,14 +2,13 @@ package silversword.axiom.client.gui.components;
 
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.utils.color.Color;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Momentum-pohjainen pehmeÃ¤ vieritys + motion blur + hard stop reunoilla.
- * Motion bluria sÃ¤Ã¤detÃ¤Ã¤n yhdellÃ¤ luvulla: setMotionBlurIntensity(0..1)
+ * Momentum-pohjainen pehmeä vieritys + motion blur + hard stop reunoilla.
  */
 public final class ScrollContainer implements UiComponent {
 
@@ -28,13 +27,9 @@ public final class ScrollContainer implements UiComponent {
     private Double tweenTarget = null;
     private double tweenRate   = 11.0;
 
-    // ============================================================
-    //  MOTION BLUR â€“ vain yksi luku (0..1)
-    // ============================================================
-    /** Ainoa blur-sÃ¤Ã¤tÃ¶. 0 = pois, 0.65 = oletus, 1 = voimakas. */
+    // ===== Motion blur =====
     private float motionBlurIntensity = 0f;
 
-    // Johdetut arvot â€“ pÃ¤ivittyvÃ¤t setMotionBlurIntensity-kutsusta
     private int    blurSamples  = 3;
     private double blurStretch  = 2.3;
     private float  blurStrength = 0.39f;
@@ -46,6 +41,7 @@ public final class ScrollContainer implements UiComponent {
     private int contentHeight = 0;
     private int gap = 4;
     private int innerPadding = 4;
+    private int rightPadding = 0;   // ← UUSI: varaa tilaa oikealle (esim. gear-ikonille)
 
     // ===== Scrollbar =====
     private boolean draggingScrollbar = false;
@@ -57,7 +53,7 @@ public final class ScrollContainer implements UiComponent {
     private boolean drawBackground = true;
 
     public ScrollContainer() {
-        applyBlurIntensity(); // alusta johdetut arvot
+        applyBlurIntensity();
     }
 
     // ================================================================
@@ -65,13 +61,16 @@ public final class ScrollContainer implements UiComponent {
     // ================================================================
     public void setGap(int g)               { this.gap = Math.max(0, g); }
     public void setInnerPadding(int p)      { this.innerPadding = Math.max(0, p); }
+    public void setRightPadding(int p)      { this.rightPadding = Math.max(0, p); }
     public void setShowScrollBar(boolean s) { this.showScrollBar = s; }
     public void setDrawBackground(boolean b){ this.drawBackground = b; }
     public void setFriction(double f)       { this.friction = Math.max(0.1, f); }
     public void setImpulsePerTick(double p) { this.impulsePerTick = Math.max(1.0, p); }
     public void setTweenRate(double r)      { this.tweenRate = Math.max(0.1, r); }
 
-    /** Johtaa samples / stretch / strength yhdestÃ¤ luvusta. */
+    /** Palauttaa inner paddingin (esim. ModuleListView käyttää tätä gear-oikean reunan laskentaan). */
+    public int getInnerPadding() { return innerPadding; }
+
     private void applyBlurIntensity() {
         if (motionBlurIntensity <= 0.01f) {
             blurSamples  = 0;
@@ -79,9 +78,9 @@ public final class ScrollContainer implements UiComponent {
             blurStrength = 0f;
             return;
         }
-        blurSamples  = Math.max(1, Math.round(motionBlurIntensity * 5f)); // 1..5
-        blurStretch  = 1.0 + motionBlurIntensity * 2.0;                    // 1.0..3.0
-        blurStrength = 0.10f + motionBlurIntensity * 0.45f;                // 0.10..0.55
+        blurSamples  = Math.max(1, Math.round(motionBlurIntensity * 5f));
+        blurStretch  = 1.0 + motionBlurIntensity * 2.0;
+        blurStrength = 0.10f + motionBlurIntensity * 0.45f;
     }
 
     // -------- Lapset --------
@@ -114,7 +113,7 @@ public final class ScrollContainer implements UiComponent {
     private void layoutChildrenAt(double extraOffset) {
         int x = bounds.x + innerPadding;
         int y = bounds.y + innerPadding - (int) Math.round(scrollY + extraOffset);
-        int w = Math.max(1, bounds.w - innerPadding * 2);
+        int w = Math.max(1, bounds.w - innerPadding * 2 - rightPadding);
         for (UiComponent c : children) {
             int h = c.getPreferredHeight();
             c.setBounds(new Rect(x, y, w, h));
@@ -138,7 +137,7 @@ public final class ScrollContainer implements UiComponent {
     }
 
     // ================================================================
-    //  Fysiikka â€“ momentum + HARD STOP
+    //  Fysiikka
     // ================================================================
     private void stepPhysics(float delta) {
         float dt = delta * 0.05f;
@@ -270,19 +269,12 @@ public final class ScrollContainer implements UiComponent {
             return true;
         }
 
+        // Yritä kaikille lapsille — jokainen tekee oman hit-testinsä
+        // (bounds TAI laajennettu alue kuten gear-ikoni).
         for (UiComponent c : children) {
-            Rect r = c.getBounds();
-            if (r != null && r.contains(mouseX, mouseY)) {
-                if (c.mouseClicked(ui, mouseX, mouseY, button)) return true;
-            }
+            if (c.mouseClicked(ui, mouseX, mouseY, button)) return true;
         }
         return true;
-    }
-
-    @Override
-    public void mouseReleased(UiContext ui, double mouseX, double mouseY, int button) {
-        if (button == 1) draggingScrollbar = false;
-        for (UiComponent c : children) c.mouseReleased(ui, mouseX, mouseY, button);
     }
 
     @Override
@@ -309,14 +301,20 @@ public final class ScrollContainer implements UiComponent {
             return true;
         }
 
+        // Sama: yritä kaikille lapsille, lapsi tekee oman hit-testinsä.
         for (UiComponent c : children) {
-            Rect r = c.getBounds();
-            if (r != null && r.contains(mouseX, mouseY)) {
-                if (c.mouseDragged(ui, mouseX, mouseY, button, dx, dy)) return true;
-            }
+            if (c.mouseDragged(ui, mouseX, mouseY, button, dx, dy)) return true;
         }
         return false;
     }
+
+    @Override
+    public void mouseReleased(UiContext ui, double mouseX, double mouseY, int button) {
+        if (button == 1) draggingScrollbar = false;
+        for (UiComponent c : children) c.mouseReleased(ui, mouseX, mouseY, button);
+    }
+
+
 
     @Override public boolean keyPressed(UiContext ui, int keyCode, int scanCode, int mods) {
         for (UiComponent c : children) if (c.keyPressed(ui, keyCode, scanCode, mods)) return true;
@@ -327,9 +325,6 @@ public final class ScrollContainer implements UiComponent {
         return false;
     }
 
-    // ================================================================
-    //  Julkinen API
-    // ================================================================
     public void scrollTo(int y) {
         int max = maxScroll();
         tweenTarget = (double) Math.max(0, Math.min(max, y));

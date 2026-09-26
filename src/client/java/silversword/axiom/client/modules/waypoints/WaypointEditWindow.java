@@ -5,8 +5,8 @@ import silversword.axiom.client.gui.core.*;
 import silversword.axiom.client.gui.window.WindowFactory;
 import silversword.axiom.client.main.AxiomMod;
 import silversword.axiom.client.managers.WaypointManager;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.utils.color.SettingColor;
 
 public class WaypointEditWindow implements UiComponent {
     private Rect bounds;

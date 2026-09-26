@@ -13,9 +13,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import silversword.axiom.client.modules.player.ChestStealer;
-import silversword.axiom.client.render.font.CustomTextRenderer;
-import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.CustomTextRenderer;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.TextRenderer;
+import silversword.axiom.client.rendersystem.utils.color.Color;
 
 @Mixin(AbstractContainerScreen.class)
 public abstract class AbstractContainerScreenMixin {
@@ -64,7 +64,7 @@ public abstract class AbstractContainerScreenMixin {
 
         textRenderer.begin(scale, false, true);
         if (textRenderer instanceof CustomTextRenderer custom) {
-            custom.render(context, text, textX, textY, new Color(255, 255, 255, 255), false);
+            custom.render(text, textX, textY, new Color(255, 255, 255, 255), false);
         } else {
             context.text(net.minecraft.client.Minecraft.getInstance().font, text, textX, textY, 0xFFFFFFFF, false);
         }

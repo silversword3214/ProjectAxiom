@@ -4,7 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import silversword.axiom.client.gui.core.Theme;
 import silversword.axiom.client.gui.core.UiContext;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.Renderer2D;
 
 public final class HudContext extends UiContext {
 

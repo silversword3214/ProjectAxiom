@@ -4,7 +4,7 @@ import net.minecraft.client.Minecraft;
 import silversword.axiom.client.gui.core.Rect;
 import silversword.axiom.client.gui.core.UiContext;
 import silversword.axiom.client.main.AxiomMod;
-import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.rendersystem.utils.color.SettingColor;
 
 public class LabeledColorPicker implements UiComponent {
     private Rect bounds;

@@ -12,15 +12,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.render.NoHurtCam;
 import silversword.axiom.client.modules.render.NoViewBobbingTilt;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.rearcamera.RearCameraRenderer;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.RenderAPI;
+import silversword.axiom.client.rendersystem.axiomrenderer.engine.postprocess.shaderesp.ShaderEspRenderer;
+import silversword.axiom.client.rendersystem.utils.rearcamera.RearCameraRenderer;
 
 @Mixin(GameRenderer.class)
 public abstract class GameRendererMixin {
 
     @Inject(method = "close", at = @At("RETURN"))
     private void axiom$onGameRendererClose(CallbackInfo ci) {
-        silversword.axiom.client.render.rendersystem.axiomrenderer.shaderesp.ShaderEspRenderer.shutdown();
+        ShaderEspRenderer.shutdown();
         RenderAPI.getInstance().close();
     }
 

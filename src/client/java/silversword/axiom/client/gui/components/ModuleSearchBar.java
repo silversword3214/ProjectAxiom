@@ -24,6 +24,12 @@ public final class ModuleSearchBar implements UiComponent {
     private static final int MAX_DROPDOWN_HEIGHT = 200;
     private static final float ANIM_SPEED = 0.2f;
 
+    // Kursori
+    private float blinkTimer = 0f;
+    private static final float BLINK_INTERVAL = 10f;
+    private static final int RADIUS = 4;
+    private static final float OUTLINE_THICKNESS = 1.5f;
+
     public ModuleSearchBar(Consumer<AxiomMod> onModuleSelected) {
         this.onModuleSelected = onModuleSelected;
         this.heightAnim = new Animation(0f, ANIM_SPEED);
@@ -31,22 +37,28 @@ public final class ModuleSearchBar implements UiComponent {
 
     public String getText() { return text; }
     public boolean isFocused() { return focused; }
-    public void setFocused(boolean f) { this.focused = f; }
+
+    public void setFocused(boolean f) {
+        this.focused = f;
+        if (f) blinkTimer = 0f;
+    }
 
     @Override public Rect getBounds() { return bounds; }
     @Override public void setBounds(Rect bounds) { this.bounds = bounds; }
     @Override public int getPreferredHeight() { return 18; }
 
     public void appendChar(char c) {
-        if (c < 32 || c == 127 || c == 167) return; // ohita kontrollit ja §
+        if (c < 32 || c == 127 || c == 167) return;
         text += c;
         updateSearchResults();
+        blinkTimer = 0f;
     }
 
     public void backspace() {
         if (!text.isEmpty()) {
             text = text.substring(0, text.length() - 1);
             updateSearchResults();
+            blinkTimer = 0f;
         }
     }
 
@@ -63,6 +75,8 @@ public final class ModuleSearchBar implements UiComponent {
 
     @Override
     public void render(UiContext ui, int mouseX, int mouseY, float delta) {
+        blinkTimer += delta;
+
         boolean showDropdown = focused && !text.isEmpty();
         heightAnim.setTarget(showDropdown ? 1.0f : 0.0f);
         heightAnim.update(delta);
@@ -75,10 +89,10 @@ public final class ModuleSearchBar implements UiComponent {
         int bg = focused ? ui.theme.panel : (hover ? ui.theme.buttonHover : ui.theme.button);
 
         boolean isOpened = currentHeight > 1;
-        ui.fillRoundedCustom(bounds, bg, 4, true, true, !isOpened, !isOpened);
+        ui.fillRoundedCustom(bounds, bg, RADIUS, true, true, !isOpened, !isOpened);
 
         if (focused) {
-            ui.drawRoundedOutline(bounds, ui.theme.accent, 4, 1.5);
+            ui.drawRoundedOutline(bounds, ui.theme.accent, RADIUS, OUTLINE_THICKNESS);
         }
 
         String shown = text.isEmpty() && !focused ? "Search modules..." : text;
@@ -87,7 +101,8 @@ public final class ModuleSearchBar implements UiComponent {
         int textX = bounds.x + ui.theme.innerPadding;
         ui.text(shown, textX, textY, color);
 
-        if (focused) {
+        // VILKKUVA KURSORI — accent-värillä, täysi korkeus
+        if (focused && ((int)(blinkTimer / BLINK_INTERVAL) % 2 == 0)) {
             int caretX = textX + ui.textWidth(text);
             ui.fill(caretX, bounds.y + 3, 1, bounds.h - 6, ui.theme.accent);
         }
@@ -127,8 +142,7 @@ public final class ModuleSearchBar implements UiComponent {
 
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-        // 26.3: vasen klikki == 1
-        if (button != 1) return false;
+        if (button != InputConstants.MOUSE_BUTTON_LEFT) return false;
 
         boolean clickedOnBar = bounds.contains(mouseX, mouseY);
 
@@ -155,26 +169,24 @@ public final class ModuleSearchBar implements UiComponent {
         }
 
         boolean wasFocused = focused;
-        focused = clickedOnBar;
+        setFocused(clickedOnBar);
         if (focused) updateSearchResults();
 
         return wasFocused || focused;
     }
 
     @Override
-    public boolean keyPressed(UiContext ui, int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(UiContext ui, int scancode, int keycode, int modifiers) {
         if (!focused) return false;
 
-        // 26.3 / SDL: käytä InputConstants-vakioita (input.key() = scancode)
-        if (keyCode == InputConstants.KEY_ESCAPE || keyCode == InputConstants.KEY_RETURN) {
-            focused = false;
+        if (scancode == InputConstants.KEY_ESCAPE || scancode == InputConstants.KEY_RETURN) {
+            setFocused(false);
             return true;
         }
-        if (keyCode == InputConstants.KEY_BACKSPACE) {
+        if (scancode == InputConstants.KEY_BACKSPACE) {
             backspace();
             return true;
         }
-        // Merkkinäppäimet hoidetaan parent-screenin kautta (tryHandleTyping)
         return false;
     }
 

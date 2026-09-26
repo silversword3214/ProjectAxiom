@@ -17,9 +17,9 @@ import silversword.axiom.client.hud.HudManager;
 import silversword.axiom.client.managers.ModuleKeybindManager;
 import silversword.axiom.client.managers.ModuleManager;
 import silversword.axiom.client.modules.waypoints.WaypointCommands;
-import silversword.axiom.client.render.font.Fonts;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderPipelines;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.rearcamera.RearCameraRenderer;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.Fonts;
+import silversword.axiom.client.rendersystem.axiomrenderer.engine.RenderPipelines;
+import silversword.axiom.client.rendersystem.utils.rearcamera.RearCameraRenderer;
 import silversword.axiom.client.sound.CustomSounds;
 
 public final class AxiomInitialize implements ClientModInitializer {
@@ -43,7 +43,7 @@ public final class AxiomInitialize implements ClientModInitializer {
             Fonts.refresh();
             String savedFont = FontConfigManager.loadFont();
             if (savedFont != null) {
-                silversword.axiom.client.render.font.Fonts.setFont(savedFont);
+                Fonts.setFont(savedFont);
             }
             RenderPipelines.rebuildAll();
         });

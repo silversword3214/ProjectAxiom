@@ -1,8 +1,8 @@
 package silversword.axiom.client.utils.render;
 
 import net.minecraft.resources.Identifier;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.Renderer2D;
+import silversword.axiom.client.rendersystem.utils.color.Color;
 
 import java.util.ArrayList;
 import java.util.List;

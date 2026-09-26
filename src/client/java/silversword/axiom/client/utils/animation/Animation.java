@@ -3,7 +3,7 @@ package silversword.axiom.client.utils.animation;
 public class Animation {
     private float value;
     private float target;
-    private float speed; // per second
+    private float speed;
 
     public Animation(float initial, float speed) {
         this.value = initial;

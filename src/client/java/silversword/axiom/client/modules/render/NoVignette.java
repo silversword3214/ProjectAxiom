@@ -12,7 +12,6 @@ public class NoVignette extends AxiomMod implements KeybindConfigurable {
 
     public NoVignette() {
         super("No Vignette", "Removes the dark vignette effect from the screen", ModuleCategory.RENDER);
-        // 26.3: GLFW_KEY_UNKNOWN → InputConstants.UNKNOWN.getValue() (-1)
         toggleKey = new SettingKeybind("Toggle Key", InputConstants.UNKNOWN.getValue());
         addHiddenSetting(toggleKey);
     }

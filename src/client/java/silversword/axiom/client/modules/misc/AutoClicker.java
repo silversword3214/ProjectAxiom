@@ -1,6 +1,12 @@
 package silversword.axiom.client.modules.misc;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.component.SwingAnimation;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import silversword.axiom.client.event.KeyboardAction;
 import silversword.axiom.client.event.MouseClickEvent;
 import silversword.axiom.client.eventbus.Subscribe;
@@ -59,65 +65,79 @@ public class AutoClicker extends AxiomMod implements KeybindConfigurable {
 
     @Override
     protected void onTick() {
-        if (mc.player == null || mc.level == null) return;
+        LocalPlayer player = mc.player;
+        if (player == null || mc.level == null || mc.gameMode == null) return;
 
-        boolean left = button.getMode().equals("Left") || button.getMode().equals("Both");
-        boolean right = button.getMode().equals("Right") || button.getMode().equals("Both");
+        String mode = button.getMode();
+        boolean left  = mode.equals("Left")  || mode.equals("Both");
+        boolean right = mode.equals("Right") || mode.equals("Both");
 
         long now = System.currentTimeMillis();
-        long baseDelay = (long) (delay.getValue() * 1000);
-        long randomAdd = (long) (Math.random() * random.getValue());
-        long actualDelay = baseDelay + randomAdd;
+        long actualDelay = computeDelay();
 
         if (onlyWhileHolding.get()) {
-            // 26.3: GLFW pois → MouseHandler
             boolean leftHeld  = mc.mouseHandler.isLeftPressed();
             boolean rightHeld = mc.mouseHandler.isRightPressed();
 
             if (left && leftHeld && now - lastClickTime >= actualDelay) {
-                clickLeft();
+                clickLeft(player);
                 lastClickTime = now;
             }
             if (right && rightHeld && now - lastClickTime >= actualDelay) {
-                clickRight();
+                clickRight(player);
                 lastClickTime = now;
             }
         } else {
-            // Jatkuva klikkaus ilman pohjassa pitämistä
             if (now - lastClickTime >= actualDelay) {
-                if (left) clickLeft();
-                if (right) clickRight();
+                if (left)  clickLeft(player);
+                if (right) clickRight(player);
                 lastClickTime = now;
             }
         }
     }
 
-    private void clickLeft() {
-        if (mc.player == null || mc.gameMode == null) return;
-        // 26.3: gameMode.attack kutsuu swing(...) sisäisesti – erillistä kutsua ei tarvita
-        if (mc.crosshairPickEntity != null) {
-            mc.gameMode.attack(mc.player, mc.crosshairPickEntity);
-        }
+    private long computeDelay() {
+        long base = (long) (delay.getValue() * 1000);
+        double r = random.getValue();
+        if (r <= 0) return base;
+
+        RandomSource rng = mc.level != null ? mc.level.getRandom() : RandomSource.create();
+        return base + (long) (rng.nextDouble() * r);
     }
 
-    private void clickRight() {
-        if (mc.player == null || mc.gameMode == null) return;
-        mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
+    private void clickLeft(LocalPlayer player) {
+        HitResult hit = mc.hitResult;
+        if (hit instanceof BlockHitResult bhr && hit.getType() == HitResult.Type.BLOCK) {
+            mc.gameMode.startDestroyBlock(bhr.getBlockPos(), bhr.getDirection());
+            mc.gameMode.continueDestroyBlock(bhr.getBlockPos(), bhr.getDirection());
+        } else if (mc.crosshairPickEntity != null) {
+            mc.gameMode.attack(player, mc.crosshairPickEntity);
+        }
+        player.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
+    }
+
+    private void clickRight(LocalPlayer player) {
+        HitResult hit = mc.hitResult;
+        if (hit instanceof BlockHitResult bhr && hit.getType() == HitResult.Type.BLOCK) {
+            mc.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, bhr);
+        } else {
+            mc.gameMode.useItem(player, InteractionHand.MAIN_HAND);
+        }
     }
 
     @Subscribe
     public void onMouseClick(MouseClickEvent event) {
         if (!isEnabled()) return;
 
-        boolean left  = button.getMode().equals("Left")  || button.getMode().equals("Both");
-        boolean right = button.getMode().equals("Right") || button.getMode().equals("Both");
+        String mode = button.getMode();
+        boolean left  = mode.equals("Left")  || mode.equals("Both");
+        boolean right = mode.equals("Right") || mode.equals("Both");
 
-        // MC:n click.button(): 0 = vasen, 1 = oikea, 2 = keski.
-        // 26.3: GLFW-vakioita ei enää tarvita – vertaillaan suoraan indeksejä.
         if (event.action == KeyboardAction.PRESS) {
             int btn = event.click.button();
-            if (left  && btn == 0) event.setCancelled(true);
-            if (right && btn == 1) event.setCancelled(true);
+            // 26.3 / SDL: 1 = vasen, 2 = keski, 3 = oikea
+            if (left  && btn == InputConstants.MOUSE_BUTTON_LEFT)  event.setCancelled(true);
+            if (right && btn == InputConstants.MOUSE_BUTTON_RIGHT) event.setCancelled(true);
         }
     }
 }

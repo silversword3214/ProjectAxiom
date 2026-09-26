@@ -18,7 +18,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.chunk.LevelChunk;
-import silversword.axiom.client.event.render.Render3DEvent;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.event.Render3DEvent;
 import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.components.UiComponent;
 import silversword.axiom.client.gui.window.WindowFactory;
@@ -29,10 +29,10 @@ import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.moduleutils.BlockSelectable;
 import silversword.axiom.client.modules.moduleutils.BlockSelectionView;
 
-import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer3D;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
-import silversword.axiom.client.render.rendersystem.utils.misc.ShapeModeEnum;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.Renderer3D;
+import silversword.axiom.client.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.rendersystem.utils.misc.ShapeModeEnum;
 import silversword.axiom.client.setting.*;
 
 import java.util.*;

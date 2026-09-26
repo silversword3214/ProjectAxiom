@@ -12,12 +12,11 @@ import silversword.axiom.client.gui.core.Theme;
 import silversword.axiom.client.gui.core.ThemeManager;
 import silversword.axiom.client.gui.core.UiContext;
 import silversword.axiom.client.hud.core.HudContext;
-import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.TextRenderer;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.RenderAPI;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.Renderer2D;
 import silversword.axiom.client.hud.*;
-import silversword.axiom.client.render.rendersystem.utils.render.RenderUtils;
+import silversword.axiom.client.rendersystem.utils.render.RenderUtils;
 
 public final class HudEditScreen extends Screen {
     private static final int GRID_SIZE = 10;
@@ -98,14 +97,12 @@ public final class HudEditScreen extends Screen {
     }
 
     private void drawGrid(UiContext ctx) {
-        RenderCore core = RenderAPI.getInstance().getCore();
-        // Pystysuorat viivat
+        Renderer2D renderer = ctx.renderer;
         for (int x = 0; x < width; x += GRID_SIZE) {
-            core.addLine2D(x, 0, x, height, 1.0f, GRID_COLOR);
+            renderer.drawLine(x, 0, x, height, 1.0f, GRID_COLOR);
         }
-        // Vaakasuorat viivat
         for (int y = 0; y < height; y += GRID_SIZE) {
-            core.addLine2D(0, y, width, y, 1.0f, GRID_COLOR);
+            renderer.drawLine(0, y, width, y, 1.0f, GRID_COLOR);
         }
     }
 

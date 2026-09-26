@@ -9,8 +9,8 @@ import silversword.axiom.client.gui.window.WindowFactory;
 import silversword.axiom.client.gui.screen.ClickGuiScreen;
 import silversword.axiom.client.hud.HudElement;
 import silversword.axiom.client.hud.HudManager;
-import silversword.axiom.client.render.rendersystem.utils.texture.Texture;
-import silversword.axiom.client.render.rendersystem.utils.texture.TextureManager;
+import silversword.axiom.client.rendersystem.utils.texture.Texture;
+import silversword.axiom.client.rendersystem.utils.texture.TextureManager;
 
 import java.util.ArrayList;
 import java.util.List;

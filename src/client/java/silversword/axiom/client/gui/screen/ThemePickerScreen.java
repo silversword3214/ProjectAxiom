@@ -8,10 +8,10 @@ import org.joml.Matrix4f;
 import silversword.axiom.client.config.ClickGuiConfigManager;
 import silversword.axiom.client.gui.components.*;
 import silversword.axiom.client.gui.core.*;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.renderer.Renderer2D;
-import silversword.axiom.client.render.rendersystem.utils.color.rainbow.RainbowPalette;
-import silversword.axiom.client.render.rendersystem.utils.color.rainbow.RainbowPalettes;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.RenderAPI;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.Renderer2D;
+import silversword.axiom.client.rendersystem.utils.color.rainbow.RainbowPalette;
+import silversword.axiom.client.rendersystem.utils.color.rainbow.RainbowPalettes;
 
 import java.util.ArrayList;
 import java.util.List;

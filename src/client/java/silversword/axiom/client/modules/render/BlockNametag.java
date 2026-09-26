@@ -7,8 +7,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
-import silversword.axiom.client.event.render.Render2DEvent;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.event.Render2DEvent;
 import silversword.axiom.client.eventbus.Subscribe;
 import silversword.axiom.client.gui.components.ColorCustomizerView;
 import silversword.axiom.client.gui.components.UiComponent;
@@ -18,18 +17,17 @@ import silversword.axiom.client.modules.ColorConfigurable;
 import silversword.axiom.client.modules.KeybindConfigurable;
 import silversword.axiom.client.modules.ModuleCategory;
 import silversword.axiom.client.modules.NamedColor;
-import silversword.axiom.client.render.font.CustomTextRenderer;
-import silversword.axiom.client.render.font.TextRenderer;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.RenderAPI;
-import silversword.axiom.client.render.rendersystem.axiomrenderer.core.RenderCore;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.color.SettingColor;
-import silversword.axiom.client.render.rendersystem.utils.render.NametagUtils;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.CustomTextRenderer;
+import silversword.axiom.client.rendersystem.axiomrenderer.font.TextRenderer;
+import silversword.axiom.client.rendersystem.axiomrenderer.api.RenderAPI;
+import silversword.axiom.client.rendersystem.axiomrenderer.engine.RenderCore;
+import silversword.axiom.client.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.utils.color.SettingColor;
+import silversword.axiom.client.rendersystem.utils.render.NametagUtils;
 import silversword.axiom.client.setting.SettingKeybind;
 import silversword.axiom.client.setting.SettingMode;
 import silversword.axiom.client.setting.SettingNumber;
 import silversword.axiom.client.setting.SettingSlider;
-import silversword.axiom.client.utils.render.TextUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -168,7 +166,7 @@ public final class BlockNametag extends AxiomMod implements ColorConfigurable, K
         drawBackground(event, bgX, bgY, bgWidth, bgHeight, finalScale);
 
         if (text instanceof CustomTextRenderer ctr) {
-            ctr.render(event.getGuiGraphics(), currentBlockName,
+            ctr.render(currentBlockName,
                     bgX + padding, bgY + padding,
                     textColor.getCurrentColor(), false);
         } else {

@@ -8,9 +8,9 @@ import silversword.axiom.client.modules.combat.PotionRefill;
 import silversword.axiom.client.modules.misc.DeathLocationModule;
 import silversword.axiom.client.modules.render.NoParticleModule;
 import silversword.axiom.client.modules.render.WaypointModule;
-import silversword.axiom.client.render.rendersystem.utils.color.Color;
-import silversword.axiom.client.render.rendersystem.utils.texture.Texture;
-import silversword.axiom.client.render.rendersystem.utils.texture.TextureManager;
+import silversword.axiom.client.rendersystem.utils.color.Color;
+import silversword.axiom.client.rendersystem.utils.texture.Texture;
+import silversword.axiom.client.rendersystem.utils.texture.TextureManager;
 
 import java.util.function.Consumer;
 
@@ -19,6 +19,9 @@ public final class ModuleRow implements UiComponent {
     private static Texture gearTexture;
 
     private Rect bounds = new Rect(0, 0, 10, 10);
+
+    private int rightEdge = Integer.MIN_VALUE;
+
     private final AxiomMod module;
     private final Consumer<AxiomMod> onOpenSettings;
     private final String ownerWindowId;
@@ -46,11 +49,18 @@ public final class ModuleRow implements UiComponent {
     private float hoverTime = 0f;
     private static final float TOOLTIP_DELAY = 20f;
 
-    private boolean toggleCancelledByDrag = false;   // UUSI
+    private boolean toggleCancelledByDrag = false;
 
 
+    private static final float MARQUEE_SPEED = 2f;
+    private static final int MARQUEE_GAP = 28;
+    private float marqueeOffset = 0f;
 
-    public ModuleRow(AxiomMod module, Consumer<AxiomMod> onOpenSettings, String ownerWindowId, int rowIndex, boolean isLast) {
+    private static final int GEAR_RIGHT_PAD = 1;
+    private static final int GEAR_WIDTH = 16;
+
+    public ModuleRow(AxiomMod module, Consumer<AxiomMod> onOpenSettings,
+                     String ownerWindowId, int rowIndex, boolean isLast) {
         this.module = module;
         this.onOpenSettings = onOpenSettings;
         this.ownerWindowId = ownerWindowId;
@@ -62,6 +72,8 @@ public final class ModuleRow implements UiComponent {
     @Override public Rect getBounds() { return bounds; }
     @Override public void setBounds(Rect r) { bounds = r; }
     @Override public int getPreferredHeight() { return 16; }
+
+    public void setRightEdge(int x) { this.rightEdge = x; }
 
     public void highlight(long durationMs) {
         highlighted = true;
@@ -97,12 +109,11 @@ public final class ModuleRow implements UiComponent {
             ui.fill(bounds.x - 1, animatedY, barWidth, animatedHeight, ui.theme.accent);
         }
 
-        int rightPad = 2;
-        int gearBtnW = 16;
+        int effectiveRight = (rightEdge != Integer.MIN_VALUE) ? rightEdge : bounds.right();
+        int gearX = effectiveRight - GEAR_WIDTH - GEAR_RIGHT_PAD;
         int btnH = Math.max(14, bounds.h - 2);
-        int gearX = bounds.right() - gearBtnW - rightPad;
         int btnY = bounds.y + 1;
-        gearRect = new Rect(gearX, btnY, gearBtnW, btnH);
+        gearRect = new Rect(gearX, btnY, GEAR_WIDTH, btnH);
 
         boolean gearHover = gearRect.contains(mouseX, mouseY);
         if (gearHover) gearRotation += delta * HOVER_SPIN_SPEED;
@@ -110,7 +121,8 @@ public final class ModuleRow implements UiComponent {
         gearRotation %= 360f;
 
         if (gearTexture != null) {
-            ui.addTexture(GEAR_TEXTURE, gearRect.x + 2, gearRect.y + 2, gearRect.w - 4, gearRect.h - 2, gearRotation, new Color(0xFFFFFFFF));
+            ui.addTexture(GEAR_TEXTURE, gearRect.x + 2, gearRect.y + 2,
+                    gearRect.w - 4, gearRect.h - 2, gearRotation, new Color(0xFFFFFFFF));
         } else {
             ui.fill(gearRect, gearHover ? ui.theme.buttonHover : ui.theme.panel);
             String dots = "...";
@@ -131,24 +143,52 @@ public final class ModuleRow implements UiComponent {
             }
         }
 
-        int nameY = bounds.y + (bounds.h - ui.fontHeight()) / 2 + 3;
+        int nameY = bounds.y + (bounds.h - ui.fontHeight()) / 2 + 5;
         int nameX = bounds.x + 2;
+        int textClipWidth = gearRect.x - 2 - nameX;
 
         String displayName = module.getName();
         if (displayName == null) displayName = "";
 
-        // TruncateToFit poistettu kokonaan! PiirretÃ¤Ã¤n suoraan displayName.
-        if (ClickGuiConfigManager.isRainbowWaveEnabled()) {
-            // x ja y ovat ne samat nameX ja nameY kuin tavallisella tekstillÃ¤
-            ui.drawRainbowText(displayName, nameX, nameY, rowIndex);
-        } else {
-            ui.text(displayName, nameX, nameY, ui.theme.text);
+        if (!displayName.isEmpty() && textClipWidth > 0) {
+            int textW = ui.textWidth(displayName);
+            boolean textOverflows = textW > textClipWidth;
+
+            if (textOverflows && hover && !gearHover) {
+                marqueeOffset += MARQUEE_SPEED * delta;
+                float cycle = textW + MARQUEE_GAP;
+                if (marqueeOffset >= cycle) marqueeOffset -= cycle;
+            } else {
+                marqueeOffset = 0f;
+            }
+
+            ui.enableScissor(nameX, bounds.y, textClipWidth, bounds.h);
+            try {
+                if (!textOverflows) {
+                    if (ClickGuiConfigManager.isRainbowWaveEnabled()) {
+                        ui.drawRainbowText(displayName, nameX, nameY, rowIndex);
+                    } else {
+                        ui.text(displayName, nameX, nameY, ui.theme.text);
+                    }
+                } else {
+                    int cycle = textW + MARQUEE_GAP;
+                    int baseX = nameX - (int) marqueeOffset;
+
+                    if (ClickGuiConfigManager.isRainbowWaveEnabled()) {
+                        ui.drawRainbowText(displayName, baseX, nameY, rowIndex);
+                        ui.drawRainbowText(displayName, baseX + cycle, nameY, rowIndex);
+                    } else {
+                        ui.text(displayName, baseX, nameY, ui.theme.text);
+                        ui.text(displayName, baseX + cycle, nameY, ui.theme.text);
+                    }
+                }
+            } finally {
+                ui.disableScissor();
+            }
         }
 
         if (hover && !gearHover) {
-            // LisÃ¤tÃ¤Ã¤n aikaa deltan verran (delta on yleensÃ¤ sekunnin murto-osa)
             hoverTime += delta;
-
             if (hoverTime >= TOOLTIP_DELAY) {
                 String description = module.getDescription();
                 if (description != null && !description.isEmpty()) {
@@ -156,18 +196,15 @@ public final class ModuleRow implements UiComponent {
                 }
             }
         } else {
-            // Nollataan laskuri heti, kun hiiri poistuu tai siirtyy rattaan pÃ¤Ã¤lle
             hoverTime = 0f;
         }
     }
 
-
     @Override
     public boolean mouseClicked(UiContext ui, double mouseX, double mouseY, int button) {
-        if (!bounds.contains(mouseX, mouseY)) return false;
+        if (!bounds.contains(mouseX, mouseY) && !gearRect.contains(mouseX, mouseY)) return false;
         if (button != 1) return false;
 
-        // Gear-nappi: avaa asetukset, ei togglea
         if (gearRect.contains(mouseX, mouseY)) {
             leftDown = false;
             if (module instanceof WaypointModule) ((WaypointModule) module).openManager();
@@ -178,14 +215,14 @@ public final class ModuleRow implements UiComponent {
             return true;
         }
 
-        // Tallenna drag-tilaa varten
+        if (!bounds.contains(mouseX, mouseY)) return false;
+
         leftDown = true;
         dragStarted = false;
         toggleCancelledByDrag = false;
         pressX = mouseX;
         pressY = mouseY;
 
-        // Toggle HETI (kuten muut UiComponentit)
         module.toggle();
         return true;
     }
@@ -200,8 +237,6 @@ public final class ModuleRow implements UiComponent {
         double dist = Math.hypot(mouseX - pressX, mouseY - pressY);
         if (dist >= DRAG_THRESHOLD) {
             dragStarted = true;
-
-            // Perutaan optimistinen toggle â€” drag alkoi
             if (!toggleCancelledByDrag) {
                 module.toggle();
                 toggleCancelledByDrag = true;
@@ -218,11 +253,7 @@ public final class ModuleRow implements UiComponent {
         leftDown = false;
         dragStarted = false;
         toggleCancelledByDrag = false;
-        // Ei enÃ¤Ã¤ togglea tÃ¤Ã¤llÃ¤ â€” se tehtiin mouseClickedissa
     }
-
-
-
 
     public AxiomMod getModule() { return module; }
 

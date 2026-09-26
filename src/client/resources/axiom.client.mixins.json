@@ -40,6 +40,8 @@
     "entity.LivingEntityMixin",
     "entity.LocalPlayerMixin",
     "gui.AbstractContainerScreenMixin",
+    "gui.GuiScreenMixin",
+    "gui.HudRenderMixin",
     "gui.PauseScreenMixin",
     "gui.TitleScreenMixin",
     "hand.LowerShieldMixin",
@@ -62,14 +64,12 @@
     "render.ScreenEffectRendererMixin",
     "render.WindowMixin",
     "render.xray.XRayAmbientOcclusionMixin",
+    "render.xray.XRayIndigoTerrainMixin",
+    "render.xray.XRayLightmapMixin",
     "render.xray.XRayOcclusionMixin",
     "render.xray.XRayShouldDrawSideMixin",
     "render.xray.XRaySideCullingMixin",
-    "world.ClientWorldPropertiesMixin",
-    "gui.GuiScreenMixin",
-    "gui.HudRenderMixin",
-    "render.xray.XRayIndigoTerrainMixin",
-    "render.xray.XRayLightmapMixin"
+    "world.ClientWorldPropertiesMixin"
   ],
   "injectors": {
     "defaultRequire": 0
@@ -78,6 +78,10 @@
     "requireAnnotations": true
   },
   "mixins": [
-
+    "render.FullbrightLightmapMixin",
+    "render.HideHandMixin",
+    "render.NoVignetteMixin",
+    "render.ZoomCameraMixin",
+    "render.ZoomScrollMixin"
   ]
 }
